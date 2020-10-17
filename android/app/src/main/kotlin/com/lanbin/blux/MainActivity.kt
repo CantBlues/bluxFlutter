@@ -1,4 +1,4 @@
-package com.example.blux
+package com.lanbin.blux
 
 import io.flutter.embedding.android.FlutterActivity
 
