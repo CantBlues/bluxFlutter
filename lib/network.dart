@@ -9,7 +9,7 @@ String mediaHost = "http://192.168.0.174:9998/";
 void switchIpv() {
   ipv = !ipv;
   if (ipv) {
-    host = "http://127.0.0.1:19999";
+    host = "http://127.0.0.1:19999/";
     mediaHost = "http://127.0.0.1:19998/";
 
   } else {
@@ -21,7 +21,7 @@ void switchIpv() {
 
 Future<bool> sendShutDown() async {
   Response response;
-  response = await Dio().get(host + "shutdown");
+  response = await Dio().get(host + "/shutdown");
   var ret = jsonDecode(response.data.toString());
   if (response.statusCode == 200 && ret["Status"]) {
     return true;

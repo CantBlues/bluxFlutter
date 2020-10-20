@@ -51,7 +51,6 @@ class _PlayerState extends State<Player> {
     return _vpController.value.initialized
         ? Chewie(controller: _controller)
         : SizedBox();
-    // return Center(child:Text("abc"));
   }
 
   @override
