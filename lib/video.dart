@@ -1,5 +1,6 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import 'package:video_player/video_player.dart';
@@ -34,16 +35,15 @@ class _PlayerState extends State<Player> {
   @override
   void initState() {
     super.initState();
-    _vpController =
-        VideoPlayerController.network(mediaHost + widget.url)
-          ..initialize().then((_) {
-            setState(() {});
-            _controller = ChewieController(
-                videoPlayerController: _vpController,
-                autoPlay: true,
-                aspectRatio: _vpController.value.aspectRatio,
-                allowedScreenSleep: false);
-          });
+    _vpController = VideoPlayerController.network(mediaHost + widget.url)
+      ..initialize().then((_) {
+        setState(() {});
+        _controller = ChewieController(
+            videoPlayerController: _vpController,
+            autoPlay: true,
+            aspectRatio: _vpController.value.aspectRatio ?? 1,
+            allowedScreenSleep: false);
+      });
   }
 
   @override

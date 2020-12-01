@@ -26,7 +26,7 @@ class _MyHomePageState extends State<MyHomePage> {
         drawer: Drawer(
             child: Center(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text("IPv4/6:"),
             Switch(
@@ -95,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text("remoteWakeUp"),
                 onPressed: () {
                   sendUDP("192.168.0.255");
+                  remoteWake();
                   // todo show tips
                 },
               ),

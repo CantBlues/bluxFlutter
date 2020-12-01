@@ -11,11 +11,9 @@ void switchIpv() {
   if (ipv) {
     host = "http://127.0.0.1:19999/";
     mediaHost = "http://127.0.0.1:19998/";
-
   } else {
     host = "http://192.168.0.174:9999/";
     mediaHost = "http://192.168.0.174:9998/";
-
   }
 }
 
@@ -71,4 +69,25 @@ int _hexToInt(String hex) {
     }
   }
   return val;
+}
+
+void remoteWake() async {
+  Socket socket = await Socket.connect('47.104.143.223', 5200);
+  print('connected');
+  // listen to the received data event stream
+  socket.listen((List<int> event) {
+    print(event);
+  });
+
+  // send hello
+  socket.add(<int>[1, 35, 51]);
+  await Future.delayed(Duration(seconds: 1));
+  socket.add(<int>[5, 35, 51]);
+
+  // wait 5 seconds
+  await Future.delayed(Duration(seconds: 5));
+
+  // .. and close the socket
+  socket.close();
+  print("close");
 }
