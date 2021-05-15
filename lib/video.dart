@@ -12,8 +12,8 @@ class VideoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dynamic args = ModalRoute.of(context).settings.arguments;
-    return Padding(
-      child: Column(children: [Player(url: args["Path"])]),
+    return ListView(
+      children: [Player(url: args["Path"])],
       padding:
           EdgeInsets.only(top: MediaQueryData.fromWindow(window).padding.top),
     );
@@ -35,20 +35,21 @@ class _PlayerState extends State<Player> {
   @override
   void initState() {
     super.initState();
+    print(mediaHost + widget.url);
     _vpController = VideoPlayerController.network(mediaHost + widget.url)
       ..initialize().then((_) {
         setState(() {});
         _controller = ChewieController(
             videoPlayerController: _vpController,
             autoPlay: true,
-            aspectRatio: _vpController.value.aspectRatio ?? 1,
+            aspectRatio: _vpController.value.aspectRatio,
             allowedScreenSleep: false);
       });
   }
 
   @override
   build(BuildContext context) {
-    return _vpController.value.initialized
+    return _vpController.initialize()
         ? Chewie(controller: _controller)
         : SizedBox();
   }
