@@ -33,25 +33,22 @@ class _PlayerState extends State<Player> {
   VideoPlayerController _vpController;
   ChewieController _controller;
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
     print(mediaHost + widget.url);
-    _vpController = VideoPlayerController.network(mediaHost + widget.url)
-      ..initialize().then((_) {
-        setState(() {});
-        _controller = ChewieController(
-            videoPlayerController: _vpController,
-            autoPlay: true,
-            aspectRatio: _vpController.value.aspectRatio,
-            allowedScreenSleep: false);
-      });
+    _vpController = VideoPlayerController.network(mediaHost + widget.url);
+    await Future.wait([_vpController.initialize()]);
+    _controller = ChewieController(
+        videoPlayerController: _vpController,
+        autoPlay: true,
+        aspectRatio: _vpController.value.aspectRatio,
+        allowedScreenSleep: false);
+    setState(() {});
   }
 
   @override
   build(BuildContext context) {
-    return _vpController.initialize()
-        ? Chewie(controller: _controller)
-        : SizedBox();
+    return Chewie(controller: _controller);
   }
 
   @override
