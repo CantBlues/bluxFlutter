@@ -7,11 +7,11 @@ import 'package:video_player/video_player.dart';
 import 'network.dart';
 
 class VideoPage extends StatelessWidget {
-  VideoPage({Key key}) : super(key: key);
+  VideoPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final dynamic args = ModalRoute.of(context).settings.arguments;
+    final dynamic args = ModalRoute.of(context)!.settings.arguments;
     return ListView(
       children: [Player(url: args["Path"])],
       padding:
@@ -21,8 +21,8 @@ class VideoPage extends StatelessWidget {
 }
 
 class Player extends StatefulWidget {
-  Player({Key key, @required this.url}) : super(key: key);
-  final String url;
+  Player({Key? key, required this.url}) : super(key: key);
+  final String? url;
 
   @override
   _PlayerState createState() => _PlayerState();
@@ -30,13 +30,13 @@ class Player extends StatefulWidget {
 
 class _PlayerState extends State<Player> {
   _PlayerState();
-  VideoPlayerController _vpController;
-  ChewieController _controller;
+  late VideoPlayerController _vpController;
+  late ChewieController _controller;
   @override
   Future<void> initState() async {
     super.initState();
-    print(mediaHost + widget.url);
-    _vpController = VideoPlayerController.network(mediaHost + widget.url);
+    print(mediaHost + widget.url!);
+    _vpController = VideoPlayerController.network(mediaHost + widget.url!);
     await Future.wait([_vpController.initialize()]);
     _controller = ChewieController(
         videoPlayerController: _vpController,

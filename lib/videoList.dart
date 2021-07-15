@@ -13,7 +13,7 @@ class VideoList extends StatefulWidget {
 
 class _VideoListState extends State<VideoList> {
   var _list = <dynamic>[];
-  int count = 0;
+  int? count = 0;
   int page = 0;
 
   void _cardTap(int index) {
@@ -39,10 +39,10 @@ class _VideoListState extends State<VideoList> {
                   onTap: () => _cardTap(index),
                   onLongPress: () => _cardLongPress(index, context)),
               fit: BoxFit.cover,
-              image: _list[index]["Images"]
+              image: (_list[index]["Images"]
                   ? NetworkImage(
                       mediaHost + "/imgs/${_list[index]["Md5"]}thumb.jpg")
-                  : AssetImage("assets/imgPlaceHolder.png")),
+                  : AssetImage("assets/imgPlaceHolder.png")) as ImageProvider<Object>),
           Align(
             child: Container(
               child: Center(
@@ -123,7 +123,7 @@ class _VideoListState extends State<VideoList> {
             delegate:
                 SliverChildBuilderDelegate((BuildContext context, int pos) {
               if (pos >= _list.length - 1 &&
-                  _list.length < count &&
+                  _list.length < count! &&
                   this.page != 0) {
                 _getVideoList();
               }
@@ -142,16 +142,16 @@ class _VideoListState extends State<VideoList> {
 
 class CustomRect extends CustomClipper<Rect> {
   CustomRect(this.index, {this.row, this.column, this.ratio});
-  int index, row, column;
-  double ratio;
+  int? index, row, column;
+  double? ratio;
 
   @override
   Rect getClip(Size size) {
     Rect r = Rect.fromLTRB(
-        column * (size.width) / 10,
-        row * size.width / ratio / 10,
-        (column + 1) * (size.width) / 10,
-        (row + 1) * size.width / ratio / 10);
+        column! * (size.width) / 10,
+        row! * size.width / ratio! / 10,
+        (column! + 1) * (size.width) / 10,
+        (row! + 1) * size.width / ratio! / 10);
     return r;
   }
 
@@ -163,14 +163,14 @@ class CustomRect extends CustomClipper<Rect> {
 
 class ProcessImg extends StatefulWidget {
   ProcessImg({this.md5});
-  final String md5;
+  final String? md5;
   @override
   _ProcessImgState createState() => _ProcessImgState();
 }
 
 class _ProcessImgState extends State<ProcessImg> {
   int index = 0;
-  Image img;
+  Image? img;
   double ratio = 1;
   @override
   void initState() {
