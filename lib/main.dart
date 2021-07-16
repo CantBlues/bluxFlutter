@@ -4,10 +4,17 @@ import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'dart:io';
 
 void main() async {
   runApp(MyApp());
-  await FlutterDisplayMode.setHighRefreshRate();
+  try {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await FlutterDisplayMode.setHighRefreshRate();
+    } 
+  } catch (e) {
+    print(e);
+  }
 }
 
 class MyApp extends StatelessWidget {
