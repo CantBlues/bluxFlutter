@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text("remoteWakeUp"),
                 onPressed: () {
                   sendUDP("192.168.0.255");
-                  remoteWake();
+                  remoteWake("47.104.99.3");
                   // todo show tips
                 },
               ),

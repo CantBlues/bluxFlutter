@@ -71,8 +71,8 @@ int _hexToInt(String hex) {
   return val;
 }
 
-void remoteWake() async {
-  Socket socket = await Socket.connect('47.104.143.223', 5200);
+void remoteWake(String ip) async {
+  Socket socket = await Socket.connect(ip, 5200);
   print('connected');
   // listen to the received data event stream
   socket.listen((List<int> event) {
