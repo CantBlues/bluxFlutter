@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import 'package:video_player/video_player.dart';
 import 'network.dart';
+import 'package:flutter/services.dart';
 
 class VideoPage extends StatelessWidget {
   VideoPage({Key? key}) : super(key: key);
@@ -12,11 +13,11 @@ class VideoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dynamic args = ModalRoute.of(context)!.settings.arguments;
-    return ListView(
-      children: [Player(url: args["Path"])],
-      padding:
-          EdgeInsets.only(top: MediaQueryData.fromWindow(window).padding.top),
-    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,child:Scaffold(
+      body: Player(url: args["Path"]),
+      backgroundColor: Colors.black,
+    ));
   }
 }
 
@@ -33,22 +34,35 @@ class _PlayerState extends State<Player> {
   late VideoPlayerController _vpController;
   late ChewieController _controller;
   @override
-  Future<void> initState() async {
+  initState() {
     super.initState();
     print(mediaHost + widget.url!);
-    _vpController = VideoPlayerController.network(mediaHost + widget.url!);
-    await Future.wait([_vpController.initialize()]);
-    _controller = ChewieController(
-        videoPlayerController: _vpController,
-        autoPlay: true,
-        aspectRatio: _vpController.value.aspectRatio,
-        allowedScreenSleep: false);
-    setState(() {});
+    _vpController = VideoPlayerController.network(mediaHost + widget.url!)
+      ..initialize().then((_) {
+        _controller = ChewieController(
+            videoPlayerController: _vpController,
+            autoPlay: true,
+            aspectRatio: _vpController.value.aspectRatio,
+            allowedScreenSleep: false);
+        setState(() {});
+      });
+
+    //todo
   }
 
   @override
   build(BuildContext context) {
-    return Chewie(controller: _controller);
+    return _vpController.value.isInitialized
+        ? Padding(
+            padding: EdgeInsets.only(
+                top: MediaQueryData.fromWindow(window).padding.top),
+            child: AspectRatio(
+                aspectRatio: _vpController.value.aspectRatio,
+                child: Chewie(controller: _controller)))
+        : Container(
+            child: CircularProgressIndicator(),
+            alignment: Alignment.center,
+          );
   }
 
   @override

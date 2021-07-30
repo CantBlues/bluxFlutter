@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
+import 'usage.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'dart:io';
 
@@ -29,7 +30,8 @@ class MyApp extends StatelessWidget {
         routes: {
           "/": (context) => MyHomePage(title: 'Blux'),
           "video": (context) => VideoPage(),
-          "videoList": (context) => VideoList()
+          "videoList": (context) => VideoList(),
+          "usage":(context)=> UsagePage()
         });
   }
 }

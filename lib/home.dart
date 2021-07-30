@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'network.dart';
+import 'usage.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, this.title}) : super(key: key);
@@ -100,6 +101,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
             ),
+            Expanded(
+                child: TextButton(
+              child: Text("app usage"),
+              onPressed: () => Navigator.of(context).pushNamed('usage'),
+            ))
           ],
         ));
   }
