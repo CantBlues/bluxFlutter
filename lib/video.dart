@@ -14,10 +14,11 @@ class VideoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final dynamic args = ModalRoute.of(context)!.settings.arguments;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,child:Scaffold(
-      body: Player(url: args["Path"]),
-      backgroundColor: Colors.black,
-    ));
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          body: Player(url: args["Path"]),
+          backgroundColor: Colors.black,
+        ));
   }
 }
 
@@ -36,7 +37,6 @@ class _PlayerState extends State<Player> {
   @override
   initState() {
     super.initState();
-    print(mediaHost + widget.url!);
     _vpController = VideoPlayerController.network(mediaHost + widget.url!)
       ..initialize().then((_) {
         _controller = ChewieController(

@@ -3,19 +3,22 @@ import 'package:flutter/cupertino.dart';
 import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
+import 'audios.dart';
 import 'usage.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'dart:io';
+import 'network.dart';
 
 void main() async {
   runApp(MyApp());
   try {
     if (Platform.isAndroid || Platform.isIOS) {
       await FlutterDisplayMode.setHighRefreshRate();
-    } 
+    }
   } catch (e) {
     print(e);
   }
+  listenNetwork();
 }
 
 class MyApp extends StatelessWidget {
@@ -31,7 +34,8 @@ class MyApp extends StatelessWidget {
           "/": (context) => MyHomePage(title: 'Blux'),
           "video": (context) => VideoPage(),
           "videoList": (context) => VideoList(),
-          "usage":(context)=> UsagePage()
+          "usage": (context) => UsagePage(),
+          "audios": (context) => AudiosPage()
         });
   }
 }

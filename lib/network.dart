@@ -1,13 +1,34 @@
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:connectivity/connectivity.dart';
 
-bool ipv = false;
+bool ipv = true;
 String host = "http://192.168.0.174:9999/";
 String mediaHost = "http://192.168.0.174:9998/";
 
-void switchIpv() {
-  ipv = !ipv;
+const String local = "http://192.168.0.174:9999/";
+void listenNetwork() {
+  Connectivity()
+      .onConnectivityChanged
+      .listen((ConnectivityResult result) async {
+    if (result == ConnectivityResult.wifi) {
+      Response response;
+      response = await Dio().get(local + "/checkonline");
+      var ret = response.data.toString();
+      if (ret == "online") {
+        switchIpv(false);
+      } else {
+        switchIpv(true);
+      }
+    } else {
+      switchIpv(true);
+    }
+  });
+}
+
+void switchIpv(bool ipv6) {
+  ipv = ipv6;
   if (ipv) {
     host = "http://127.0.0.1:19999/";
     mediaHost = "http://127.0.0.1:19998/";

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'network.dart';
-import 'usage.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, this.title}) : super(key: key);
@@ -33,7 +32,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Switch(
                 value: _ipv,
                 onChanged: (v) {
-                  switchIpv();
+                  switchIpv(!_ipv);
                   setState(() {
                     _ipv = !_ipv;
                   });
@@ -105,6 +104,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: TextButton(
               child: Text("app usage"),
               onPressed: () => Navigator.of(context).pushNamed('usage'),
+            )),
+            Expanded(
+                child: TextButton(
+              child: Text("Audios"),
+              onPressed: () => Navigator.of(context).pushNamed('audios'),
             ))
           ],
         ));
