@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:app_usage/app_usage.dart';
-import 'dart:developer';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'network.dart';
+import 'package:dio/dio.dart';
 
 class UsagePage extends StatefulWidget {
   UsagePage({Key? key, this.title}) : super(key: key);
@@ -19,6 +21,8 @@ class _UsagePageState extends State<UsagePage> {
 
   @override
   Widget build(BuildContext context) {
+    var ttt = PhoneUsage();
+    ttt.test();
     DateTime startDate = DateTime(2021, 07, 18);
     DateTime endDate = new DateTime.now();
     Future<List<AppUsageInfo>> infos = _getAppUsage(startDate, endDate);
@@ -44,5 +48,49 @@ class _UsagePageState extends State<UsagePage> {
         },
       ),
     );
+  }
+}
+
+class PhoneUsage {
+  check() async {
+    String lastFetch = await loadLastFetch();
+    if (lastFetch == "0") {
+      //
+      setLastFetch(DateTime.now().toString());
+    }
+  }
+
+  Future<Map<String, List<AppUsageInfo>>> getStats(
+      DateTime from, DateTime to) async {
+    var collect = Map<String, List<AppUsageInfo>>();
+    for (DateTime i = from; i.isBefore(to); i = i.add(Duration(days: 1))) {
+      List<AppUsageInfo> infos =
+          await AppUsage.getAppUsage(i, i.add(Duration(days: 1)));
+      collect[i.toString()] = infos;
+    }
+    return collect;
+  }
+
+  Future<String> getLastFetch() async {
+    Response response = await dio.get("/getLastFetchDate");
+    return response.statusCode == 200 ? response.data.toString() : "";
+  }
+
+  Future<String> loadLastFetch() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String lastFetch = (prefs.getString('lastDate') ?? "0");
+    print('Last fetch data $lastFetch');
+    return lastFetch;
+  }
+
+  setLastFetch(String date) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lastDate', date);
+  }
+
+  void test() {
+    getStats(DateTime(2021, 05, 01), DateTime(2021, 07, 24)).then((e) {
+      print(e);
+    });
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'network.dart';
+import 'eventbus.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, this.title}) : super(key: key);
@@ -18,6 +19,16 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _ipv = ipv;
 
   @override
+  void initState() {
+    super.initState();
+    bus.on("netChange", (arg) {
+      setState(() {
+        _ipv = ipv;
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
@@ -33,9 +44,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 value: _ipv,
                 onChanged: (v) {
                   switchIpv(!_ipv);
-                  setState(() {
-                    _ipv = !_ipv;
-                  });
+                  // setState(() {
+                  //   _ipv = !_ipv;
+                  // });
                 })
           ],
         ))),
@@ -109,6 +120,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: TextButton(
               child: Text("Audios"),
               onPressed: () => Navigator.of(context).pushNamed('audios'),
+            )),
+            Expanded(
+                child: TextButton(
+              child: Text("network"),
+              onPressed: () => {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return Text(dio.options.baseUrl);
+                    })
+              },
             ))
           ],
         ));

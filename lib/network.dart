@@ -2,10 +2,18 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity/connectivity.dart';
+import 'eventbus.dart';
 
-bool ipv = true;
+bool ipv = false;
 String host = "http://192.168.0.174:9999/";
 String mediaHost = "http://192.168.0.174:9998/";
+BaseOptions options = BaseOptions(
+    baseUrl: "http://192.168.0.174:9999",
+    responseType: ResponseType.plain,
+    connectTimeout: 30000,
+    receiveTimeout: 30000,
+    contentType: Headers.jsonContentType);
+Dio dio = Dio(options);
 
 const String local = "http://192.168.0.174:9999/";
 void listenNetwork() {
@@ -29,13 +37,15 @@ void listenNetwork() {
 
 void switchIpv(bool ipv6) {
   ipv = ipv6;
-  if (ipv) {
+  if (ipv6) {
     host = "http://127.0.0.1:19999/";
     mediaHost = "http://127.0.0.1:19998/";
   } else {
     host = "http://192.168.0.174:9999/";
     mediaHost = "http://192.168.0.174:9998/";
   }
+  dio = Dio(options.copyWith(baseUrl: host));
+  bus.emit("netChange");
 }
 
 Future<bool> sendShutDown() async {
@@ -54,11 +64,8 @@ void sendUDP(String ip) {
     socket.broadcastEnabled = true;
     print('Sending from ${socket.address.address}:${socket.port}');
     int port = 9;
-    socket.send(
-        _hexStr2ListInt(
-            "FFFFFFFFFFFFD0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312D0509914E312"),
-        InternetAddress(ip),
-        port);
+    socket.send(_hexStr2ListInt("FFFFFFFFFFFF" + "D0509914E312" * 16),
+        InternetAddress(ip), port);
   });
 }
 
