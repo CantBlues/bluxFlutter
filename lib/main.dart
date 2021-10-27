@@ -14,11 +14,11 @@ void main() async {
   try {
     if (Platform.isAndroid || Platform.isIOS) {
       await FlutterDisplayMode.setHighRefreshRate();
+      listenNetwork();
     }
   } catch (e) {
     print(e);
   }
-  listenNetwork();
 }
 
 class MyApp extends StatelessWidget {
