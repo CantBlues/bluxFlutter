@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import 'package:video_player/video_player.dart';
-import 'network.dart';
+import 'utils/network.dart';
 import 'package:flutter/services.dart';
 
 class VideoPage extends StatelessWidget {

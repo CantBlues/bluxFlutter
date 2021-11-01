@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'network.dart';
+import 'utils/network.dart';
 import 'package:dio/dio.dart';
 
 class UsagePage extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'network.dart';
+import 'utils/network.dart';
 import 'dart:convert';
 
 

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart' as v;
-import 'network.dart';
+import 'utils/network.dart';
 
 class VideoList extends StatefulWidget {
   @override

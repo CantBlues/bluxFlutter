@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'network.dart';
-import 'eventbus.dart';
+import 'utils/network.dart';
+import 'utils/eventbus.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, this.title}) : super(key: key);

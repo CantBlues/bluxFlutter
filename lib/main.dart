@@ -7,7 +7,7 @@ import 'audios.dart';
 import 'usage.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'dart:io';
-import 'network.dart';
+import 'utils/network.dart';
 
 void main() async {
   runApp(MyApp());
