@@ -31,6 +31,8 @@ dependencies:
   app_usage: ^2.0.0
   connectivity: ^3.0.6
   shared_preferences: ^2.0.7
+  path: ^1.8.0
+  sqflite: ^2.0.0
 
 
   
