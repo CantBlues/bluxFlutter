@@ -8,6 +8,7 @@ import 'usage.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'dart:io';
 import 'utils/network.dart';
+import 'utils/db.dart';
 
 void main() async {
   runApp(MyApp());
