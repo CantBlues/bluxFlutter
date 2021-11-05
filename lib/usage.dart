@@ -22,8 +22,7 @@ class UsagePage extends StatelessWidget {
             icon: Icon(Icons.upgrade),
             onPressed: () async {
               print("upgrade");
-              dateFramerToDb(DateTime(2021, 10, 18), DateTime.now());
-
+              await dateFramerToDb(DateTime(2021, 10, 18), DateTime.now());
             },
           )
         ],
@@ -47,8 +46,6 @@ class UsageContent extends StatefulWidget {
 class _UsageContentState extends State<UsageContent> {
   Future<List<Map<String, dynamic>>> _getAppUsage(
       DateTime from, DateTime to) async {
-    appsInfo = await UsageModel.getAppsInfo();
-
     var _db = await dbHelper.open();
     // List<Map<String, dynamic>> ret = await _db!.rawQuery('''
     //   SELECT * FROM usage LEFT JOIN apps ON usage.appid = apps.id;

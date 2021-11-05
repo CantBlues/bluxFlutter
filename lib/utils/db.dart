@@ -46,19 +46,18 @@ class UsageModel {
 
   static Future<int> addAppInfo(String packageName) async {
     Database _db = await dbHelper.open();
-    int id = await _db.insert("apps", {"package": packageName});
-    appsInfo[packageName] = id;
-    return id;
+    return await _db.insert("apps", {"package": packageName});
   }
 }
 
 extension usageInfoExtension on AppUsageInfo {
   Future<int> getAppId(String name) async {
     if (appsInfo.containsKey(name)) {
-      print("appid: ${appsInfo[name]}");
       return appsInfo[name]!;
     } else {
-      return await UsageModel.addAppInfo(name);
+      int id = await UsageModel.addAppInfo(name);
+      appsInfo[name] = id;
+      return id;
     }
   }
 
@@ -86,7 +85,7 @@ dateFramerToDb(DateTime from, DateTime end) async {
   for (DateTime i = from; i.isBefore(end); i = i.add(Duration(days: 1))) {
     List<AppUsageInfo> usages =
         await AppUsage.getAppUsage(i, i.add(Duration(days: 1)));
-    usages.forEach((element) async {
+    await Future.forEach(usages, (AppUsageInfo element) async {
       await element.insertUsage();
     });
   }
