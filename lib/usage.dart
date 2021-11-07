@@ -22,7 +22,7 @@ class UsagePage extends StatelessWidget {
             icon: Icon(Icons.upgrade),
             onPressed: () async {
               print("upgrade");
-              await dateFramerToDb(DateTime(2021, 10, 18), DateTime.now());
+              fetchUsage();
             },
           )
         ],
@@ -47,11 +47,9 @@ class _UsageContentState extends State<UsageContent> {
   Future<List<Map<String, dynamic>>> _getAppUsage(
       DateTime from, DateTime to) async {
     var _db = await dbHelper.open();
-    // List<Map<String, dynamic>> ret = await _db!.rawQuery('''
-    //   SELECT * FROM usage LEFT JOIN apps ON usage.appid = apps.id;
-    // ''');
-    List<Map<String, dynamic>> ret = await _db!.query("usage");
-    print(ret.length);
+    List<Map<String, dynamic>> ret = await _db!.rawQuery('''
+      SELECT a.id, a.usage,a.appid,a.node,b.id AS bid, b.name,b.package FROM usage a LEFT JOIN apps b ON bid = a.appid;
+    ''');
     return ret;
   }
 
@@ -82,47 +80,3 @@ class _UsageContentState extends State<UsageContent> {
     );
   }
 }
-
-// class PhoneUsage {
-//   check() async {
-//     String lastFetch = await loadLastFetch();
-//     if (lastFetch == "0") {
-//       //
-//       setLastFetch(DateTime.now().toString());
-//     }
-//   }
-
-//   Future<Map<String, List<AppUsageInfo>>> getStats(
-//       DateTime from, DateTime to) async {
-//     var collect = Map<String, List<AppUsageInfo>>();
-//     for (DateTime i = from; i.isBefore(to); i = i.add(Duration(days: 1))) {
-//       List<AppUsageInfo> infos =
-//           await AppUsage.getAppUsage(i, i.add(Duration(days: 1)));
-//       collect[i.toString()] = infos;
-//     }
-//     return collect;
-//   }
-
-//   Future<String> getLastFetch() async {
-//     Response response = await dio.get("/getLastFetchDate");
-//     return response.statusCode == 200 ? response.data.toString() : "";
-//   }
-
-//   Future<String> loadLastFetch() async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     String lastFetch = (prefs.getString('lastDate') ?? "0");
-//     print('Last fetch data $lastFetch');
-//     return lastFetch;
-//   }
-
-//   setLastFetch(String date) async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     await prefs.setString('lastDate', date);
-//   }
-
-//   void test() {
-//     getStats(DateTime(2021, 11, 01), DateTime(2021, 11, 04)).then((e) {
-//       print(e);
-//     });
-//   }
-// }
