@@ -22,7 +22,7 @@ class UsagePage extends StatelessWidget {
             icon: Icon(Icons.upgrade),
             onPressed: () async {
               print("upgrade");
-              fetchUsage();
+              sendUsageToServer();
             },
           )
         ],

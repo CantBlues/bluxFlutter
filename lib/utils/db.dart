@@ -4,6 +4,7 @@ import 'package:app_usage/app_usage.dart';
 import 'dart:io';
 import 'network.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 
 var dbHelper = DbHelper();
 Map<String, int> appsInfo = {};
@@ -132,7 +133,7 @@ getUsage() async {
   }
 }
 
-fetchUsage() async {
+sendUsageToServer() async {
   await getUsage(); // insert to local database
   Response lastDate = await dio.get("/usage/getLastDate");
   if (lastDate.statusCode == 200 && lastDate.data != null) {
@@ -153,4 +154,20 @@ fetchUsage() async {
 // server return list of usage, take the first node and last node as boundary that ready to delete on local database
 // server return apps data, delete all record on local database.apps
 // insert data retrieved by server to local db
-loadUsageFromServer() async {}
+loadUsageFromServer() async {
+  await deleteDb();
+  Response res = await dio.post("/usage/getData");
+  if (res.statusCode == 200) {
+    var data = jsonDecode(res.data.toString());
+    Database _db = await dbHelper.open();
+    Batch batch = _db.batch();
+    for (var item in data["apps"]) {
+      batch.insert("apps", item);
+    }
+    for (var item in data["usage"]) {
+      batch.insert("usage", item);
+    }
+    await batch.commit(noResult: true);
+    print("load data from server success!");
+  }
+}
