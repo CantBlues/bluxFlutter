@@ -5,6 +5,7 @@ import 'dart:io';
 import 'network.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'package:usage_stats/usage_stats.dart'; // file UsageStats.kt in package line 78 modify INTERVAL_DAILY from INTERVAL_BEST
 
 var dbHelper = DbHelper();
 Map<String, int> appsInfo = {};
@@ -149,6 +150,65 @@ sendUsageToServer() async {
           data: {"usage": usage, "apps": apps, "last": lastDate.data});
     }
   }
+}
+
+Future<List<Map<String, dynamic>>> downloadFromServer() async {
+  await UsageModel.getAppsInfo();
+  DateTime from = DateTime(2022, 2, 13, 12, 0, 1);
+  DateTime end = DateTime(2022, 2, 14);
+
+  List<Map<String, dynamic>> ret = [];
+  Map<String, int> pack = {};
+  for (DateTime i = from; i.isBefore(end); i = i.add(Duration(days: 1))) {
+    int sumTime = 0;
+
+    print(i);
+    // print(i.add(Duration(days: 1)).subtract(Duration(seconds: 2)));
+    List<UsageInfo> usage =
+        await UsageStats.queryUsageStats(i, i.add(Duration(hours: 1)));
+    Future.forEach(usage, (UsageInfo e) {
+      sumTime += int.parse(e.totalTimeInForeground!);
+
+      if (pack[e.packageName] != null) {
+        pack[e.packageName!] = pack[e.packageName]! + 1;
+      } else {
+        pack[e.packageName!] = 1;
+      }
+
+      ret.add({
+        "name": e.packageName,
+        "time": double.parse(e.totalTimeInForeground!) / 60000
+      });
+    });
+    ret.add({
+      'name':
+          '-------------------------------------------------------------------'
+    });
+    ret.add({'name': 'total', 'time': sumTime / 1000 / 60});
+    ret.add({
+      'name':
+          '-------------------------------------------------------------------'
+    });
+    ret.add(pack);
+    List<String> name = [];
+    pack.forEach((key, value) {
+      name.add(key);
+    });
+    name.sort();
+    ret.add({'name': name});
+
+    // List<AppUsageInfo> usages =
+    //     await AppUsage.getAppUsage(i, i.add(Duration(days: 1)));
+    // var tmp = usages[0];
+    // print(
+    //     "appname : ${tmp.appName} , Package : ${tmp.packageName} , usage : ${tmp.usage} ");
+    // await Future.forEach(usages, (AppUsageInfo element) async {
+    //   sumTime += element.usage.inSeconds;
+    //   // print(i.toString() + " : " + sumTime.toString());
+    // });
+    // print(i.toString() + "  sum: " + sumTime.toString());
+  }
+  return ret;
 }
 
 // server return list of usage, take the first node and last node as boundary that ready to delete on local database

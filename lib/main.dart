@@ -5,15 +5,15 @@ import 'video.dart';
 import 'videoList.dart';
 import 'audios.dart';
 import 'usage.dart';
+import 'contributionView.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'dart:io';
 import 'utils/network.dart';
-import 'utils/db.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 void main() async {
   runApp(MyApp());
   try {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       await FlutterDisplayMode.setHighRefreshRate();
       listenNetwork();
     }
@@ -32,11 +32,12 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         routes: {
-          "/": (context) => MyHomePage(title: 'Blux'),
+          "/": (context) => Landscape(),
           "video": (context) => VideoPage(),
           "videoList": (context) => VideoList(),
           "usage": (context) => UsagePage(),
-          "audios": (context) => AudiosPage()
+          "audios": (context) => AudiosPage(),
+          "annual": (context) => Text("a")
         });
   }
 }

@@ -19,6 +19,12 @@ class UsagePage extends StatelessWidget {
               },
               icon: const Icon(Icons.delete_forever)),
           IconButton(
+            icon: Icon(Icons.download),
+            onPressed: () async {
+              downloadFromServer();
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.upgrade),
             onPressed: () async {
               print("upgrade");
@@ -47,9 +53,10 @@ class _UsageContentState extends State<UsageContent> {
   Future<List<Map<String, dynamic>>> _getAppUsage(
       DateTime from, DateTime to) async {
     var _db = await dbHelper.open();
-    List<Map<String, dynamic>> ret = await _db!.rawQuery('''
-      SELECT a.id, a.usage,a.appid,a.node,b.id AS bid, b.name,b.package FROM usage a LEFT JOIN apps b ON bid = a.appid;
-    ''');
+    // List<Map<String, dynamic>> ret = await _db!.rawQuery('''
+    //   SELECT a.id, a.usage,a.appid,a.node,b.id AS bid, b.name,b.package FROM usage a LEFT JOIN apps b ON bid = a.appid;
+    // ''');
+    List<Map<String, dynamic>> ret = await downloadFromServer();
     return ret;
   }
 
