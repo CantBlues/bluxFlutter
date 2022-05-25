@@ -117,5 +117,13 @@ void remoteWake(String ip) async {
 
   // .. and close the socket
   socket.close();
-  print("close");
+}
+
+Future<bool> checkOnline() async {
+  Response response = await dio.get('checkonline');
+  String ret = response.data;
+  if (ret == "online") {
+    return true;
+  }
+  return false;
 }
