@@ -8,7 +8,7 @@ bool ipv = false;
 String host = "http://192.168.0.174:9999/";
 String mediaHost = "http://192.168.0.174:9998/";
 BaseOptions options = BaseOptions(
-    baseUrl: "http://192.168.0.174:9999",
+    baseUrl: "http://192.168.0.174:9999/",
     responseType: ResponseType.plain,
     connectTimeout: 30000,
     receiveTimeout: 30000,

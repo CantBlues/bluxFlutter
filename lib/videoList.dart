@@ -209,11 +209,11 @@ class _ProcessImgState extends State<ProcessImg> {
         child: Stack(
           children: [
             con,
-            GestureDetector(
-              onTapDown: (detail) {
-                print(detail.globalPosition);
-              },
-            ),
+            // GestureDetector(
+            //   onTapDown: (detail) {
+            //     print(detail.globalPosition);
+            //   },
+            // ),
             Slider(
                 value: index.toDouble(),
                 min: 0,
