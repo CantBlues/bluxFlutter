@@ -1,8 +1,5 @@
-import 'dart:io';
-import 'dart:math';
+import 'dart:convert';
 import 'dart:ui';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
@@ -19,8 +16,8 @@ class _LandscapeState extends State<Landscape> {
   bool _blink = false;
   double _blurDeep = 1;
   double _dragPos = 0;
-  bool _draging = false;
-  bool _showMask = false;
+  double _dragStartPos = 0;
+  bool _draging = false; // maybe its useless
 
   @override
   void initState() {
@@ -34,18 +31,40 @@ class _LandscapeState extends State<Landscape> {
   }
 
   checkPc() {
-    checkOnline().then(
-      (value) {
-        if (value) {
-          setState(() {
-            _pcStatus = true;
-            _blink = false;
-          });
-        }
-      },
-    );
+    checkOnline().then((value) {
+      if (value) {
+        setState(() {
+          _pcStatus = true;
+          _blink = false;
+        });
+      }
+      setState(() {
+        _blink = false;
+      });
+    }, onError: (e) {
+      setState(() {
+        _blink = false;
+      });
+    });
     setState(() {
       _blink = true;
+    });
+  }
+
+  _showTask() {
+    if (_pcStatus)
+      showDialog(
+          context: context,
+          barrierColor: Colors.transparent,
+          builder: (context) {
+            return TaskLayer(clearBlur: _clearBlur);
+          });
+  }
+
+  _clearBlur() {
+    setState(() {
+      _blurDeep = 0;
+      _draging = false;
     });
   }
 
@@ -110,10 +129,10 @@ class _LandscapeState extends State<Landscape> {
                         checkPc();
                         int count = 0;
                         if (!_pcStatus) {
-                          Timer.periodic(Duration(seconds: 10), (t) {
+                          Timer.periodic(Duration(seconds: 30), (t) {
                             count++;
                             checkPc();
-                            if (count > 5) t.cancel();
+                            if (count > 2) t.cancel();
                           });
                         }
                       },
@@ -207,32 +226,26 @@ class _LandscapeState extends State<Landscape> {
                     setState(() {
                       _draging = true;
                     });
-                    _dragPos = e.globalPosition.dx;
+                    _dragStartPos = e.globalPosition.dx;
                   },
                   onHorizontalDragEnd: (e) {
-                    print(_blurDeep);
-                    if (_blurDeep < 19) {
+                    if (_dragPos > 100 || _blurDeep < 5) {
                       setState(() {
                         _draging = false;
                         _blurDeep = 0;
                       });
                     } else {
-                      setState(() {
-                        _showMask = true;
-                      });
+                      _showTask();
                     }
                   },
                   onHorizontalDragUpdate: (e) {
-                    var tmp = _dragPos - e.globalPosition.dx;
-                    tmp = tmp / 10;
-                    if (tmp < 20 && tmp > 0) {
-                      setState(() {
-                        _blurDeep = tmp;
-                      });
-                    }
+                    _dragPos = e.globalPosition.dx;
+                    var tmp = _dragStartPos - _dragPos;
+                    setState(() {
+                      _blurDeep = tmp / 20;
+                    });
                   },
                 ))),
-        _showMask ? TaskLayer() : Container()
       ]),
     );
   }
@@ -283,14 +296,171 @@ class _BlinkAnimationState extends State<BlinkAnimation>
   }
 }
 
+class TaskWidget extends StatefulWidget {
+  const TaskWidget(this.name, this.left, this.tap, this.status);
+
+  final String name;
+  final bool left;
+  final bool status;
+  final tap;
+
+  @override
+  State<StatefulWidget> createState() => _TaskWidgetState();
+}
+
+class _TaskWidgetState extends State<TaskWidget> {
+  bool _mark = false;
+
+  _taskTap(e) {
+    widget.tap(widget.name, !_mark).then((e) {
+      setState(() {
+        _mark = !_mark;
+      });
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskWidget oldWidget) {
+    setState(() {
+      _mark = widget.status;
+    });
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var text = Text(widget.name,
+        style: TextStyle(
+            fontSize: 30,
+            color: _mark ? Colors.white54 : Colors.white,
+            decoration:
+                _mark ? TextDecoration.lineThrough : TextDecoration.none));
+    Alignment align = widget.left ? Alignment(-0.6, 0) : Alignment(0.6, 0);
+    return Align(
+        alignment: align, child: Listener(child: text, onPointerUp: _taskTap));
+  }
+}
+
 class TaskLayer extends StatefulWidget {
+  TaskLayer({Key? key, this.clearBlur}) : super(key: key);
+  final clearBlur;
   @override
   State<StatefulWidget> createState() => _TaskLayerState();
 }
 
 class _TaskLayerState extends State<TaskLayer> {
+  late DateTime today;
+  late DateTime preDay;
+  bool yesterday = false;
+  List<String> serverData = [];
+
+  Future tapTask(String name, bool mark) async {
+    var date = yesterday ? preDay : today;
+    var ret = await dioLara.post("/api/task/mark", data: {
+      "date": date.millisecondsSinceEpoch,
+      "name": name,
+      "mark": mark
+    });
+    return ret;
+  }
+
+  List<Widget> _generateTasks() {
+    List<Widget> ret = [];
+    List<String> tasks = [
+      "running",
+      "guitar",
+      "reading",
+      "push up",
+      "pull up",
+      "core",
+      "squat",
+      "To do",
+      "drawing"
+    ];
+    bool left = false;
+    for (var task in tasks) {
+      var marked = serverData.contains(task) ? true : false;
+      ret.add(TaskWidget(task, !left, tapTask, marked));
+      left = !left;
+    }
+    return ret;
+  }
+
+  Widget dateTag(int day) {
+    bool big = (yesterday && (day == 1)) || (!yesterday && (day == 0));
+    return Expanded(
+        child: Center(
+            child: GestureDetector(
+      onTap: () {
+        setState(() {
+          yesterday = day == 1 ? true : false;
+        });
+        queryTasks(yesterday ? preDay : today);
+      },
+      child: Container(
+          padding: EdgeInsets.only(bottom: big ? 20 : 0),
+          child: Text("${today.month}/${today.day - day}",
+              style: TextStyle(fontSize: big ? 30 : 20))),
+    )));
+  }
+
+  queryTasks(DateTime day) {
+    dioLara
+        .get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString())
+        .then((response) {
+      var ret = jsonDecode(response.data);
+      List<String> _markedTask = [];
+      for (var element in ret['data']) {
+        _markedTask.add(element['name']);
+      }
+      setState(() {
+        serverData = _markedTask;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    today = DateTime.now();
+    preDay = today.subtract(Duration(days: 1));
+    queryTasks(today);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Text("");
+    return Theme(
+        data: ThemeData(fontFamily: "PermanentMarker"),
+        child: GestureDetector(
+            onDoubleTap: () {
+              Navigator.of(context).pop();
+              widget.clearBlur();
+            },
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                children: [
+                  Container(
+                      height: 100,
+                      child: Row(
+                        children: [
+                          yesterday
+                              ? Expanded(child: Container())
+                              : Container(),
+                          dateTag(
+                              1), // this params means subtract one day from 'today'
+                          dateTag(0),
+                          yesterday ? Container() : Expanded(child: Container())
+                        ],
+                      )),
+                  Expanded(
+                      child: Padding(
+                          padding: EdgeInsets.only(bottom: 50),
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: _generateTasks())))
+                ],
+              ),
+            )));
   }
 }

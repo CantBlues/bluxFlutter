@@ -10,10 +10,17 @@ String mediaHost = "http://192.168.0.174:9998/";
 BaseOptions options = BaseOptions(
     baseUrl: "http://192.168.0.174:9999/",
     responseType: ResponseType.plain,
-    connectTimeout: 30000,
+    // connectTimeout: 30000,
     receiveTimeout: 30000,
     contentType: Headers.jsonContentType);
 Dio dio = Dio(options);
+
+BaseOptions optionsLara = BaseOptions(
+    baseUrl: "http://blux.lanbin.com/",
+    responseType: ResponseType.plain,
+    receiveTimeout: 30000,
+    contentType: Headers.jsonContentType);
+Dio dioLara = Dio(optionsLara);
 
 const String local = "http://192.168.0.174:9999/";
 void listenNetwork() {
