@@ -28,6 +28,7 @@ class _LandscapeState extends State<Landscape> {
       });
     });
     checkPc();
+    dioLara.get("/");
   }
 
   checkPc() {
@@ -352,7 +353,14 @@ class _TaskLayerState extends State<TaskLayer> {
   late DateTime today;
   late DateTime preDay;
   bool yesterday = false;
+  bool _loading = true;
   List<String> serverData = [];
+
+  @override
+  void deactivate() {
+    widget.clearBlur();
+    super.deactivate();
+  }
 
   Future tapTask(String name, bool mark) async {
     var date = yesterday ? preDay : today;
@@ -405,6 +413,9 @@ class _TaskLayerState extends State<TaskLayer> {
   }
 
   queryTasks(DateTime day) {
+    setState(() {
+      _loading = true;
+    });
     dioLara
         .get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString())
         .then((response) {
@@ -415,6 +426,7 @@ class _TaskLayerState extends State<TaskLayer> {
       }
       setState(() {
         serverData = _markedTask;
+        _loading = false;
       });
     });
   }
@@ -454,11 +466,13 @@ class _TaskLayerState extends State<TaskLayer> {
                         ],
                       )),
                   Expanded(
-                      child: Padding(
-                          padding: EdgeInsets.only(bottom: 50),
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: _generateTasks())))
+                      child: _loading
+                          ? Center(child: CircularProgressIndicator())
+                          : Padding(
+                              padding: EdgeInsets.only(bottom: 50),
+                              child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: _generateTasks())))
                 ],
               ),
             )));
