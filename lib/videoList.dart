@@ -29,53 +29,42 @@ class _VideoListState extends State<VideoList> {
   }
 
   Widget _buildCard(int index, AsyncSnapshot snap) {
-    return Card(
-      child: Stack(
-        children: [
-          Ink.image(
-              child: InkWell(
-                  splashColor: Colors.black45,
-                  highlightColor: Colors.transparent,
-                  onTap: () => _cardTap(index),
-                  onLongPress: () => _cardLongPress(index, context)),
-              fit: BoxFit.cover,
-              image: (_list[index]["Images"]
-                  ? NetworkImage(
-                      mediaHost + "/imgs/${_list[index]["Md5"]}thumb.jpg")
-                  : AssetImage("assets/imgPlaceHolder.png")) as ImageProvider<Object>),
-          Align(
-            child: Container(
-              child: Center(
-                  child: Padding(
-                      child: Text(
-                        "${_list[index]["Name"]}",
-                        style: TextStyle(color: Colors.white, fontSize: 17),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                      padding: EdgeInsets.only(left: 10, right: 10))),
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                Color.fromARGB(150, 0, 0, 0),
-                Color.fromARGB(0, 255, 255, 255)
-              ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
-              height: 50,
+    return Column(
+      children: [
+        Card(
+          child: AspectRatio(
+              aspectRatio: 1.5,
+              child: Ink.image(
+                  child: InkWell(
+                      splashColor: Colors.black45,
+                      highlightColor: Colors.transparent,
+                      onTap: () => _cardTap(index),
+                      onLongPress: () => _cardLongPress(index, context)),
+                  fit: BoxFit.cover,
+                  image: (_list[index]["Images"]
+                          ? NetworkImage(mediaHost +
+                              "/imgs/${_list[index]["Md5"]}thumb.jpg")
+                          : AssetImage("assets/imgPlaceHolder.png"))
+                      as ImageProvider<Object>)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          clipBehavior: Clip.antiAlias,
+        ),
+        Padding(
+            child: Text(
+              "${_list[index]["Name"]}",
+              style: TextStyle(color: Colors.black, fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
-            alignment: Alignment.bottomCenter,
-          ),
-        ],
-        fit: StackFit.expand,
-        alignment: AlignmentDirectional.center,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      clipBehavior: Clip.antiAlias,
+            padding: EdgeInsets.only(left: 10, right: 10))
+      ],
     );
   }
 
   Future _getVideoList() async {
     Response response;
-    response = await Dio()
-        .post(host, data: {"page": page + 1});
+    response = await Dio().post(host, data: {"page": page + 1});
     var ret = jsonDecode(response.data.toString());
     if (response.statusCode == 200 && ret["Status"]) {
       setState(() {
@@ -98,44 +87,46 @@ class _VideoListState extends State<VideoList> {
   Widget build(BuildContext context) {
     return Scaffold(body:
         FutureBuilder(builder: (BuildContext context, AsyncSnapshot snap) {
-      return CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            title: Text("Learning Materials"),
-            backgroundColor: Colors.pinkAccent,
-          ),
-          CupertinoSliverRefreshControl(
-            onRefresh: () async {
-              Response res =
-                  await Dio().get(host + '/update');
-              if (res.data == '1') {
-                setState(() {
-                  page = 0;
-                  count = 0;
-                  _list = [];
+      return LayoutBuilder(builder: (ctx, cons) {
+        int _nums = (cons.maxWidth / 200).round();
+        return CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              title: Text("Learning Materials"),
+              backgroundColor: Colors.pinkAccent,
+            ),
+            CupertinoSliverRefreshControl(
+              onRefresh: () async {
+                Response res = await Dio().get(host + '/update');
+                if (res.data == '1') {
+                  setState(() {
+                    page = 0;
+                    count = 0;
+                    _list = [];
+                    _getVideoList();
+                  });
+                }
+                return;
+              },
+            ),
+            SliverGrid(
+              delegate:
+                  SliverChildBuilderDelegate((BuildContext context, int pos) {
+                if (pos >= _list.length - 1 &&
+                    _list.length < count! &&
+                    this.page != 0) {
                   _getVideoList();
-                });
-              }
-              return;
-            },
-          ),
-          SliverGrid(
-            delegate:
-                SliverChildBuilderDelegate((BuildContext context, int pos) {
-              if (pos >= _list.length - 1 &&
-                  _list.length < count! &&
-                  this.page != 0) {
-                _getVideoList();
-              }
-              return _buildCard(pos, snap);
-            }, childCount: _list.length),
-            gridDelegate:
-                SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-          )
-        ],
-        physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics()),
-      );
+                }
+                return _buildCard(pos, snap);
+              }, childCount: _list.length),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  childAspectRatio: 1.1, crossAxisCount: _nums),
+            )
+          ],
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+        );
+      });
     }));
   }
 }
@@ -175,8 +166,7 @@ class _ProcessImgState extends State<ProcessImg> {
   @override
   void initState() {
     super.initState();
-    Image img =
-        Image.network(mediaHost + "/imgs/${widget.md5}process.jpg");
+    Image img = Image.network(mediaHost + "/imgs/${widget.md5}process.jpg");
     img.image
         .resolve(ImageConfiguration())
         .addListener(ImageStreamListener((ImageInfo info, _) {
@@ -200,8 +190,7 @@ class _ProcessImgState extends State<ProcessImg> {
             v.Quaternion(0, 0, 0, 0), v.Vector3(10, 10, 1)),
         child: ClipRect(
           clipper: CustomRect(index, row: row, column: column, ratio: ratio),
-          child: Image.network(
-              mediaHost + "/imgs/${widget.md5}process.jpg"),
+          child: Image.network(mediaHost + "/imgs/${widget.md5}process.jpg"),
         ));
     return Material(
       color: Colors.transparent,

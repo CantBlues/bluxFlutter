@@ -321,6 +321,14 @@ class _TaskWidgetState extends State<TaskWidget> {
   }
 
   @override
+  void initState() {
+    setState(() {
+      _mark = widget.status;
+    });
+    super.initState();
+  }
+
+  @override
   void didUpdateWidget(covariant TaskWidget oldWidget) {
     setState(() {
       _mark = widget.status;
