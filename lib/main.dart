@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
 import 'audios.dart';
 import 'usage.dart';
-import 'contributionView.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'utils/network.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   runApp(MyApp());
   try {
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
