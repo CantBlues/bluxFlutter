@@ -21,7 +21,7 @@ class VideoPage extends StatelessWidget {
             Expanded(
                 child: ListView(
               padding: EdgeInsets.all(0),
-              children: [VideoTitle(args["ID"])],
+              children: [VideoTitle(args["Name"])],
             ))
           ]),
           backgroundColor: Colors.black,
@@ -81,22 +81,16 @@ class _PlayerState extends State<Player> {
 }
 
 class VideoTitle extends StatelessWidget {
-  VideoTitle(this.id);
-  final int id;
+  VideoTitle(this.name);
+  final String name;
 
   @override
   Widget build(BuildContext context) {
-    Future<Response> _data = dioLara.get("/api/video/$id");
-    return FutureBuilder(
-        future: _data,
-        builder: (context, snap) {
-          var _json = jsonDecode(snap.data.toString());
-          return Center(
-            child: Text(
-              _json["data"]["name"],
-              style: TextStyle(color: Colors.orangeAccent, fontSize: 30),
-            ),
-          );
-        });
+    return Center(
+      child: Text(
+        name,
+        style: TextStyle(color: Colors.orangeAccent, fontSize: 30),
+      ),
+    );
   }
 }
