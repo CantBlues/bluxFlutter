@@ -24,7 +24,8 @@ class _VideoListState extends State<VideoList> {
     showDialog(
         context: context,
         builder: (context) {
-          return ProcessImg(md5: _list[index]["Md5"]);
+          return ProcessImg(
+              md5: _list[index]["Md5"], title: _list[index]["Name"]);
         });
   }
 
@@ -153,8 +154,9 @@ class CustomRect extends CustomClipper<Rect> {
 }
 
 class ProcessImg extends StatefulWidget {
-  ProcessImg({this.md5});
+  ProcessImg({this.md5, this.title});
   final String? md5;
+  final String? title;
   @override
   _ProcessImgState createState() => _ProcessImgState();
 }
@@ -198,11 +200,16 @@ class _ProcessImgState extends State<ProcessImg> {
         child: Stack(
           children: [
             con,
-            // GestureDetector(
-            //   onTapDown: (detail) {
-            //     print(detail.globalPosition);
-            //   },
-            // ),
+            Align(
+              child: Text(
+                widget.title!,
+                style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.black,
+                    backgroundColor: Colors.orange),
+              ),
+              alignment: Alignment(0, 0.3),
+            ),
             Slider(
                 value: index.toDouble(),
                 min: 0,
