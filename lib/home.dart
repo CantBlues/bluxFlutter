@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
 import 'dart:async';
+import 'billboard.dart';
 
 class Landscape extends StatefulWidget {
   @override
@@ -62,6 +63,16 @@ class _LandscapeState extends State<Landscape> {
           });
   }
 
+  _showBillboard() {
+    if (_pcStatus)
+      showDialog(
+          context: context,
+          barrierColor: Colors.transparent,
+          builder: (context) {
+            return Billboard();
+          });
+  }
+
   _clearBlur() {
     setState(() {
       _blurDeep = 0;
@@ -117,10 +128,21 @@ class _LandscapeState extends State<Landscape> {
                             Color.fromRGBO(255, 218, 164, 1)
                           ])),
                     )),
+                // background image
                 Align(
                     alignment: Alignment.bottomCenter,
                     child: Image.asset("assets/landscape.png",
                         width: double.infinity)),
+                // billboard tap to show contributions layer.
+                Align(
+                    alignment: Alignment(1, 0.5),
+                    child: SizedBox(
+                        width: 150,
+                        height: 160,
+                        child: GestureDetector(
+                          onTap: () => _showBillboard(),
+                        ))),
+                // denglong
                 Align(
                   alignment: Alignment(-1.05, 0.255),
                   child: GestureDetector(
@@ -194,6 +216,7 @@ class _LandscapeState extends State<Landscape> {
                         ],
                       )),
                 ),
+                // window tap to enter video list page
                 Align(
                     alignment: Alignment(-0.5, 0.5),
                     child: GestureDetector(
@@ -341,7 +364,10 @@ class _TaskWidgetState extends State<TaskWidget> {
     var text = Text(widget.name,
         style: TextStyle(
             fontSize: 30,
+            fontWeight: FontWeight.bold,
             color: _mark ? Colors.white54 : Colors.white,
+            decorationColor: Colors.red,
+            decorationThickness: 3,
             decoration:
                 _mark ? TextDecoration.lineThrough : TextDecoration.none));
     Alignment align = widget.left ? Alignment(-0.6, 0) : Alignment(0.6, 0);
@@ -450,7 +476,7 @@ class _TaskLayerState extends State<TaskLayer> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-        data: ThemeData(fontFamily: "PermanentMarker"),
+        data: ThemeData(fontFamily: "ShadowsIntoLight"),
         child: GestureDetector(
             onDoubleTap: () {
               Navigator.of(context).pop();

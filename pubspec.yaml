@@ -33,9 +33,9 @@ dependencies:
   shared_preferences: ^2.0.7
   path: ^1.8.0
   sqflite: ^2.0.0
-  flutter_annual_task: ^0.2.0
-  # fl_chart: ^0.41.0
+  fl_chart: ^0.55.0
   universal_platform: ^1.0.0+1
+  flutter_heatmap_calendar: ^1.0.3
   usage_stats: ^1.1.1
 
   
@@ -85,9 +85,9 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
   fonts:
-    - family: PermanentMarker
+    - family: ShadowsIntoLight
       fonts:
-        - asset: assets/fonts/PermanentMarker-Regular.ttf
+        - asset: assets/fonts/ShadowsIntoLight-Regular.ttf
   assets:
     - assets/imgPlaceHolder.png
     - assets/landscape.png
