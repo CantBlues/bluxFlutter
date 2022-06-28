@@ -1,11 +1,9 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'dart:ui';
 import 'package:video_player/video_player.dart';
 import 'utils/network.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
 
 class VideoPage extends StatelessWidget {
   VideoPage({Key? key}) : super(key: key);

@@ -389,6 +389,7 @@ class _TaskLayerState extends State<TaskLayer> {
   bool yesterday = false;
   bool _loading = true;
   List<String> serverData = [];
+  List<String> tasks = [];
 
   @override
   void deactivate() {
@@ -408,17 +409,6 @@ class _TaskLayerState extends State<TaskLayer> {
 
   List<Widget> _generateTasks() {
     List<Widget> ret = [];
-    List<String> tasks = [
-      "running",
-      "guitar",
-      "reading",
-      "push up",
-      "pull up",
-      "core",
-      "squat",
-      "To do",
-      "drawing"
-    ];
     bool left = false;
     for (var task in tasks) {
       var marked = serverData.contains(task) ? true : false;
@@ -450,6 +440,18 @@ class _TaskLayerState extends State<TaskLayer> {
     setState(() {
       _loading = true;
     });
+    dioLara.get('/api/tasktypes').then(
+      (response) {
+        var data = jsonDecode(response.data);
+        List<String> _tasks = [];
+        for (var element in data['data']) {
+          _tasks.add(element["name"]);
+        }
+        setState(() {
+          tasks = _tasks;
+        });
+      },
+    );
     dioLara
         .get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString())
         .then((response) {
