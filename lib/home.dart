@@ -30,6 +30,7 @@ class _LandscapeState extends State<Landscape> {
     });
     checkPc();
     dioLara.get("/");
+    listenNetwork();
   }
 
   checkPc() {

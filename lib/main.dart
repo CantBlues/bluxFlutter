@@ -6,7 +6,6 @@ import 'videoList.dart';
 import 'audios.dart';
 import 'usage.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'utils/network.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 void main() async {
@@ -18,7 +17,6 @@ void main() async {
   try {
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       await FlutterDisplayMode.setHighRefreshRate();
-      listenNetwork();
     }
   } catch (e) {
     print(e);
