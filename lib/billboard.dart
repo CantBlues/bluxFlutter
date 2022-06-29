@@ -77,7 +77,7 @@ class _BillboardState extends State<Billboard> {
                           )
                         : ContributionView(_type, _contributionData)),
                     Expanded(child: BlurCard(BarChartView(_barData))),
-                    BlurCard(PercentageView()),
+                    BlurCard(PercentageView(_barData)),
                     Row(children: [
                       Expanded(
                           child: BlurCard(Container(
@@ -200,7 +200,7 @@ class BarChartView extends StatelessWidget {
     List<BarChartGroupData> _items = [];
     Map<String, List<double>> tasks = {};
     for (var element in data["this_month"]!) {
-      tasks[element["name"]] = [element["times"]];
+      tasks[element["name"]] = [element["times"]/1];
     }
     for (var element in data["last_month"]!) {
       tasks[element["name"]]!.add(element["times"]);
@@ -232,7 +232,9 @@ class BarChartView extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 60,
                 getTitlesWidget: (num, TitleMeta a) {
-                  return Transform.rotate(angle: -0.8 ,child:Center(child:Text("${_name[num.round()]}")));
+                  return Transform.rotate(
+                      angle: -0.8,
+                      child: Center(child: Text("${_name[num.round()]}")));
                 })),
         leftTitles: AxisTitles(),
         rightTitles: AxisTitles(),
@@ -248,12 +250,51 @@ class BarChartView extends StatelessWidget {
 }
 
 class PercentageView extends StatelessWidget {
+  const PercentageView(this.data);
+
+  final Map<String, List> data;
   @override
   Widget build(BuildContext context) {
-    List<PieChartSectionData> pieData = [
-      PieChartSectionData(value: 10, color: Colors.pink),
-      PieChartSectionData(value: 8, color: Colors.blue)
+    List<PieChartSectionData> pieData = [];
+    List<Color> _colors = [
+      Colors.blue,
+      Color.fromARGB(255, 177, 13, 241),
+      Colors.pinkAccent,
+      Colors.white,
+      Colors.orange,
+      Colors.grey,
+      Colors.yellow,
+      Colors.red,
+      Colors.lightGreenAccent,
     ];
+    List<String> body = [
+      "push up",
+      "pull up",
+      "squat",
+      "running"
+    ]; //  will get from server ?
+    List<String> soul = ["reading", "guitar", "drawing"];
+    List<String> steps = ["To do", "Review"];
+    int soulNum = 0;
+    int stepsNum = 0;
+    for (var element in data["this_month"]!) {
+      if (body.contains(element["name"])) {
+        PieChartSectionData _part =
+            PieChartSectionData(title:"${element["name"]}:${element["times"]}",value: element["times"]/1, color: _colors[0]);
+        _colors.remove(_colors[0]);
+        pieData.add(_part);
+      }
+      if (soul.contains(element["name"])) {
+        soulNum += int.parse(element["times"].toString());
+      }
+      if (steps.contains(element["name"])) {
+        stepsNum += int.parse(element["times"].toString());
+      }
+    }
+    print("$soulNum  $stepsNum ");
+    int drop =  stepsNum - soulNum;
+    double _angle = (drop + 10) / 20; // introduce this constant to adjust balance between soul and steps
+
     return Container(
         padding: EdgeInsets.all(20),
         child: Row(
@@ -262,7 +303,7 @@ class PercentageView extends StatelessWidget {
                 child: Center(
                     child: CustomPaint(
               size: Size(300, 300),
-              painter: Seesaw(),
+              painter: Seesaw(_angle),
             ))),
             Expanded(
                 child: Center(child: PieChart(PieChartData(sections: pieData))))
@@ -274,6 +315,8 @@ class PercentageView extends StatelessWidget {
 }
 
 class Seesaw extends CustomPainter {
+  const Seesaw(this.angle);
+  final double angle;
   Float64List transit(double dx, double dy) {
     return Float64List.fromList(
         [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, dx, dy, 0, 1]);
@@ -320,7 +363,7 @@ class Seesaw extends CustomPainter {
     plank.lineTo(peak.dx + _width, peak.dy);
     plank.lineTo(peak.dx + _width, peak.dy - 10);
 
-    double degree = 0.2;
+    double degree = angle;
     plank = plank.transform(rotate(degree));
     double afterX = peak.dx * cos(degree) - peak.dy * sin(degree);
     double afterY = (peak.dx) * sin(degree) + peak.dy * cos(degree);
