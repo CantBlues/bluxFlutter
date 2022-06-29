@@ -16,18 +16,19 @@ class Billboard extends StatefulWidget {
 }
 
 class _BillboardState extends State<Billboard> {
-  String _type = "sum";
+  String _type = "Sum";
   bool _loading = true;
   bool _contributionLoading = true;
   List _typeMenu = [];
   List _contributionData = [];
 
   getContributionData(String type) {
-    dioLara.get("/api/tasks/contribution/$_type").then((response) {
+    dioLara.get("/api/tasks/contribution?type=$type").then((response) {
       var data = jsonDecode(response.data);
       setState(() {
         _contributionLoading = false;
         _contributionData = data["data"];
+        _type = type;
       });
     });
   }
@@ -59,8 +60,8 @@ class _BillboardState extends State<Billboard> {
                         ? Center(
                             child: CircularProgressIndicator(),
                           )
-                        : ContributionView(_contributionData)),
-                    Expanded(child: BlurCard(BarChartView())),
+                        : ContributionView(_type, _contributionData)),
+                    SizedBox(height: 200, child: BlurCard(BarChartView())),
                     BlurCard(PercentageView()),
                     Row(children: [
                       Expanded(
@@ -73,6 +74,8 @@ class _BillboardState extends State<Billboard> {
                                   style: TextStyle(color: Colors.white))),
                           itemBuilder: (context) {
                             List<PopupMenuEntry> menus = [];
+                            menus.add(PopupMenuItem(
+                                value: "Sum", child: Text("Sum")));
                             for (var element in _typeMenu) {
                               String name = element["name"];
                               PopupMenuItem item =
@@ -84,9 +87,6 @@ class _BillboardState extends State<Billboard> {
                           onSelected: (value) {
                             String _name = value.toString();
                             getContributionData(_name);
-                            setState(() {
-                              _type = _name;
-                            });
                           },
                         ),
                       ))),
@@ -127,14 +127,23 @@ class BlurCard extends StatelessWidget {
 }
 
 class ContributionView extends StatelessWidget {
-  const ContributionView(this.data);
+  const ContributionView(this.name, this.data);
+  final String name;
   final List data;
+
   @override
   Widget build(BuildContext context) {
     Map<DateTime, int> datasets = {};
-    for (var element in data) {
-      datasets[DateTime.parse(element["date"])] = int.parse(element['sum']);
+    if (name == "Sum" ) {
+      for (var element in data) {
+        datasets[DateTime.parse(element["date"])] = int.parse(element['sum']);
+      }
+    } else {
+      for (var element in data) {
+        datasets[DateTime.parse(element["date"])] = 1;
+      }
     }
+
     return SizedBox(
         height: 220,
         child: Center(
@@ -202,6 +211,7 @@ class BarChartView extends StatelessWidget {
       minY: 10,
       titlesData: FlTitlesData(
         show: true,
+        leftTitles: AxisTitles(),
         rightTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
