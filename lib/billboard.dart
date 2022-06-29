@@ -21,6 +21,7 @@ class _BillboardState extends State<Billboard> {
   bool _contributionLoading = true;
   List _typeMenu = [];
   List _contributionData = [];
+  Map<String, List> _barData = {};
 
   getContributionData(String type) {
     dioLara.get("/api/tasks/contribution?type=$type").then((response) {
@@ -33,9 +34,23 @@ class _BillboardState extends State<Billboard> {
     });
   }
 
+  getBarData() {
+    dioLara.get("/api/tasks/compare2month").then((response) {
+      var data = jsonDecode(response.data);
+      Map<String, List> _tmp = {
+        "this_month": data["data"]["this_month"],
+        "last_month": data["data"]["last_month"]
+      };
+      setState(() {
+        _barData = _tmp;
+      });
+    });
+  }
+
   @override
   void initState() {
     getContributionData(_type);
+    getBarData();
     dioLara.get("/api/tasktypes").then((response) {
       var data = jsonDecode(response.data);
       setState(() {
@@ -61,7 +76,7 @@ class _BillboardState extends State<Billboard> {
                             child: CircularProgressIndicator(),
                           )
                         : ContributionView(_type, _contributionData)),
-                    SizedBox(height: 200, child: BlurCard(BarChartView())),
+                    Expanded(child: BlurCard(BarChartView(_barData))),
                     BlurCard(PercentageView()),
                     Row(children: [
                       Expanded(
@@ -69,6 +84,7 @@ class _BillboardState extends State<Billboard> {
                         width: double.infinity,
                         height: 60,
                         child: PopupMenuButton(
+                          offset: Offset(80, 0),
                           child: Center(
                               child: Text(_type,
                                   style: TextStyle(color: Colors.white))),
@@ -134,7 +150,7 @@ class ContributionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Map<DateTime, int> datasets = {};
-    if (name == "Sum" ) {
+    if (name == "Sum") {
       for (var element in data) {
         datasets[DateTime.parse(element["date"])] = int.parse(element['sum']);
       }
@@ -161,7 +177,8 @@ class ContributionView extends StatelessWidget {
 }
 
 class BarChartView extends StatelessWidget {
-  const BarChartView();
+  const BarChartView(this.data);
+  final Map<String, List> data;
 
   BarChartGroupData makeGroupData(int x, double y1, double y2) {
     return BarChartGroupData(barsSpace: 4, x: x, barRods: [
@@ -180,49 +197,51 @@ class BarChartView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<BarChartGroupData> showingBarGroups;
-    final barGroup1 = makeGroupData(0, 5, 12);
-    final barGroup2 = makeGroupData(1, 16, 12);
-    final barGroup3 = makeGroupData(2, 18, 5);
-    final barGroup4 = makeGroupData(3, 20, 16);
-    final barGroup5 = makeGroupData(4, 17, 6);
-    final barGroup6 = makeGroupData(5, 19, 1.5);
-    final barGroup7 = makeGroupData(6, 10, 1.5);
-    final barGroup8 = makeGroupData(6, 10, 1.5);
-    final barGroup9 = makeGroupData(6, 10, 1.5);
+    List<BarChartGroupData> _items = [];
+    Map<String, List<double>> tasks = {};
+    for (var element in data["this_month"]!) {
+      tasks[element["name"]] = [element["times"]];
+    }
+    for (var element in data["last_month"]!) {
+      tasks[element["name"]]!.add(element["times"]);
+    }
 
-    final items = [
-      barGroup1,
-      barGroup2,
-      barGroup3,
-      barGroup4,
-      barGroup5,
-      barGroup6,
-      barGroup7,
-      barGroup8,
-      barGroup9
-    ];
+    int i = 0;
+    List<String> _name = [];
+    tasks.forEach((key, value) {
+      BarChartGroupData tmp = makeGroupData(
+          i,
+          value[0],
+          value.length == 2
+              ? value[1]
+              : 1); // will change 1 to 0 when last month data exist
+      _items.add(tmp);
+      _name.add(key);
+      i++;
+    });
 
-    showingBarGroups = items;
     return Container(
         // width: double.infinity,
         child: BarChart(BarChartData(
       maxY: 30,
-      minY: 10,
+      minY: 0,
       titlesData: FlTitlesData(
         show: true,
+        bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 60,
+                getTitlesWidget: (num, TitleMeta a) {
+                  return Transform.rotate(angle: -0.8 ,child:Center(child:Text("${_name[num.round()]}")));
+                })),
         leftTitles: AxisTitles(),
-        rightTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        topTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        rightTitles: AxisTitles(),
+        topTitles: AxisTitles(),
       ),
       borderData: FlBorderData(
         show: false,
       ),
-      barGroups: showingBarGroups,
+      barGroups: _items,
       gridData: FlGridData(show: false),
     )));
   }
