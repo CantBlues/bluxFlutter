@@ -432,7 +432,7 @@ class _TaskLayerState extends State<TaskLayer> {
       },
       child: Container(
           padding: EdgeInsets.only(bottom: big ? 20 : 0),
-          child: Text("${today.month}/${today.day - day}",
+          child: Text(day == 1 ? "${preDay.month}/${preDay.day}" : "${today.month}/${today.day}",
               style: TextStyle(fontSize: big ? 30 : 20))),
     )));
   }
