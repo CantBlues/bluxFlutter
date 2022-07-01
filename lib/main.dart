@@ -5,6 +5,7 @@ import 'video.dart';
 import 'videoList.dart';
 import 'audios.dart';
 import 'usage.dart';
+import 'taskTypeSetting.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -38,7 +39,8 @@ class MyApp extends StatelessWidget {
           "videoList": (context) => VideoList(),
           "usage": (context) => UsagePage(),
           "audios": (context) => AudiosPage(),
-          "annual": (context) => Text("a")
+          "annual": (context) => Text("a"),
+          "taskSetting":(context) => TaskTypeSetting()
         });
   }
 }

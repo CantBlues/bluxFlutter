@@ -199,11 +199,13 @@ class BarChartView extends StatelessWidget {
   Widget build(BuildContext context) {
     List<BarChartGroupData> _items = [];
     Map<String, List<double>> tasks = {};
-    for (var element in data["this_month"]!) {
-      tasks[element["name"]] = [element["times"]/1];
-    }
-    for (var element in data["last_month"]!) {
-      tasks[element["name"]]!.add(element["times"]);
+    if (data["this_month"] != null) {
+      for (var element in data["this_month"]!) {
+        tasks[element["name"]] = [element["times"] / 1];
+      }
+      for (var element in data["last_month"]!) {
+        tasks[element["name"]]!.add(element["times"]);
+      }
     }
 
     int i = 0;
@@ -277,23 +279,29 @@ class PercentageView extends StatelessWidget {
     List<String> steps = ["To do", "Review"];
     int soulNum = 0;
     int stepsNum = 0;
-    for (var element in data["this_month"]!) {
-      if (body.contains(element["name"])) {
-        PieChartSectionData _part =
-            PieChartSectionData(title:"${element["name"]}:${element["times"]}",value: element["times"]/1, color: _colors[0]);
-        _colors.remove(_colors[0]);
-        pieData.add(_part);
-      }
-      if (soul.contains(element["name"])) {
-        soulNum += int.parse(element["times"].toString());
-      }
-      if (steps.contains(element["name"])) {
-        stepsNum += int.parse(element["times"].toString());
+    if (data["this_month"] != null) {
+      for (var element in data["this_month"]!) {
+        if (body.contains(element["name"])) {
+          PieChartSectionData _part = PieChartSectionData(
+              title: "${element["name"]}:${element["times"]}",
+              value: element["times"] / 1,
+              color: _colors[0]);
+          _colors.remove(_colors[0]);
+          pieData.add(_part);
+        }
+        if (soul.contains(element["name"])) {
+          soulNum += int.parse(element["times"].toString());
+        }
+        if (steps.contains(element["name"])) {
+          stepsNum += int.parse(element["times"].toString());
+        }
       }
     }
+
     print("$soulNum  $stepsNum ");
-    int drop =  stepsNum - soulNum;
-    double _angle = (drop + 10) / 20; // introduce this constant to adjust balance between soul and steps
+    int drop = stepsNum - soulNum;
+    double _angle = (drop + 10) /
+        20; // introduce this constant to adjust balance between soul and steps
 
     return Container(
         padding: EdgeInsets.all(20),

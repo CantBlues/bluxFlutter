@@ -5,6 +5,7 @@ import 'utils/network.dart';
 import 'utils/eventbus.dart';
 import 'dart:async';
 import 'billboard.dart';
+import 'drawer.dart';
 
 class Landscape extends StatefulWidget {
   @override
@@ -84,25 +85,7 @@ class _LandscapeState extends State<Landscape> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Drawer(
-          child: Center(
-              child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(child: Text("current server:${dio.options.baseUrl}")),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("IPv4/6:"),
-              Switch(
-                  value: _ipv,
-                  onChanged: (v) {
-                    switchIpv(!_ipv);
-                  })
-            ],
-          ),
-        ],
-      ))),
+      drawer: DrawerView(_ipv),
       body: Stack(children: [
         Container(
             width: double.infinity,
