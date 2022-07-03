@@ -12,7 +12,7 @@ class Landscape extends StatefulWidget {
   _LandscapeState createState() => _LandscapeState();
 }
 
-class _LandscapeState extends State<Landscape> {
+class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
@@ -32,6 +32,11 @@ class _LandscapeState extends State<Landscape> {
     checkPc();
     dioLara.get("/");
     listenNetwork();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) checkPc();
   }
 
   checkPc() {
@@ -415,7 +420,10 @@ class _TaskLayerState extends State<TaskLayer> {
       },
       child: Container(
           padding: EdgeInsets.only(bottom: big ? 20 : 0),
-          child: Text(day == 1 ? "${preDay.month}/${preDay.day}" : "${today.month}/${today.day}",
+          child: Text(
+              day == 1
+                  ? "${preDay.month}/${preDay.day}"
+                  : "${today.month}/${today.day}",
               style: TextStyle(fontSize: big ? 30 : 20))),
     )));
   }

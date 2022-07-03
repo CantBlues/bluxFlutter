@@ -14,14 +14,14 @@ class TaskTypeSetting extends StatelessWidget {
           actions: [
             IconButton(
                 onPressed: () => showEditType(context, null),
-                icon: Icon(Icons.edit))
+                icon: Icon(Icons.add))
           ],
         ),
         body: Container(
             color: Colors.grey[200],
             width: double.infinity,
             child: Center(child: TypesList()),
-            padding: EdgeInsets.only(top: 30)));
+            margin: EdgeInsets.only(top: 30)));
   }
 }
 
@@ -171,10 +171,11 @@ class _TypeEditState extends State<TypeInfo> {
         _data["id"] = widget.info["id"];
       _data["name"] = _name;
       _data["weight"] = _weight;
-      dioLara.post("/api/task/type/addoredit",data:_data);
+      dioLara.post("/api/task/type/addoredit", data: _data);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Saving Data')),
       );
+      Navigator.of(context).pop();
     }
   }
 
