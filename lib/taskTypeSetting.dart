@@ -13,15 +13,14 @@ class TaskTypeSetting extends StatelessWidget {
           backgroundColor: Color.fromARGB(255, 53, 28, 8),
           actions: [
             IconButton(
-                onPressed: () => showEditType(context, null),
+                onPressed: () => showEditType(context, null,null),// here should pass function "getTypes"
                 icon: Icon(Icons.add))
           ],
         ),
         body: Container(
             color: Colors.grey[200],
             width: double.infinity,
-            child: Center(child: TypesList()),
-            margin: EdgeInsets.only(top: 30)));
+            child: Center(child: TypesList())));
   }
 }
 
@@ -41,8 +40,7 @@ class _TypesListState extends State<TypesList> {
     dioLara.post("/api/task/types/order", data: _types);
   }
 
-  @override
-  void initState() {
+  getTypes() {
     dioLara.get("/api/tasktypes").then((response) {
       var data = jsonDecode(response.data);
       if (data["status"] == "success") {
@@ -52,6 +50,11 @@ class _TypesListState extends State<TypesList> {
         });
       }
     });
+  }
+
+  @override
+  void initState() {
+    getTypes();
     super.initState();
   }
 
@@ -60,13 +63,13 @@ class _TypesListState extends State<TypesList> {
     return _loading
         ? CircularProgressIndicator()
         : ReorderableListView(
-            padding: EdgeInsets.only(left: 30, right: 30),
+            padding: EdgeInsets.only(left: 30, right: 30, top: 30),
             children: _types.map((item) {
               int _id = item["id"];
               String _name = item["name"];
               int _weight = item["weight"];
               return TaskTypeCard(_id, _name, _weight,
-                  key: Key(_id.toString()));
+                  key: Key(_id.toString()), tap: getTypes);
             }).toList(),
             onReorder: (int oldIndex, int newIndex) {
               setState(() {
@@ -87,11 +90,13 @@ class TaskTypeCard extends StatelessWidget {
     this.id,
     this.name,
     this.weight, {
+    this.tap,
     Key? key,
   }) : super(key: key);
   final String name;
   final int weight;
   final int id;
+  final tap;
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +136,7 @@ class TaskTypeCard extends StatelessWidget {
               Expanded(child: Container()),
               IconButton(
                   onPressed: () => showEditType(
-                      context, {"id": id, "name": name, "weight": weight}),
+                      context, tap, {"id": id, "name": name, "weight": weight}),
                   icon: Icon(Icons.edit)),
             ],
           ),
@@ -141,17 +146,18 @@ class TaskTypeCard extends StatelessWidget {
   }
 }
 
-showEditType(BuildContext c, info) {
+showEditType(BuildContext c, tap, info) {
   showDialog(
       context: c,
       builder: (c) {
-        return Dialog(child: TypeInfo(info: info ?? null));
+        return Dialog(child: TypeInfo(info: info ?? null, tap: tap));
       });
 }
 
 class TypeInfo extends StatefulWidget {
-  const TypeInfo({this.info});
+  const TypeInfo({this.info, this.tap});
   final info;
+  final tap;
 
   @override
   _TypeEditState createState() => _TypeEditState();
@@ -176,6 +182,7 @@ class _TypeEditState extends State<TypeInfo> {
         const SnackBar(content: Text('Saving Data')),
       );
       Navigator.of(context).pop();
+      widget.tap();
     }
   }
 
