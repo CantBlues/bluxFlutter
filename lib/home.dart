@@ -377,8 +377,8 @@ class _TaskLayerState extends State<TaskLayer> {
   late DateTime preDay;
   bool yesterday = false;
   bool _loading = true;
-  List<String> serverData = [];
-  List<String> tasks = [];
+  List<int> serverData = [];
+  List<Map<String, dynamic>> tasks = [];
 
   @override
   void deactivate() {
@@ -400,8 +400,8 @@ class _TaskLayerState extends State<TaskLayer> {
     List<Widget> ret = [];
     bool left = false;
     for (var task in tasks) {
-      var marked = serverData.contains(task) ? true : false;
-      ret.add(TaskWidget(task, !left, tapTask, marked));
+      var marked = serverData.contains(task["type_id"]) ? true : false;
+      ret.add(TaskWidget(task["name"], !left, tapTask, marked));
       left = !left;
     }
     return ret;
@@ -435,9 +435,9 @@ class _TaskLayerState extends State<TaskLayer> {
     dioLara.get('/api/tasktypes').then(
       (response) {
         var data = jsonDecode(response.data);
-        List<String> _tasks = [];
+        List<Map<String, dynamic>> _tasks = [];
         for (var element in data['data']) {
-          _tasks.add(element["name"]);
+          _tasks.add({"name": element["name"], "type_id": element["id"]});
         }
         setState(() {
           tasks = _tasks;
@@ -448,9 +448,9 @@ class _TaskLayerState extends State<TaskLayer> {
         .get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString())
         .then((response) {
       var ret = jsonDecode(response.data);
-      List<String> _markedTask = [];
+      List<int> _markedTask = [];
       for (var element in ret['data']) {
-        _markedTask.add(element['name']);
+        _markedTask.add(element['type_id']);
       }
       setState(() {
         serverData = _markedTask;
