@@ -13,7 +13,8 @@ class TaskTypeSetting extends StatelessWidget {
           backgroundColor: Color.fromARGB(255, 53, 28, 8),
           actions: [
             IconButton(
-                onPressed: () => showEditType(context, null,null),// here should pass function "getTypes"
+                onPressed: () => showEditType(context, null,
+                    null), // here should pass function "getTypes"
                 icon: Icon(Icons.add))
           ],
         ),
@@ -68,7 +69,8 @@ class _TypesListState extends State<TypesList> {
               int _id = item["id"];
               String _name = item["name"];
               int _weight = item["weight"];
-              return TaskTypeCard(_id, _name, _weight,
+              String _classify = item["classify"] ?? "";
+              return TaskTypeCard(_id, _name, _weight, _classify,
                   key: Key(_id.toString()), tap: getTypes);
             }).toList(),
             onReorder: (int oldIndex, int newIndex) {
@@ -89,13 +91,15 @@ class TaskTypeCard extends StatelessWidget {
   const TaskTypeCard(
     this.id,
     this.name,
-    this.weight, {
+    this.weight,
+    this.classify, {
     this.tap,
     Key? key,
   }) : super(key: key);
   final String name;
   final int weight;
   final int id;
+  final String classify;
   final tap;
 
   @override
@@ -135,8 +139,12 @@ class TaskTypeCard extends StatelessWidget {
                           fontWeight: FontWeight.bold, fontSize: 20))),
               Expanded(child: Container()),
               IconButton(
-                  onPressed: () => showEditType(
-                      context, tap, {"id": id, "name": name, "weight": weight}),
+                  onPressed: () => showEditType(context, tap, {
+                        "id": id,
+                        "name": name,
+                        "weight": weight,
+                        "classify": classify
+                      }),
                   icon: Icon(Icons.edit)),
             ],
           ),
@@ -168,6 +176,7 @@ class _TypeEditState extends State<TypeInfo> {
 
   String _name = "";
   int _weight = 0;
+  String _classify = "";
   Map _data = {};
 
   _submit() {
@@ -177,6 +186,7 @@ class _TypeEditState extends State<TypeInfo> {
         _data["id"] = widget.info["id"];
       _data["name"] = _name;
       _data["weight"] = _weight;
+      _data["classify"] = _classify;
       dioLara.post("/api/task/type/addoredit", data: _data);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Saving Data')),
@@ -225,6 +235,12 @@ class _TypeEditState extends State<TypeInfo> {
                       }
                       return null;
                     },
+                  ),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: "classify"),
+                    initialValue:
+                        widget.info != null ? widget.info["classify"] : null,
+                    onSaved: (value) => _classify = value!,
                   ),
                   Padding(
                       padding: EdgeInsets.only(top: 30),

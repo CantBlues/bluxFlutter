@@ -77,7 +77,7 @@ class _BillboardState extends State<Billboard> {
                           )
                         : ContributionView(_type, _contributionData)),
                     Expanded(child: BlurCard(BarChartView(_barData))),
-                    BlurCard(PercentageView(_barData)),
+                    BlurCard(PercentageView(_barData, _typeMenu)),
                     Row(children: [
                       Expanded(
                           child: BlurCard(Container(
@@ -211,72 +211,70 @@ class BarChartView extends StatelessWidget {
     int i = 0;
     List<String> _name = [];
     tasks.forEach((key, value) {
-      BarChartGroupData tmp = makeGroupData(
-          i,
-          value[0],
-          value.length == 2
-              ? value[1]
-              : 1); // will change 1 to 0 when last month data exist
+      BarChartGroupData tmp =
+          makeGroupData(i, value[0], value.length == 2 ? value[1] : 0);
       _items.add(tmp);
       _name.add(key);
       i++;
     });
 
     return Container(
-        // width: double.infinity,
-        child: BarChart(BarChartData(
-      maxY: 30,
-      minY: 0,
-      titlesData: FlTitlesData(
-        show: true,
-        bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 60,
-                getTitlesWidget: (num, TitleMeta a) {
-                  return Transform.rotate(
-                      angle: -0.8,
-                      child: Center(child: Text("${_name[num.round()]}")));
-                })),
-        leftTitles: AxisTitles(),
-        rightTitles: AxisTitles(),
-        topTitles: AxisTitles(),
-      ),
-      borderData: FlBorderData(
-        show: false,
-      ),
-      barGroups: _items,
-      gridData: FlGridData(show: false),
-    )));
+        child: data["this_month"] == null
+            ? CircularProgressIndicator()
+            : BarChart(BarChartData(
+                maxY: 30,
+                minY: 0,
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 60,
+                          getTitlesWidget: (num, TitleMeta a) {
+                            return Transform.rotate(
+                                angle: -0.8,
+                                child: Center(
+                                    child: Text("${_name[num.round()]}")));
+                          })),
+                  leftTitles: AxisTitles(),
+                  rightTitles: AxisTitles(),
+                  topTitles: AxisTitles(),
+                ),
+                borderData: FlBorderData(
+                  show: false,
+                ),
+                barGroups: _items,
+                gridData: FlGridData(show: false),
+              )));
   }
 }
 
 class PercentageView extends StatelessWidget {
-  const PercentageView(this.data);
+  const PercentageView(this.data, this.types);
 
   final Map<String, List> data;
+  final List types;
   @override
   Widget build(BuildContext context) {
     List<PieChartSectionData> pieData = [];
-    List<Color> _colors = [
-      Colors.blue,
-      Color.fromARGB(255, 177, 13, 241),
-      Colors.pinkAccent,
-      Colors.white,
-      Colors.orange,
-      Colors.grey,
-      Colors.yellow,
-      Colors.red,
-      Colors.lightGreenAccent,
-    ];
-    List<String> body = [
-      "push up",
-      "pull up",
-      "squat",
-      "running"
-    ]; //  will get from server ?
-    List<String> soul = ["reading", "guitar", "drawing"];
-    List<String> steps = ["To do", "Review"];
+    List<String> body = [];
+    List<String> soul = [];
+    List<String> steps = [];
+
+    for (var element in types) {
+      switch (element["classify"]) {
+        case "body":
+          body.add(element["name"]);
+          break;
+        case "soul":
+          soul.add(element["name"]);
+          break;
+        case "steps":
+          steps.add(element["name"]);
+          break;
+        default:
+      }
+    }
     int soulNum = 0;
     int stepsNum = 0;
     if (data["this_month"] != null) {
@@ -285,22 +283,23 @@ class PercentageView extends StatelessWidget {
           PieChartSectionData _part = PieChartSectionData(
               title: "${element["name"]}:${element["times"]}",
               value: element["times"] / 1,
-              color: _colors[0]);
-          _colors.remove(_colors[0]);
+              color: Color.fromARGB(255, Random().nextInt(128) + 128,
+                  Random().nextInt(128) + 128, Random().nextInt(128) + 128));
           pieData.add(_part);
         }
+
+        int _weight = element["weight"];
         if (soul.contains(element["name"])) {
-          soulNum += int.parse(element["times"].toString());
+          soulNum += int.parse(element["times"].toString()) * _weight;
         }
         if (steps.contains(element["name"])) {
-          stepsNum += int.parse(element["times"].toString());
+          stepsNum += int.parse(element["times"].toString()) * _weight;
         }
       }
     }
 
-    print("$soulNum  $stepsNum ");
     int drop = stepsNum - soulNum;
-    double _angle = (drop + 10) /
+    double _angle = (drop + 5) /
         20; // introduce this constant to adjust balance between soul and steps
 
     return Container(
@@ -309,9 +308,16 @@ class PercentageView extends StatelessWidget {
           children: [
             Expanded(
                 child: Center(
-                    child: CustomPaint(
-              size: Size(300, 300),
-              painter: Seesaw(_angle),
+                    child: Stack(
+              children: [
+                Align(
+                    alignment: Alignment(0, -0.6),
+                    child: Text("Soul: $soulNum , Steps: $stepsNum ")),
+                CustomPaint(
+                  size: Size(300, 300),
+                  painter: Seesaw(_angle),
+                )
+              ],
             ))),
             Expanded(
                 child: Center(child: PieChart(PieChartData(sections: pieData))))

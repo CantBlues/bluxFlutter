@@ -355,6 +355,7 @@ class _TaskWidgetState extends State<TaskWidget> {
             fontSize: 30,
             fontWeight: FontWeight.bold,
             color: _mark ? Colors.white54 : Colors.white,
+            shadows: [Shadow(blurRadius: 10)],
             decorationColor: Colors.red,
             decorationThickness: 3,
             decoration:
