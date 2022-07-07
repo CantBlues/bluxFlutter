@@ -17,7 +17,8 @@ void main() async {
   runApp(MyApp());
   try {
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-      await FlutterDisplayMode.setHighRefreshRate();
+      FlutterDisplayMode.setHighRefreshRate();
+      AppUsageView.recordPhoneUsage();
     }
   } catch (e) {
     print(e);
