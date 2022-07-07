@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'utils/network.dart';
 
 class DrawerView extends StatelessWidget {
-  const DrawerView(this.ipv);
+  const DrawerView(this.ipv, this.pcStatus);
   final bool ipv;
+  final bool pcStatus;
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -61,14 +62,14 @@ class DrawerView extends StatelessWidget {
                   child: Text("Task Types Setting",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
                   onPressed: () =>
-                      Navigator.of(context).pushNamed("taskSetting"),
+                      pcStatus ? Navigator.of(context).pushNamed("taskSetting") : null,
                 ),
                 color: Colors.deepPurple),
             Cave(
                 TextButton(
                   child: Text("Phone Usage",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => Navigator.of(context).pushNamed("usage"),
+                  onPressed: () => pcStatus ? Navigator.of(context).pushNamed("usage") : null,
                 ),
                 color: Colors.deepPurple)
           ],

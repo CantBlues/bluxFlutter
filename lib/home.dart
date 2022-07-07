@@ -90,7 +90,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: DrawerView(_ipv),
+      drawer: DrawerView(_ipv,_pcStatus),
       body: Stack(children: [
         Container(
             width: double.infinity,
