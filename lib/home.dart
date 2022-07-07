@@ -412,20 +412,25 @@ class _TaskLayerState extends State<TaskLayer> {
     bool big = (yesterday && (day == 1)) || (!yesterday && (day == 0));
     return Expanded(
         child: Center(
-            child: GestureDetector(
-      onTap: () {
-        setState(() {
-          yesterday = day == 1 ? true : false;
-        });
-        queryTasks(yesterday ? preDay : today);
-      },
+            child: Listener(
       child: Container(
           padding: EdgeInsets.only(bottom: big ? 20 : 0),
           child: Text(
               day == 1
                   ? "${preDay.month}/${preDay.day}"
                   : "${today.month}/${today.day}",
-              style: TextStyle(fontSize: big ? 30 : 20))),
+              style: TextStyle(
+                fontSize: big ? 30 : 20,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                shadows: [Shadow(blurRadius: 10, color: Colors.white)],
+              ))),
+      onPointerUp: (event) {
+        setState(() {
+          yesterday = day == 1 ? true : false;
+        });
+        queryTasks(yesterday ? preDay : today);
+      },
     )));
   }
 
