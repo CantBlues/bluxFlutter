@@ -61,15 +61,18 @@ class DrawerView extends StatelessWidget {
                 TextButton(
                   child: Text("Task Types Setting",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () =>
-                      pcStatus ? Navigator.of(context).pushNamed("taskSetting") : null,
+                  onPressed: () => pcStatus
+                      ? Navigator.of(context).pushNamed("taskSetting")
+                      : null,
                 ),
                 color: Colors.deepPurple),
             Cave(
                 TextButton(
-                  child: Text("Phone Usage",
+                  child: Text("UsageStat Apps Setting",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => pcStatus ? Navigator.of(context).pushNamed("usage") : null,
+                  onPressed: () => pcStatus
+                      ? Navigator.of(context).pushNamed("usage_edit_apps")
+                      : null,
                 ),
                 color: Colors.deepPurple)
           ],

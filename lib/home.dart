@@ -90,7 +90,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: DrawerView(_ipv,_pcStatus),
+      drawer: DrawerView(_ipv, _pcStatus),
       body: Stack(children: [
         Container(
             width: double.infinity,
@@ -222,7 +222,14 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
                         if (_pcStatus)
                           Navigator.of(context).pushNamed('audios');
                       },
-                    ))
+                    )),
+                Align(
+                    alignment: Alignment(0.9, -0.7),
+                    child: GestureDetector(
+                        child: Container(width: 200, height: 80),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () =>
+                            Navigator.of(context).pushNamed("usage")))
               ],
             )),
         _draging

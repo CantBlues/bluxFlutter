@@ -4,7 +4,8 @@ import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
 import 'audios.dart';
-import 'usage.dart';
+import 'usage/usage_page.dart';
+import 'usage/edit_app.dart';
 import 'taskTypeSetting.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -39,9 +40,10 @@ class MyApp extends StatelessWidget {
           "video": (context) => VideoPage(),
           "videoList": (context) => VideoList(),
           "usage": (context) => UsagePage(),
+          "usage_edit_apps": (context) => UsageAppsEditPage(),
           "audios": (context) => AudiosPage(),
           "annual": (context) => Text("a"),
-          "taskSetting":(context) => TaskTypeSetting()
+          "taskSetting": (context) => TaskTypeSetting()
         });
   }
 }
