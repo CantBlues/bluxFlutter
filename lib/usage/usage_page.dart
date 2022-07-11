@@ -168,6 +168,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
             List<FlSpot> spots = [];
+            value.data.sort((e1,e2)=>e1["node"] - e2["node"]);
             for (var element in value.data) {
               FlSpot spot = FlSpot(element["node"] / 1, element["usage"] / 1);
               spots.add(spot);
