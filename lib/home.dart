@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:blux/usage/usage_page.dart';
 import 'package:flutter/material.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
@@ -228,8 +229,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
                     child: GestureDetector(
                         child: Container(width: 200, height: 80),
                         behavior: HitTestBehavior.opaque,
-                        onTap: () =>
-                            Navigator.of(context).pushNamed("usage")))
+                        onTap: () => Navigator.of(context).pushNamed("usage")))
               ],
             )),
         _draging
@@ -478,6 +478,12 @@ class _TaskLayerState extends State<TaskLayer> {
     today = DateTime.now();
     preDay = today.subtract(Duration(days: 1));
     queryTasks(today);
+    // check whether need collect UsageStats
+    dioLara.get("/api/phone/usages/recently/node").then((value) {
+      var data = jsonDecode(value.data);
+      if (data["data"].length == 9) return;
+      AppUsageView.recordPhoneUsage(multi: true);
+    });
   }
 
   @override

@@ -306,8 +306,8 @@ class AppUsageView extends StatefulWidget {
     List<Map> periodUsage = [];
     DateTime now = new DateTime.now();
     DateTime endDate = DateTime(now.year, now.month, now.day);
-    DateTime startDate =
-        DateTime(now.year, now.month, now.day).subtract(Duration(days: multi ? 10 : 1));
+    DateTime startDate = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: multi ? 9 : 1));
 
     DateTime cur = startDate;
     while (cur.isBefore(endDate)) {
