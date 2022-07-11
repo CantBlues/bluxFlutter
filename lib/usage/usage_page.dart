@@ -1,9 +1,7 @@
 import 'dart:convert';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:usage_stats/usage_stats.dart';
 import '../utils/network.dart';
 import 'package:provider/provider.dart';
@@ -171,8 +169,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
           builder: (context, value, child) {
             List<FlSpot> spots = [];
             for (var element in value.data) {
-              FlSpot spot =
-                  FlSpot(element["node"]/1, element["usage"] / 1);
+              FlSpot spot = FlSpot(element["node"] / 1, element["usage"] / 1);
               spots.add(spot);
             }
             return LineChart(LineChartData(
@@ -199,43 +196,130 @@ class _UsageLineChartState extends State<UsageLineChart> {
   }
 }
 
+class EventHandle {
+  EventHandle(this.name, this.lastEvent);
+  final String name;
+  int sum = 0;
+  EventUsageInfo lastEvent;
+
+  show(EventUsageInfo event) {
+    lastEvent = event;
+  }
+
+  hide(EventUsageInfo event) {
+    // when app crossing the day. but The end of day isn't handle.
+    if (lastEvent.eventType == null) {
+      int stamp = int.parse(event.timeStamp!);
+      var _today = DateTime.fromMillisecondsSinceEpoch(stamp);
+      DateTime _beigin = DateTime(_today.year, _today.month, _today.day);
+      int timeDiff = stamp - _beigin.millisecondsSinceEpoch;
+
+      sum += timeDiff;
+    }
+    // except first event of today is stop. Guarantee pre-event is a starting event.
+    if (lastEvent.eventType != null &&
+        (lastEvent.eventType == "1" ||
+            lastEvent.eventType == "15" ||
+            lastEvent.eventType == "19")) {
+      int usage = int.parse(event.timeStamp!) - int.parse(lastEvent.timeStamp!);
+      sum += usage;
+    }
+    lastEvent = event;
+  }
+}
+
 class AppUsageView extends StatefulWidget {
   @override
   _APPUsageViewState createState() => _APPUsageViewState();
 
-  static Future<List<Map>> getUsage() async {
-    List<Map> periodUsage = [];
-    DateTime endDate = new DateTime.now();
-    DateTime startDate = endDate.subtract(Duration(days: 6));
-    DateTime cur = startDate;
+  static handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
+    Map<String, EventHandle> apps = {};
+    List<String> events = [];
 
+    origin.forEach((element) {
+      // collect events type
+      if (!events.contains(element.eventType!)) events.add(element.eventType!);
+
+      // traverse events   event types : https://developer.android.com/reference/android/app/usage/UsageEvents.Event
+      int eventType = int.parse(element.eventType!);
+      String packageName = element.packageName!;
+
+      // use EventHandle class to deal timestamps about single app.
+      if (!apps.containsKey(packageName))
+        apps[packageName] = EventHandle(packageName, EventUsageInfo());
+      EventHandle app = apps[packageName]!;
+
+      switch (eventType) {
+        case 1: //ACTIVITY_RESUMED
+          app.show(element);
+          break;
+        case 2: //ACTIVITY_PAUSED
+          app.hide(element);
+          break;
+        case 5: //CONFIGURATION_CHANGE
+          break;
+        case 7: //USER_INTERACTION
+          break;
+        case 10: //NOTIFICATION_SEEN
+          break;
+        case 11: //STANDBY_BUCKET_CHANGED
+          break;
+        case 12: //NOTIFICATION_INTERRUPTION
+          break;
+        case 15: //SCREEN_INTERACTIVE
+          app.show(element);
+          break;
+        case 16: //SCREEN_NON_INTERACTIVE
+          app.hide(element);
+          break;
+        case 17: //KEYGUARD_SHOWN
+          break;
+        case 18: //KEYGUARD_HIDDEN
+          break;
+        case 19: //FOREGROUND_SERVICE_START
+          // app.show(element);
+          break;
+        case 20: //FOREGROUND_SERVICE_STOP
+          // app.hide(element);
+          break;
+        case 23: //ACTIVITY_STOPPED
+          // app.hide(element);
+          break;
+      }
+    });
+
+    int sum = 0;
+
+    apps.forEach((key, value) {
+      Map tmp = {"name": key, "usage": value.sum / 1000};
+      if (value.sum != 0) today["data"].add(tmp);
+      if (value.name != "android") sum += value.sum;
+    });
+
+    today["data"].add({
+      "name": "sum",
+      "usage": sum / 1000,
+    });
+  }
+
+  static Future<List<Map>> getUsage(bool multi) async {
+    List<Map> periodUsage = [];
+    DateTime now = new DateTime.now();
+    DateTime endDate = DateTime(now.year, now.month, now.day);
+    DateTime startDate =
+        DateTime(now.year, now.month, now.day).subtract(Duration(days: multi ? 10 : 1));
+
+    DateTime cur = startDate;
     while (cur.isBefore(endDate)) {
-      int sum = 0;
       cur = cur.add(Duration(days: 1));
       int node =
           int.parse(startDate.toString().substring(0, 10).split('-').join());
       Map today = {"node": node, "data": []};
 
-      var origin = await UsageStats.queryUsageStats(startDate, cur);
+      List<EventUsageInfo> origin =
+          await UsageStats.queryEvents(startDate, cur);
+      handleStatsPerDay(origin, today);
 
-      for (var element in origin) {
-        if (int.parse(element.totalTimeInForeground!) != 0) {
-          int usage =
-              (int.parse(element.totalTimeInForeground!) / 1000).round();
-          var tmp = {
-            "name": element.packageName!,
-            "usage": usage,
-          };
-          if (usage > 0) {
-            sum += int.parse(element.totalTimeInForeground!);
-            today["data"].add(tmp);
-          }
-        }
-      }
-      today["data"].add({
-        "name": "sum",
-        "usage": sum / 1000,
-      });
       periodUsage.add(today);
       startDate = startDate.add(Duration(days: 1));
     }
@@ -243,8 +327,8 @@ class AppUsageView extends StatefulWidget {
     return periodUsage;
   }
 
-  static recordPhoneUsage() async {
-    var data = await AppUsageView.getUsage();
+  static recordPhoneUsage({bool multi = false}) async {
+    var data = await AppUsageView.getUsage(multi);
     dioLara.post("/api/phone/usages", data: data);
   }
 }
@@ -253,7 +337,10 @@ class _APPUsageViewState extends State<AppUsageView> {
   List _infos = ["waiting"];
 
   showUsage() async {
-    var data = await AppUsageView.getUsage();
+    DateTime now = DateTime.now();
+    var data = await AppUsageView.getUsage(true);
+    var diff = DateTime.now().difference(now);
+    print(diff);
     List output = [];
     for (var element in data) {
       output.add(element["node"]);
