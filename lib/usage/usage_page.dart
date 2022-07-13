@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:universal_platform/universal_platform.dart';
 import 'package:usage_stats/usage_stats.dart';
 import '../utils/network.dart';
 import 'package:provider/provider.dart';
@@ -30,25 +31,29 @@ class PhoneStat extends StatefulWidget {
 class _PhoneStatState extends State<PhoneStat> {
   AppProvider app = AppProvider();
   bool loading = true;
+  late FixedExtentScrollController scrollController;
+  int selectedApp = 0;
 
-  showApps() {
-    showDialog(
-        context: context,
-        builder: (context) {
-          int selectedApp = 0;
-          List<Widget> apps = [];
-          app.apps.forEach((element) {
-            var name = (element["name"] != null && element["name"] != "")
-                ? element["name"]
-                : element["package_name"];
-            apps.add(Text(name));
-          });
-          return GestureDetector(
+  Widget showApps(context) {
+    List<Widget> apps = [];
+
+    app.apps.forEach((element) {
+      var name = (element["name"] != null && element["name"] != "")
+          ? element["name"]
+          : element["package_name"];
+      apps.add(Center(child: Text(name)));
+    });
+    return CupertinoActionSheet(
+      actions: [
+        SizedBox(
+            height: 400,
             child: CupertinoPicker(
-                itemExtent: 20,
+                scrollController: scrollController,
+                itemExtent: 64,
                 onSelectedItemChanged: (v) => selectedApp = v,
-                children: apps),
-            onDoubleTap: () async {
+                children: apps)),
+        CupertinoActionSheetAction(
+            onPressed: () async {
               Navigator.of(context).pop();
               var curApp = app.apps[selectedApp];
               app.appId = curApp["id"];
@@ -58,12 +63,12 @@ class _PhoneStatState extends State<PhoneStat> {
                 app.name = curApp["name"] != null && curApp["name"] != ""
                     ? curApp["name"]
                     : curApp["package_name"];
-
                 app.data = data;
               });
             },
-          );
-        });
+            child: Text("Confirm"))
+      ],
+    );
   }
 
   @override
@@ -87,6 +92,14 @@ class _PhoneStatState extends State<PhoneStat> {
     });
 
     super.initState();
+
+    scrollController = FixedExtentScrollController(initialItem: selectedApp);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    scrollController.dispose();
   }
 
   @override
@@ -102,13 +115,22 @@ class _PhoneStatState extends State<PhoneStat> {
                           constraints: BoxConstraints(minHeight: 100),
                           child: UsageContribution()),
                       Expanded(child: UsageLineChart()),
-                      Center(
-                          child: TextButton(
-                              onPressed: () => showApps(),
-                              child: Text(
-                                app.name,
-                                style: TextStyle(fontSize: 30),
-                              )))
+                      SizedBox(
+                          height: 60,
+                          child: Center(
+                              child: TextButton(
+                                  onPressed: () {
+                                    scrollController.dispose();
+                                    scrollController =
+                                        FixedExtentScrollController(
+                                            initialItem: selectedApp);
+                                    showCupertinoModalPopup(
+                                        context: context, builder: showApps);
+                                  },
+                                  child: Text(
+                                    app.name,
+                                    style: TextStyle(fontSize: 25),
+                                  ))))
                     ],
                   )));
   }
@@ -164,11 +186,11 @@ class _UsageLineChartState extends State<UsageLineChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.only(left: 20, top: 20, right: 20),
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
             List<FlSpot> spots = [];
-            value.data.sort((e1,e2)=>e1["node"] - e2["node"]);
+            value.data.sort((e1, e2) => e1["node"] - e2["node"]);
             for (var element in value.data) {
               FlSpot spot = FlSpot(element["node"] / 1, element["usage"] / 1);
               spots.add(spot);
@@ -209,14 +231,16 @@ class EventHandle {
 
   hide(EventUsageInfo event) {
     // when app crossing the day. but The end of day isn't handle.
-    if (lastEvent.eventType == null) {
-      int stamp = int.parse(event.timeStamp!);
-      var _today = DateTime.fromMillisecondsSinceEpoch(stamp);
-      DateTime _beigin = DateTime(_today.year, _today.month, _today.day);
-      int timeDiff = stamp - _beigin.millisecondsSinceEpoch;
+    //   will change the way to handle event that crossing day.
+    //    maybe using continuous events, manual divide days.
 
-      sum += timeDiff;
-    }
+    // if (lastEvent.eventType == null) {
+    //   int stamp = int.parse(event.timeStamp!);
+    //   var _today = DateTime.fromMillisecondsSinceEpoch(stamp);
+    //   DateTime _beigin = DateTime(_today.year, _today.month, _today.day);
+    //   int timeDiff = stamp - _beigin.millisecondsSinceEpoch;
+    //   sum += timeDiff;
+    // }
     // except first event of today is stop. Guarantee pre-event is a starting event.
     if (lastEvent.eventType != null &&
         (lastEvent.eventType == "1" ||
@@ -235,11 +259,17 @@ class AppUsageView extends StatefulWidget {
 
   static handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
     Map<String, EventHandle> apps = {};
-    List<String> events = [];
+    today["events"] = [];
+    today["events"].add("events:");
 
     origin.forEach((element) {
-      // collect events type
-      if (!events.contains(element.eventType!)) events.add(element.eventType!);
+      // collect event info in necessary
+      // Map eventInfo = {
+      //   "type": element.eventType,
+      //   "packageName": element.packageName,
+      //   "timestamp": element.timeStamp
+      // };
+      // today["events"].add(eventInfo);
 
       // traverse events   event types : https://developer.android.com/reference/android/app/usage/UsageEvents.Event
       int eventType = int.parse(element.eventType!);
@@ -329,8 +359,10 @@ class AppUsageView extends StatefulWidget {
   }
 
   static recordPhoneUsage({bool multi = false}) async {
-    var data = await AppUsageView.getUsage(multi);
-    dioLara.post("/api/phone/usages", data: data);
+    if (UniversalPlatform.isAndroid) {
+      var data = await AppUsageView.getUsage(multi);
+      dioLara.post("/api/phone/usages", data: data);
+    }
   }
 }
 
@@ -348,6 +380,10 @@ class _APPUsageViewState extends State<AppUsageView> {
       for (var app in element["data"]) {
         output.add(app);
       }
+      //  display events.
+      // for (var event in element["events"]) {
+      //   output.add(event);
+      // }
     }
     setState(() {
       _infos = output;

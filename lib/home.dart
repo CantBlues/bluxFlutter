@@ -481,7 +481,7 @@ class _TaskLayerState extends State<TaskLayer> {
     // check whether need collect UsageStats
     dioLara.get("/api/phone/usages/recently/node").then((value) {
       var data = jsonDecode(value.data);
-      if (data["data"].length == 9) return;
+      if (data["data"].length == 10) return;
       AppUsageView.recordPhoneUsage(multi: true);
     });
   }
