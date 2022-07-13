@@ -190,9 +190,13 @@ class _UsageLineChartState extends State<UsageLineChart> {
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
             List<FlSpot> spots = [];
-            value.data.sort((e1, e2) => e1["node"] - e2["node"]);
+            value.data.sort((e1, e2) => DateTime.parse(e1["node"])
+                .compareTo(DateTime.parse(e2["node"])));
             for (var element in value.data) {
-              FlSpot spot = FlSpot(element["node"] / 1, element["usage"] / 1);
+              DateTime _node = DateTime.parse(element["node"]);
+              double _nodeDouble = double.parse(
+                  _node.toString().substring(0, 10).split('-').join());
+              FlSpot spot = FlSpot(_nodeDouble, element["usage"] / 1);
               spots.add(spot);
             }
             return LineChart(LineChartData(
