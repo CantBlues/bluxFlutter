@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity/connectivity.dart';
+import 'package:flutter/foundation.dart';
 import 'eventbus.dart';
 
 bool ipv = false;
@@ -20,7 +21,39 @@ BaseOptions optionsLara = BaseOptions(
     responseType: ResponseType.plain,
     receiveTimeout: 30000,
     contentType: Headers.jsonContentType);
-Dio dioLara = Dio(optionsLara);
+final dioLara = Dio(optionsLara);
+final laravel = LaravelDio();
+
+_parseAndDecode(String response) {
+  return jsonDecode(response);
+}
+
+class LaravelDio {
+  static LaravelDio? _instance;
+  late final Dio dio;
+  LaravelDio() {
+    BaseOptions optionsLara = BaseOptions(
+        baseUrl: "http://blux.lanbin.com/api/",
+        responseType: ResponseType.json,
+        receiveTimeout: 30000,
+        contentType: Headers.jsonContentType);
+    dio = Dio(optionsLara);
+    (dio.transformer as DefaultTransformer).jsonDecodeCallback = parseJson;
+    // dio.interceptors.add(InterceptorsWrapper(
+    //   onResponse: (e, handler) {
+    //     return handler.next(Response(data: "abc",requestOptions:e.requestOptions));
+    //   },
+    // ));
+  }
+
+  parseJson(String text) {
+    return compute(_parseAndDecode, text);
+  }
+
+  static LaravelDio getInstance() {
+    return _instance ??= LaravelDio();
+  }
+}
 
 const String local = "http://192.168.0.174:9999/";
 void listenNetwork() {
