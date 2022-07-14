@@ -22,7 +22,7 @@ BaseOptions optionsLara = BaseOptions(
     receiveTimeout: 30000,
     contentType: Headers.jsonContentType);
 final dioLara = Dio(optionsLara);
-final laravel = LaravelDio();
+final laravel = LaravelDio().dio;
 
 _parseAndDecode(String response) {
   return jsonDecode(response);

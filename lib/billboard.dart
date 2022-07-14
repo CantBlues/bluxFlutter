@@ -260,6 +260,7 @@ class PercentageView extends StatelessWidget {
     List<String> body = [];
     List<String> soul = [];
     List<String> steps = [];
+    num pieSum = 0;
 
     for (var element in types) {
       switch (element["classify"]) {
@@ -280,6 +281,7 @@ class PercentageView extends StatelessWidget {
     if (data["this_month"] != null) {
       for (var element in data["this_month"]!) {
         if (body.contains(element["name"])) {
+          pieSum += element["times"];
           PieChartSectionData _part = PieChartSectionData(
               title: "${element["name"]}:${element["times"]}",
               value: element["times"] / 1,
@@ -320,7 +322,19 @@ class PercentageView extends StatelessWidget {
               ],
             ))),
             Expanded(
-                child: Center(child: PieChart(PieChartData(sections: pieData))))
+                child: Center(
+                    child: Stack(
+              children: [
+                PieChart(PieChartData(sections: pieData)),
+                Center(
+                    child: Text(
+                  pieSum.toString(),
+                  style: TextStyle(
+                      fontSize: 30,
+                      shadows: [Shadow(color: Colors.white, blurRadius: 20)]),
+                ))
+              ],
+            )))
           ],
         ),
         height: 200,
