@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:app_usage/app_usage.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -364,8 +365,11 @@ class AppUsageView extends StatefulWidget {
 
   static recordPhoneUsage({bool multi = false}) async {
     if (UniversalPlatform.isAndroid) {
-      var data = await AppUsageView.getUsage(multi);
-      dioLara.post("/api/phone/usages", data: data);
+      if (await UsageStats.checkUsagePermission() ?? false) {
+        var data = await AppUsageView.getUsage(multi);
+        dioLara.post("/api/phone/usages", data: data);
+      }
+      UsageStats.grantUsagePermission();
     }
   }
 }
@@ -374,6 +378,8 @@ class _APPUsageViewState extends State<AppUsageView> {
   List _infos = ["waiting"];
 
   showUsage() async {
+    if (!(await UsageStats.checkUsagePermission() ?? false))
+      UsageStats.grantUsagePermission();
     DateTime now = DateTime.now();
     var data = await AppUsageView.getUsage(true);
     var diff = DateTime.now().difference(now);
