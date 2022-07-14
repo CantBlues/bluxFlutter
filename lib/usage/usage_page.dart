@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:app_usage/app_usage.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

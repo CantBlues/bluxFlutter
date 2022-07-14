@@ -1,3 +1,4 @@
+import 'package:blux/testpage.dart';
 import 'package:flutter/material.dart';
 import 'utils/network.dart';
 
@@ -74,6 +75,13 @@ class DrawerView extends StatelessWidget {
                       ? Navigator.of(context).pushNamed("usage_edit_apps")
                       : null,
                 ),
+                color: Colors.deepPurple),
+            Cave(
+                TextButton(
+                    child: Text("Test Module",
+                        style: TextStyle(fontSize: 15, color: Colors.white70)),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: ((context) => TestPage())))),
                 color: Colors.deepPurple)
           ],
         )),
