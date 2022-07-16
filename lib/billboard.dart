@@ -1,4 +1,3 @@
-// annual task
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -6,7 +5,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
-// import 'package:dio/dio.dart';
 import 'utils/network.dart';
 import 'dart:convert';
 

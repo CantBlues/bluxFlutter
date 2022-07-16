@@ -12,13 +12,15 @@ import 'package:universal_platform/universal_platform.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // keep portrait up
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
   runApp(MyApp());
   try {
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-      FlutterDisplayMode.setHighRefreshRate();
+      FlutterDisplayMode
+          .setHighRefreshRate(); // OnePlus 8 refresh rate lock at 60fps, that show obviously not smooth.
       AppUsageView.recordPhoneUsage();
     }
   } catch (e) {
@@ -42,7 +44,6 @@ class MyApp extends StatelessWidget {
           "usage": (context) => UsagePage(),
           "usage_edit_apps": (context) => UsageAppsEditPage(),
           "audios": (context) => AudiosPage(),
-          "annual": (context) => Text("a"),
           "taskSetting": (context) => TaskTypeSetting()
         });
   }
