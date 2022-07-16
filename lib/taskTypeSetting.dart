@@ -230,7 +230,7 @@ class _TypeEditState extends State<TypeInfo> {
                     validator: (value) {
                       if (value == null ||
                           value.isEmpty ||
-                          !RegExp(r"^[1-9]\d*$").hasMatch(value)) {
+                          !RegExp(r"^[0-9]\d*$").hasMatch(value)) {
                         return "Please enter number.";
                       }
                       return null;
