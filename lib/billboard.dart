@@ -202,7 +202,7 @@ class BarChartView extends StatelessWidget {
         tasks[element["name"]] = [element["times"] / 1];
       }
       for (var element in data["last_month"]!) {
-        tasks[element["name"]]!.add(element["times"]);
+        tasks[element["name"]]!.add(element["times"] / 1);
       }
     }
 
@@ -220,8 +220,9 @@ class BarChartView extends StatelessWidget {
         child: data["this_month"] == null
             ? CircularProgressIndicator()
             : BarChart(BarChartData(
-                maxY: 30,
+                maxY: 31,
                 minY: 0,
+                barTouchData:BarTouchData(touchTooltipData: BarTouchTooltipData(fitInsideVertically: true)),
                 titlesData: FlTitlesData(
                   show: true,
                   bottomTitles: AxisTitles(
@@ -299,8 +300,7 @@ class PercentageView extends StatelessWidget {
     }
 
     int drop = stepsNum - soulNum;
-    double _angle = (drop + 5) /
-        20; // introduce this constant to adjust balance between soul and steps
+    double _angle = drop / 20;
 
     return Container(
         padding: EdgeInsets.all(20),
@@ -382,7 +382,7 @@ class Seesaw extends CustomPainter {
     Path tri = Path()..moveTo(peak.dx, peak.dy);
     tri.lineTo(left.dx, left.dy);
     tri.lineTo(right.dx, right.dy);
-    double _width = size.width / 3;
+    double _width = size.width / 2.5;
 
     Path plank = Path()..moveTo(peak.dx - _width, peak.dy - 10);
     plank.lineTo(peak.dx - _width, peak.dy);

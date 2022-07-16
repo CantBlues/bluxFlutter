@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:blux/usage/usage_event.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,11 +15,15 @@ class UsagePage extends StatelessWidget {
   @override
   Widget build(context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Phone Usage Stats")),
-        floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.search),
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: ((context) => AppUsageView())))),
+        appBar: AppBar(
+          title: Text("Phone Usage Stats"),
+          actions: [
+            IconButton(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: ((context) => EventForm()))),
+                icon: Icon(Icons.search))
+          ],
+        ),
         body: Container(child: PhoneStat()));
   }
 }
@@ -162,7 +167,8 @@ class _UsageContributionState extends State<UsageContribution> {
         Map<DateTime, int> datasets = {};
         for (var element in value.data) {
           DateTime node = DateTime.parse(element["node"].toString());
-          datasets[node] = element["usage"];
+          datasets[node] = element["usage"] -
+              10000; // this constant is for stand out the differences of usages.
         }
         return Container(
             child: HeatMap(
@@ -186,38 +192,78 @@ class _UsageLineChartState extends State<UsageLineChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        padding: EdgeInsets.only(left: 20, top: 20, right: 20),
+        padding: EdgeInsets.only(left: 10, top: 20, right: 20),
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
             List<FlSpot> spots = [];
+            double maxY = 0;
+            double minY = double.infinity;
+            double maxX = 0;
+            double minX = double.infinity;
             value.data.sort((e1, e2) => DateTime.parse(e1["node"])
                 .compareTo(DateTime.parse(e2["node"])));
             for (var element in value.data) {
+              double _usage = element["usage"] / 1;
+              if (_usage > maxY) maxY = _usage;
+              if (_usage < minY) minY = _usage;
+
               DateTime _node = DateTime.parse(element["node"]);
               double _nodeDouble = double.parse(
                   _node.toString().substring(0, 10).split('-').join());
-              FlSpot spot = FlSpot(_nodeDouble, element["usage"] / 1);
+              if (_nodeDouble > maxX) maxX = _nodeDouble;
+              if (_nodeDouble < minX) minX = _nodeDouble;
+              FlSpot spot = FlSpot(_nodeDouble, _usage);
               spots.add(spot);
             }
+            double xAxisInterval = ((maxX - minX) / 5);
             return LineChart(LineChartData(
-                lineBarsData: [LineChartBarData(spots: spots)],
-                lineTouchData:
-                    LineTouchData(touchTooltipData: LineTouchTooltipData(
+                minY: minY * 0.8,
+                maxY: maxY * 1.05,
+                lineBarsData: [
+                  LineChartBarData(spots: spots, color: Colors.redAccent)
+                ],
+                lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                  fitInsideHorizontally: true,
                   getTooltipItems: (touchedSpots) {
                     List<LineTooltipItem> spots = [];
                     for (var element in touchedSpots) {
                       String hours = (element.y / 3600).toStringAsFixed(2);
                       String minutes = (element.y / 60).toStringAsFixed(2);
                       LineTooltipItem spot = LineTooltipItem(
-                          "${element.x.round().toString()} : $hours hours,$minutes minutes",
+                          "${element.x.round().toString()} \n $hours hours \n $minutes minutes",
                           TextStyle(color: Colors.white));
                       spots.add(spot);
                     }
                     return spots;
                   },
                 )),
-                borderData: FlBorderData(),
-                titlesData: FlTitlesData(show: false)));
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                    rightTitles: AxisTitles(),
+                    topTitles: AxisTitles(),
+                    leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                      interval: 3600,
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        String _hour = (value / 3600).round().toString();
+                        if (value % 3600 == 0)
+                          return Center(child: Text(_hour));
+                        return Container();
+                      },
+                    )),
+                    bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              String _date =
+                                  value.round().toString().substring(4);
+                              return Transform.rotate(
+                                  angle: -0.5,
+                                  child: Center(child: Text(_date)));
+                            },
+                            interval: xAxisInterval)))));
           },
         ));
   }
@@ -263,18 +309,8 @@ class AppUsageView extends StatefulWidget {
 
   static handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
     Map<String, EventHandle> apps = {};
-    today["events"] = [];
-    today["events"].add("events:");
 
     origin.forEach((element) {
-      // collect event info in necessary
-      // Map eventInfo = {
-      //   "type": element.eventType,
-      //   "packageName": element.packageName,
-      //   "timestamp": element.timeStamp
-      // };
-      // today["events"].add(eventInfo);
-
       // traverse events   event types : https://developer.android.com/reference/android/app/usage/UsageEvents.Event
       int eventType = int.parse(element.eventType!);
       String packageName = element.packageName!;
@@ -389,10 +425,6 @@ class _APPUsageViewState extends State<AppUsageView> {
       for (var app in element["data"]) {
         output.add(app);
       }
-      //  display events.
-      // for (var event in element["events"]) {
-      //   output.add(event);
-      // }
     }
     setState(() {
       _infos = output;
