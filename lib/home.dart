@@ -7,6 +7,7 @@ import 'utils/eventbus.dart';
 import 'dart:async';
 import 'billboard.dart';
 import 'drawer.dart';
+import 'package:fluro/fluro.dart';
 
 class Landscape extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class Landscape extends StatefulWidget {
 }
 
 class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
+  final router = FluroRouter();
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
@@ -35,10 +37,10 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
     listenNetwork();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) checkPc();
-  }
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.resumed) checkPc();
+  // }
 
   checkPc() {
     checkOnline().then((value) {
@@ -86,6 +88,10 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
       _blurDeep = 0;
       _draging = false;
     });
+  }
+
+  enterStarPage() {
+    router.navigateTo(context, "path");
   }
 
   @override

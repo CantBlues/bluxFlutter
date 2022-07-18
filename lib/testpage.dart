@@ -1,4 +1,5 @@
 import 'package:blux/utils/local_auth.dart';
+import 'package:blux/utils/network.dart';
 import 'package:flutter/material.dart';
 
 class TestPage extends StatelessWidget {
@@ -10,7 +11,10 @@ class TestPage extends StatelessWidget {
         TextButton(
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: ((context) => LocalAuthView()))),
-            child: Text("Local Auth"))
+            child: Text("Local Auth")),
+            TextButton(
+            onPressed: () => laravel.get("audios/test"),
+            child: Text("laravel"))
       ],
     )));
   }

@@ -1,3 +1,4 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -39,11 +40,15 @@ class LaravelDio {
         contentType: Headers.jsonContentType);
     dio = Dio(optionsLara);
     (dio.transformer as DefaultTransformer).jsonDecodeCallback = parseJson;
-    // dio.interceptors.add(InterceptorsWrapper(
-    //   onResponse: (e, handler) {
-    //     return handler.next(Response(data: "abc",requestOptions:e.requestOptions));
-    //   },
-    // ));
+    dio.interceptors.add(InterceptorsWrapper(onResponse: (response, handler) {
+      if (response.data["status"] != "success") {
+        String _info = "${response.data["status"]}:${response.data["data"]}";
+        BotToast.showText(text: _info);
+      }
+      return handler.next(response);
+    }, onError: (e, handler) {
+      BotToast.showText(text: "$e");
+    }));
   }
 
   parseJson(String text) {

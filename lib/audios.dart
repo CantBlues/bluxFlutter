@@ -4,7 +4,8 @@ import 'package:audio_session/audio_session.dart';
 import 'utils/network.dart';
 import 'utils/audio_commons.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+// import 'package:just_audio_background/just_audio_background.dart';
+import 'package:audio_service/audio_service.dart' show MediaItem;
 
 class AudiosPage extends StatelessWidget {
   AudiosPage({Key? key}) : super(key: key);

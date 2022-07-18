@@ -9,14 +9,14 @@ class EventBus {
   static EventBus _singleton = EventBus._internal();
 
   //工厂构造函数
-  factory EventBus()=> _singleton;
+  factory EventBus() => _singleton;
 
   //保存事件订阅者队列，key:事件名(id)，value: 对应事件的订阅者队列
   final _emap = Map<Object, List<EventCallback>?>();
 
   //添加订阅者
   void on(eventName, EventCallback f) {
-    _emap[eventName] ??=  <EventCallback>[];
+    _emap[eventName] ??= <EventCallback>[];
     _emap[eventName]!.add(f);
   }
 
@@ -42,7 +42,6 @@ class EventBus {
     }
   }
 }
-
 
 //定义一个top-level（全局）变量，页面引入该文件后可以直接使用bus
 var bus = EventBus();

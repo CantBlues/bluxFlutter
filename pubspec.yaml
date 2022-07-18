@@ -39,7 +39,10 @@ dependencies:
   local_auth: ^2.1.0
   just_audio: ^0.9.27
   rxdart: ^0.27.4
-  just_audio_background: any
+  # just_audio_background: any
+  fluro: ^2.0.3
+  audio_service: any
+  bot_toast: ^4.0.3
 
   
 dev_dependencies:
