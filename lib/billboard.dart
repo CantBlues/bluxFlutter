@@ -202,7 +202,7 @@ class BarChartView extends StatelessWidget {
         tasks[element["name"]] = [element["times"] / 1];
       }
       for (var element in data["last_month"]!) {
-        tasks[element["name"]]!.add(element["times"] / 1);
+        tasks[element["name"]]?.add(element["times"] / 1);
       }
     }
 

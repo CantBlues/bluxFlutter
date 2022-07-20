@@ -80,17 +80,18 @@ class _PhoneStatState extends State<PhoneStat> {
   void initState() {
     dioLara.get("/api/phone/apps").then((value) async {
       var data = jsonDecode(value.data);
+      List _apps = [];
       int sumId = 0;
       for (var element in data["data"]) {
         if (element["package_name"] == "sum") {
           sumId = element["id"];
-          break;
         }
+        if (element["display"] == 1) _apps.add(element);
       }
       app.appId = sumId;
       var usageStats = await app.getData();
       setState(() {
-        app.apps = data["data"];
+        app.apps = _apps;
         app.data = usageStats;
         loading = false;
       });
@@ -361,17 +362,9 @@ class AppUsageView extends StatefulWidget {
       }
     });
 
-    int sum = 0;
-
     apps.forEach((key, value) {
       Map tmp = {"name": key, "usage": value.sum / 1000};
       if (value.sum != 0) today["data"].add(tmp);
-      if (value.name != "android") sum += value.sum;
-    });
-
-    today["data"].add({
-      "name": "sum",
-      "usage": sum / 1000,
     });
   }
 
@@ -404,7 +397,9 @@ class AppUsageView extends StatefulWidget {
     if (UniversalPlatform.isAndroid) {
       if (await UsageStats.checkUsagePermission() ?? false) {
         var data = await AppUsageView.getUsage(multi);
-        dioLara.post("/api/phone/usages", data: data);
+        dioLara
+            .post("/api/phone/usages", data: data)
+            .then((value) => print(value.data));
       }
       UsageStats.grantUsagePermission();
     }
