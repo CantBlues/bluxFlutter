@@ -46,7 +46,7 @@ class _PhoneStatState extends State<PhoneStat> {
       var name = (element["name"] != null && element["name"] != "")
           ? element["name"]
           : element["package_name"];
-      apps.add(Center(child: Text(name)));
+      if(element["display"] == 1) apps.add(Center(child: Text(name)));
     });
     return CupertinoActionSheet(
       actions: [
@@ -361,17 +361,9 @@ class AppUsageView extends StatefulWidget {
       }
     });
 
-    int sum = 0;
-
     apps.forEach((key, value) {
       Map tmp = {"name": key, "usage": value.sum / 1000};
       if (value.sum != 0) today["data"].add(tmp);
-      if (value.name != "android") sum += value.sum;
-    });
-
-    today["data"].add({
-      "name": "sum",
-      "usage": sum / 1000,
     });
   }
 
@@ -404,7 +396,9 @@ class AppUsageView extends StatefulWidget {
     if (UniversalPlatform.isAndroid) {
       if (await UsageStats.checkUsagePermission() ?? false) {
         var data = await AppUsageView.getUsage(multi);
-        dioLara.post("/api/phone/usages", data: data);
+        dioLara
+            .post("/api/phone/usages", data: data)
+            .then((value) => print(value.data));
       }
       UsageStats.grantUsagePermission();
     }

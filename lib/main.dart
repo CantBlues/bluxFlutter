@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         routes: {
-          "/": (context) => Landscape(),
+          "/": (context) => HomePage(),
           "video": (context) => VideoPage(),
           "videoList": (context) => VideoList(),
           "usage": (context) => UsagePage(),
