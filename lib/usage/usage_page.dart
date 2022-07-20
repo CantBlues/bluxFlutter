@@ -167,8 +167,7 @@ class _UsageContributionState extends State<UsageContribution> {
         Map<DateTime, int> datasets = {};
         for (var element in value.data) {
           DateTime node = DateTime.parse(element["node"].toString());
-          datasets[node] = element["usage"] -
-              10000; // this constant is for stand out the differences of usages.
+          datasets[node] = (element["usage"] * 0.01).round();
         }
         return Container(
             child: HeatMap(
@@ -195,6 +194,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
         padding: EdgeInsets.only(left: 10, top: 20, right: 20),
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
+            if (value.data.length == 0) return LineChart(LineChartData());
             List<FlSpot> spots = [];
             double maxY = 0;
             double minY = double.infinity;
@@ -215,7 +215,8 @@ class _UsageLineChartState extends State<UsageLineChart> {
               FlSpot spot = FlSpot(_nodeDouble, _usage);
               spots.add(spot);
             }
-            double xAxisInterval = ((maxX - minX) / 5);
+            double xAxisInterval =
+                minX == double.infinity ? 1 : ((maxX - minX) / 5);
             return LineChart(LineChartData(
                 minY: minY * 0.8,
                 maxY: maxY * 1.05,
@@ -263,7 +264,8 @@ class _UsageLineChartState extends State<UsageLineChart> {
                                   angle: -0.5,
                                   child: Center(child: Text(_date)));
                             },
-                            interval: xAxisInterval)))));
+                            interval:
+                                xAxisInterval <= 0 ? null : xAxisInterval)))));
           },
         ));
   }
