@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
@@ -211,7 +210,7 @@ class BarChartView extends StatelessWidget {
     tasks.forEach((key, value) {
       BarChartGroupData tmp =
           makeGroupData(i, value[0], value.length == 2 ? value[1] : 0);
-      _items.add(tmp);
+      if (i < 7) _items.add(tmp);
       _name.add(key);
       i++;
     });
@@ -222,7 +221,9 @@ class BarChartView extends StatelessWidget {
             : BarChart(BarChartData(
                 maxY: 31,
                 minY: 0,
-                barTouchData:BarTouchData(touchTooltipData: BarTouchTooltipData(fitInsideVertically: true)),
+                barTouchData: BarTouchData(
+                    touchTooltipData:
+                        BarTouchTooltipData(fitInsideVertically: true)),
                 titlesData: FlTitlesData(
                   show: true,
                   bottomTitles: AxisTitles(
@@ -253,13 +254,23 @@ class PercentageView extends StatelessWidget {
 
   final Map<String, List> data;
   final List types;
+
+  popPE(context, pie) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: ExerciseList(pie));
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<PieChartSectionData> pieData = [];
+    List pieData = [];
     List<String> body = [];
     List<String> soul = [];
     List<String> steps = [];
-    num pieSum = 0;
 
     for (var element in types) {
       switch (element["classify"]) {
@@ -280,13 +291,7 @@ class PercentageView extends StatelessWidget {
     if (data["this_month"] != null) {
       for (var element in data["this_month"]!) {
         if (body.contains(element["name"])) {
-          pieSum += element["times"];
-          PieChartSectionData _part = PieChartSectionData(
-              title: "${element["name"]}:${element["times"]}",
-              value: element["times"] / 1,
-              color: Color.fromARGB(255, Random().nextInt(128) + 128,
-                  Random().nextInt(128) + 128, Random().nextInt(128) + 128));
-          pieData.add(_part);
+          pieData.add(element);
         }
 
         int _weight = element["weight"];
@@ -301,7 +306,6 @@ class PercentageView extends StatelessWidget {
 
     int drop = stepsNum - soulNum;
     double _angle = drop / 20;
-
     return Container(
         padding: EdgeInsets.all(20),
         child: Row(
@@ -320,19 +324,10 @@ class PercentageView extends StatelessWidget {
               ],
             ))),
             Expanded(
-                child: Center(
-                    child: Stack(
-              children: [
-                PieChart(PieChartData(sections: pieData)),
-                Center(
-                    child: Text(
-                  pieSum.toString(),
-                  style: TextStyle(
-                      fontSize: 30,
-                      shadows: [Shadow(color: Colors.white, blurRadius: 20)]),
-                ))
-              ],
-            )))
+                child: GestureDetector(
+              child: Center(child: PhysicalPie(pieData, false)),
+              onTap: () => popPE(context, pieData),
+            ))
           ],
         ),
         height: 200,
@@ -402,5 +397,130 @@ class Seesaw extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
+  }
+}
+
+class PhysicalPie extends StatelessWidget {
+  const PhysicalPie(this.data, this.big);
+  final List data;
+  final bool big;
+
+  @override
+  Widget build(BuildContext context) {
+    List<PieChartSectionData> pieData = [];
+    num pieSum = 0;
+    for (var element in data) {
+      pieSum += element["times"];
+      PieChartSectionData _part = PieChartSectionData(
+          radius: big ? 100 : 45,
+          title: "${element["name"]}:${element["times"]}",
+          value: element["times"] / 1,
+          color: Color.fromARGB(255, Random().nextInt(128) + 128,
+              Random().nextInt(128) + 128, Random().nextInt(128) + 128));
+      pieData.add(_part);
+    }
+
+    return Stack(
+      children: [
+        PieChart(
+          PieChartData(
+            sections: pieData,
+            sectionsSpace: 8,
+          ),
+          swapAnimationDuration: Duration(seconds: 2),
+        ),
+        Center(
+            child: Text(
+          pieSum.toString(),
+          style: TextStyle(
+              fontSize: 30,
+              shadows: [Shadow(color: Colors.white, blurRadius: 20)]),
+        ))
+      ],
+    );
+  }
+}
+
+class ExerciseList extends StatefulWidget {
+  ExerciseList(this.pie);
+  final pie;
+  @override
+  _ExerciseListState createState() => _ExerciseListState();
+}
+
+class _ExerciseListState extends State<ExerciseList> {
+  List<Widget> list = [];
+  @override
+  void initState() {
+    list.add(SizedBox(
+        width: 260, height: 260, child: PhysicalPie(widget.pie, true)));
+    laravel.get("recently_exercise").then((value) => sortTask(value.data));
+    super.initState();
+  }
+
+  sortTask(data) {
+    DateTime _now = DateTime.now();
+    List<Map?> _tasks = [];
+    for (var element in data["data"]) {
+      DateTime _date = DateTime.parse(element['date']);
+      int _days = _now.difference(_date).inDays;
+      Map? _task;
+
+      if (_days >= 1) {
+        if (_days == 1)
+          _task = {"sort": 2, "content": "${element["name"]} 24h"};
+        if (_days == 2)
+          _task = {"sort": 3, "content": "${element["name"]} 48h"};
+        if (_days > 2 && _days < 5)
+          _task = {"sort": 10, "content": "${element["name"]} 72h"};
+        if (_days >= 5)
+          _task = {"sort": 1, "content": "${element["name"]} 120h"};
+      }
+
+      if (_task != null) _tasks.add(_task);
+    }
+
+    _tasks.sort(((a, b) => a?["sort"] - b?["sort"]));
+
+    for (var i = 0; i < _tasks.length; i++) {
+      double _scale = _tasks[i]!["sort"]/1;
+      Color _color;
+      switch (_tasks[i]!["sort"]) {
+        case 10:
+          _color = Colors.red;
+          break;
+        case 3:
+          _color = Colors.orange;
+          break;
+        case 2:
+          _color = Colors.blue;
+          break;
+        case 1:
+          _color = Colors.purple;
+          break;
+        default:
+          _color = Colors.black;
+      }
+      Widget _widget = Container(
+          margin: EdgeInsets.only(bottom: 20),
+          child: Text(_tasks[i]!['content'], style: TextStyle(color: _color)));
+      list.add(Transform.scale(scale: _scale, child: _widget));
+    }
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+        color: Colors.transparent,
+        child: Container(
+          child: Column(
+            children: list,
+            verticalDirection: VerticalDirection.up,
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          margin: EdgeInsets.all(20),
+        ));
   }
 }
