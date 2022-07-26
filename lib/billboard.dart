@@ -305,7 +305,7 @@ class PercentageView extends StatelessWidget {
     }
 
     int drop = stepsNum - soulNum;
-    double _angle = drop / 20;
+    double _angle = drop / 50;
     return Container(
         padding: EdgeInsets.all(20),
         child: Row(
@@ -452,8 +452,11 @@ class _ExerciseListState extends State<ExerciseList> {
   List<Widget> list = [];
   @override
   void initState() {
-    list.add(SizedBox(
-        width: 260, height: 260, child: PhysicalPie(widget.pie, true)));
+    list.add(Container(
+        margin: EdgeInsets.only(top: 30),
+        width: 260,
+        height: 260,
+        child: PhysicalPie(widget.pie, true)));
     laravel.get("recently_exercise").then((value) => sortTask(value.data));
     super.initState();
   }
@@ -468,13 +471,13 @@ class _ExerciseListState extends State<ExerciseList> {
 
       if (_days >= 1) {
         if (_days == 1)
-          _task = {"sort": 2, "content": "${element["name"]} 24h"};
+          _task = {"sort": 2, "content": "${element["name"]} >24h"};
         if (_days == 2)
-          _task = {"sort": 3, "content": "${element["name"]} 48h"};
+          _task = {"sort": 3, "content": "${element["name"]} >48h"};
         if (_days > 2 && _days < 5)
-          _task = {"sort": 10, "content": "${element["name"]} 72h"};
+          _task = {"sort": 4, "content": "${element["name"]} >72h"};
         if (_days >= 5)
-          _task = {"sort": 1, "content": "${element["name"]} 120h"};
+          _task = {"sort": 1, "content": "${element["name"]} >120h"};
       }
 
       if (_task != null) _tasks.add(_task);
@@ -483,28 +486,37 @@ class _ExerciseListState extends State<ExerciseList> {
     _tasks.sort(((a, b) => a?["sort"] - b?["sort"]));
 
     for (var i = 0; i < _tasks.length; i++) {
-      double _scale = _tasks[i]!["sort"]/1;
+      double _scale = 1;
       Color _color;
       switch (_tasks[i]!["sort"]) {
-        case 10:
+        case 4:
           _color = Colors.red;
+          _scale = 4;
           break;
         case 3:
           _color = Colors.orange;
+          _scale = 3.3;
           break;
         case 2:
           _color = Colors.blue;
+          _scale = 2.5;
           break;
         case 1:
-          _color = Colors.purple;
+          _color = Colors.deepPurple;
+          _scale = 2;
           break;
         default:
           _color = Colors.black;
       }
       Widget _widget = Container(
-          margin: EdgeInsets.only(bottom: 20),
-          child: Text(_tasks[i]!['content'], style: TextStyle(color: _color)));
-      list.add(Transform.scale(scale: _scale, child: _widget));
+          padding: EdgeInsets.only(top: 20),
+          child: Text(_tasks[i]!['content'],
+              style: TextStyle(
+                  color: _color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: _scale * 12,
+                  shadows: [Shadow(color: Colors.white, blurRadius: 5)])));
+      list.add(_widget);
     }
     setState(() {});
   }
