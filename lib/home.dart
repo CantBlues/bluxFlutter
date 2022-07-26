@@ -18,12 +18,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () =>setState(() => _lock = false),
+        onLongPress: () => setState(() => _lock = false),
         child: PageView(
-          onPageChanged: (e)=>setState(() => _lock = true),
-      physics: _lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
-      children: [Landscape(), StarsPage()],
-    ));
+          onPageChanged: (e) => setState(() => _lock = true),
+          physics:
+              _lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
+          children: [Landscape(),StarsPage(), ],
+        ));
   }
 }
 
