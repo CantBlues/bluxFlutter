@@ -99,6 +99,7 @@ class _VideoListState extends State<VideoList> {
             CupertinoSliverRefreshControl(
               onRefresh: () async {
                 Response res = await Dio().get(host + '/update');
+                Dio().get(host + '/updateaudios');
                 if (res.data == '1') {
                   setState(() {
                     page = 0;

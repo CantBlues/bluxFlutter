@@ -60,7 +60,8 @@ class AudioJustState extends State<AudioJust> {
             album: "",
             title: element["name"],
             artUri:
-                Uri.parse("http://3650000.xyz/random/" + "?${element["id"]}"),
+                Uri.parse("https://api.xiaobaibk.com/api/pic/?pic=meizi&a=${element["id"]}"),
+                // https://api.lolicon.app/setu/v2  docs : https://api.lolicon.app/#/setu 
           ),
         );
         _list.add(voice);
