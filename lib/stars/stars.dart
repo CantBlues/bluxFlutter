@@ -1,5 +1,6 @@
 import 'package:blux/stars/stars_field.dart';
 import 'package:flutter/material.dart';
+import 'exchange_channel.dart';
 
 class StarsPage extends StatelessWidget {
   @override
@@ -29,9 +30,18 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
 
   late List<ConstellationData> _constellationsData;
 
+  void yell(ConstellationData message) {
+    _constellationsData.add(message);
+    setState(() {
+      
+    });
+  }
+
   @override
   void initState() {
-    _constellationsData = DemoData().getConstellations();
+    _constellationsData = [
+      ConstellationData("WebSocket Initalization", false, '')
+    ];
     _starAnimController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: starAnimDurationIn),
@@ -92,6 +102,7 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
               routeBuilder: _buildPageRoute,
             ),
           ),
+          MessageChannel(yell)
         ],
       ),
     );
@@ -127,6 +138,7 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   void _handleListItemTap(ConstellationData data, bool redMode) {
     //Add details page to Navigator
     print(data.title);
+    _constellationsData.add(ConstellationData("abc",false,''));
   }
   //When an item in the list is tapped, push a Detail view onto the navigator. Pass along the data as as route argument.
   // void _handleListItemTap(ConstellationData data, bool redMode) {
@@ -153,48 +165,6 @@ class _DetailViewRouteArguments {
   final bool redMode;
 
   _DetailViewRouteArguments(this.data, this.redMode);
-}
-
-//   Demo Data   >
-class ConstellationData {
-  final String title;
-  final bool remote;
-  final String image;
-
-  final UniqueKey key = UniqueKey();
-
-  ConstellationData(this.title, this.remote, this.image);
-}
-
-class DemoData {
-  static final List<ConstellationData> _constellations = [
-    ConstellationData("Aries", true, "Aries"),
-    ConstellationData("Cassiopeia", true, "Cassiopeia"),
-    ConstellationData("Camelopardalis", true, "Camelopardalis"),
-    ConstellationData("Cetus", false, "Cetus"),
-    ConstellationData("Pisces", true, "Pisces"),
-    ConstellationData("Aries", false, "Aries"),
-    ConstellationData("Cassiopeia", false, "Cassiopeia"),
-    ConstellationData("Camelopardalis", false, "Camelopardalis"),
-    ConstellationData("Aries", true, "Aries"),
-    ConstellationData("Cassiopeia", true, "Cassiopeia"),
-    ConstellationData("Camelopardalis", true, "Camelopardalis"),
-    ConstellationData("Cetus", false, "Cetus"),
-    ConstellationData("Pisces", true, "Pisces"),
-    ConstellationData("Aries", false, "Aries"),
-    ConstellationData("Cassiopeia", false, "Cassiopeia"),
-    ConstellationData("Camelopardalis", false, "Camelopardalis"),
-    ConstellationData("Aries", true, "Aries"),
-    ConstellationData("Cassiopeia", true, "Cassiopeia"),
-    ConstellationData("Camelopardalis", true, "Camelopardalis"),
-    ConstellationData("Cetus", false, "Cetus"),
-    ConstellationData("Pisces", true, "Pisces"),
-    ConstellationData("Aries", false, "Aries"),
-    ConstellationData("Cassiopeia", false, "Cassiopeia"),
-    ConstellationData("Camelopardalis", false, "Camelopardalis"),
-  ];
-
-  List<ConstellationData> getConstellations() => _constellations;
 }
 
 class NestedNavigator extends StatefulWidget {

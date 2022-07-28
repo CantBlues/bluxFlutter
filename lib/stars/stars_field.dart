@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'stars.dart';
+import 'exchange_channel.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -20,21 +20,17 @@ class _StarFieldState extends State<StarField> {
   List<Star> _stars = [];
   double _maxZ = 500;
   double _minZ = 1;
-  // late ui.Image _glowImage;
   bool loading = true;
 
   late Ticker _ticker;
 
   @override
   void initState() {
-    // _loadGlowImage().then((a) => _initStars(context));
     _initStars(context);
     super.initState();
   }
 
   void _initStars(BuildContext context) {
-    //Start async image load
-
     //Create stars, randomize their starting values
 
     for (var i = widget.starCount; i-- > 0;) {
@@ -62,9 +58,7 @@ class _StarFieldState extends State<StarField> {
             height: double.infinity,
             color: Colors.black,
             child: CustomPaint(
-              painter: StarFieldPainter(
-                _stars
-              ),
+              painter: StarFieldPainter(_stars),
             ),
           );
   }
@@ -132,6 +126,25 @@ class ConstellationListView extends StatefulWidget {
 class _ConstellationListViewState extends State<ConstellationListView> {
   double _prevScrollPos = 0;
   double _scrollVel = 0;
+  List<ConstellationData> _data = [];
+
+  @override
+  void initState() {
+    setState(() {
+      _data = widget.constellations;
+    });
+    super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant ConstellationListView oldWidget) {
+    print("update");
+    print(widget.constellations);
+    setState(() {
+      _data = widget.constellations;
+    });
+    super.didUpdateWidget(oldWidget);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +169,7 @@ class _ConstellationListViewState extends State<ConstellationListView> {
   }
 
   Container _buildScrollingList() {
-    var data = widget.constellations;
+    var data = _data;
     return Container(
       //Wrap list in a NotificationListener, so we can detect scroll updates
       child: NotificationListener<ScrollNotification>(
@@ -258,7 +271,7 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () {
-          if(widget.onTap != null ) widget.onTap!(widget.data, false);
+          if (widget.onTap != null) widget.onTap!(widget.data, false);
         },
         child: Container(
             padding: EdgeInsets.only(bottom: 32),

@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
           onPageChanged: (e) => setState(() => _lock = true),
           physics:
               _lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
-          children: [Landscape(),StarsPage(), ],
+          children: [StarsPage(),Landscape() ],
         ));
   }
 }
