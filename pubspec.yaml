@@ -42,6 +42,7 @@ dependencies:
   # just_audio_background: any
   audio_service: any
   bot_toast: ^4.0.3
+  web_socket_channel: ^2.2.0
 
   
 dev_dependencies:
@@ -100,4 +101,5 @@ flutter:
     - assets/drawer.png
     - assets/me.png
     - assets/cat.png
+    - assets/rocket.png
     

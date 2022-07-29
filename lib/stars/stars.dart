@@ -1,7 +1,6 @@
 import 'package:blux/stars/stars_field.dart';
 import 'package:flutter/material.dart';
 import 'exchange_channel.dart';
-
 class StarsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -28,20 +27,9 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   late AnimationController _starAnimController;
   late Animation<double> _starAnimSequence;
 
-  late List<ConstellationData> _constellationsData;
-
-  void yell(ConstellationData message) {
-    _constellationsData.add(message);
-    setState(() {
-      
-    });
-  }
 
   @override
   void initState() {
-    _constellationsData = [
-      ConstellationData("WebSocket Initalization", false, '')
-    ];
     _starAnimController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: starAnimDurationIn),
@@ -102,7 +90,6 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
               routeBuilder: _buildPageRoute,
             ),
           ),
-          MessageChannel(yell)
         ],
       ),
     );
@@ -113,7 +100,6 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
     Widget page;
 
     page = ConstellationListView(
-      constellations: _constellationsData,
       onScrolled: _handleListScroll,
       onItemTap: _handleListItemTap,
     );
@@ -138,7 +124,6 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   void _handleListItemTap(ConstellationData data, bool redMode) {
     //Add details page to Navigator
     print(data.title);
-    _constellationsData.add(ConstellationData("abc",false,''));
   }
   //When an item in the list is tapped, push a Detail view onto the navigator. Pass along the data as as route argument.
   // void _handleListItemTap(ConstellationData data, bool redMode) {

@@ -8,6 +8,7 @@ import 'eventbus.dart';
 
 bool ipv = false;
 String host = "http://192.168.0.174:9999/";
+String wsHost = "ws://192.168.0.174:9999/ws";
 String mediaHost = "http://192.168.0.174:9998/";
 BaseOptions options = BaseOptions(
     baseUrl: "http://192.168.0.174:9999/",

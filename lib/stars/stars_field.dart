@@ -1,9 +1,10 @@
 import 'dart:math';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'exchange_channel.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'star_field_painter.dart';
+import 'package:provider/provider.dart';
 
 class StarField extends StatefulWidget {
   final double starSpeed;
@@ -105,19 +106,28 @@ class _StarFieldState extends State<StarField> {
   // }
 }
 
+class WsProvider with ChangeNotifier {
+  late WebSocketChannel channel;
+  List<ConstellationData> data = [
+    ConstellationData("WebSocket Initalization", true, "")
+  ];
+  write(msg,remote) {
+    data.add(ConstellationData(msg,remote,''));
+    notifyListeners();
+  }
+}
+
 class ConstellationListView extends StatefulWidget {
   static const route = "ConstellationListView";
 
-  final List<ConstellationData> constellations;
   final void Function(double) onScrolled;
   final void Function(ConstellationData, bool)? onItemTap;
 
-  const ConstellationListView(
-      {Key? key,
-      required this.onScrolled,
-      this.onItemTap,
-      required this.constellations})
-      : super(key: key);
+  const ConstellationListView({
+    Key? key,
+    required this.onScrolled,
+    this.onItemTap,
+  }) : super(key: key);
 
   @override
   _ConstellationListViewState createState() => _ConstellationListViewState();
@@ -126,68 +136,38 @@ class ConstellationListView extends StatefulWidget {
 class _ConstellationListViewState extends State<ConstellationListView> {
   double _prevScrollPos = 0;
   double _scrollVel = 0;
-  List<ConstellationData> _data = [];
-
-  @override
-  void initState() {
-    setState(() {
-      _data = widget.constellations;
-    });
-    super.initState();
-  }
-
-  @override
-  void didUpdateWidget(covariant ConstellationListView oldWidget) {
-    print("update");
-    print(widget.constellations);
-    setState(() {
-      _data = widget.constellations;
-    });
-    super.didUpdateWidget(oldWidget);
-  }
-
   @override
   Widget build(BuildContext context) {
     //Build list using data
     return Align(
-      child: Container(
-        width: 600,
-        child: Stack(
-          children: [
-            //Scrolling list, draw this first so it's under the other content
-            _buildScrollingList(),
-            //Cover the list with black gradients on top & bottom
-            _buildGradientOverlay(),
-            //Top left text
-            _buildHeaderText(),
-            //Top right text
-            _buildLocationText()
-          ],
+      child: ChangeNotifierProvider<WsProvider>(
+        create: (_) => WsProvider(),
+        child: Container(
+          width: 600,
+          child: Stack(
+            children: [
+              //Scrolling list, draw this first so it's under the other content
+              _buildScrollingList(),
+              //Cover the list with black gradients on top & bottom
+              _buildGradientOverlay(),
+              //Top left text
+              _buildHeaderText(),
+              //Top right text
+              _buildLocationText(),
+              MessageChannel()
+            ],
+          ),
         ),
       ),
     );
   }
 
   Container _buildScrollingList() {
-    var data = _data;
     return Container(
       //Wrap list in a NotificationListener, so we can detect scroll updates
       child: NotificationListener<ScrollNotification>(
         onNotification: _handleScrollNotification,
-        child: ListView.builder(
-          physics: BouncingScrollPhysics(),
-          itemCount: data.length,
-          //Add some extra padding to the top & bottom of the list
-          padding: EdgeInsets.only(top: 150, bottom: 200, left: 50, right: 50),
-          itemBuilder: (context, index) {
-            //Create the list renderer, injecting it with some ConstellationData
-            return ConstellationListRenderer(
-                //Re-dispatch our tap event to anyone who is listening
-                onTap: widget.onItemTap,
-                remote: data[index].remote,
-                data: data[index]);
-          },
-        ),
+        child: MessageList(),
       ),
     );
   }
@@ -249,37 +229,5 @@ class _ConstellationListViewState extends State<ConstellationListView> {
     _prevScrollPos = notification.metrics.pixels;
     //Return true to cancel the notification bubbling, we've handled it here.
     return true;
-  }
-}
-
-class ConstellationListRenderer extends StatefulWidget {
-  final ConstellationData data;
-  final bool remote;
-  final Function(ConstellationData, bool)? onTap;
-
-  const ConstellationListRenderer(
-      {Key? key, required this.data, this.remote = false, this.onTap})
-      : super(key: key);
-
-  @override
-  _ConstellationListRendererState createState() =>
-      _ConstellationListRendererState();
-}
-
-class _ConstellationListRendererState extends State<ConstellationListRenderer> {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: () {
-          if (widget.onTap != null) widget.onTap!(widget.data, false);
-        },
-        child: Container(
-            padding: EdgeInsets.only(bottom: 32),
-            alignment:
-                widget.remote ? Alignment.centerRight : Alignment.centerLeft,
-            child: Text(
-              widget.data.title,
-              style: TextStyle(color: Colors.white),
-            )));
   }
 }
