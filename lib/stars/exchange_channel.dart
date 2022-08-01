@@ -1,18 +1,23 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:blux/stars/stars_field.dart';
 import 'package:blux/utils/network.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ConstellationData {
   final String title;
   final bool remote;
-  final String image;
-
+  final String type;
   final UniqueKey key = UniqueKey();
 
-  ConstellationData(this.title, this.remote, this.image);
+  ConstellationData(this.title, this.remote, this.type);
 }
 
 class ConstellationListRenderer extends StatefulWidget {
@@ -34,7 +39,10 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () {
-          if (widget.onTap != null) widget.onTap!(widget.data, false);
+          if (widget.data.type == "image")
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: ((context) =>
+                    RemoteImage("http://" + widget.data.title))));
         },
         child: Container(
             padding: EdgeInsets.only(bottom: 32),
@@ -42,7 +50,8 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
                 widget.remote ? Alignment.centerLeft : Alignment.centerRight,
             child: Text(
               widget.data.title,
-              style: TextStyle(color: Colors.white),
+              style:
+                  TextStyle(color: widget.remote ? Colors.white : Colors.red),
             )));
   }
 }
@@ -55,6 +64,19 @@ class MessageChannel extends StatefulWidget {
 }
 
 class _MessageChannelState extends State<MessageChannel> {
+  final ImagePicker imgPicker = ImagePicker();
+
+  void sendMsg(WsProvider value, String type, String msg) {
+    value.write(msg, false, type);
+    Map _msg = {"type": type, "uid": "flutter", "msg": msg};
+    value.channel.sink.add(jsonEncode(_msg));
+  }
+
+  uploadCallBack(value) {
+    var _provider = context.read<WsProvider>();
+    sendMsg(_provider, "image", value.data["data"]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<WsProvider>(builder: (context, value, _) {
@@ -62,6 +84,21 @@ class _MessageChannelState extends State<MessageChannel> {
           alignment: Alignment(0, 0.8),
           child: TextButton(
             child: Image.asset("assets/rocket.png", width: 50),
+            onLongPress: () async {
+              List<XFile>? imgs = await imgPicker.pickMultiImage();
+              if (imgs == null) return;
+              for (var img in imgs) {
+                var file =
+                    await MultipartFile.fromFile(img.path, filename: img.name);
+                var _payload = FormData.fromMap({
+                  'name': img.name,
+                  'file': file,
+                });
+                laravel
+                    .post("file/upload", data: _payload)
+                    .then((value) => uploadCallBack(value));
+              }
+            },
             onPressed: () {
               showDialog(
                   context: context,
@@ -90,7 +127,7 @@ class _MessageChannelState extends State<MessageChannel> {
                                 child: Text("Confirm", style: TextStyle()),
                                 onPressed: () {
                                   if (_controller.text != "") {
-                                    sendMsg(value, _controller.text);
+                                    sendMsg(value, "msg", _controller.text);
                                     Navigator.of(context).pop();
                                   }
                                 },
@@ -104,12 +141,6 @@ class _MessageChannelState extends State<MessageChannel> {
             },
           ));
     });
-  }
-
-  void sendMsg(WsProvider value, String msg) {
-    value.write(msg, false);
-    Map _msg = {"type": "msg", "uid": "flutter", "msg": msg};
-    value.channel.sink.add(jsonEncode(_msg));
   }
 }
 
@@ -131,8 +162,10 @@ class _MessageListState extends State<MessageList> {
         WebSocketChannel.connect(Uri.parse(wsHost));
     channel = context.read<WsProvider>().channel;
     channel.sink.add('{"type":"login","uid":"flutter","msg":"flutter login"}');
-    channel.stream
-        .listen((data) => context.read<WsProvider>().write(data, true));
+    channel.stream.listen((data) {
+      var message = jsonDecode(data);
+      context.read<WsProvider>().write(message["msg"], true, message["type"]);
+    });
   }
 
   @override
@@ -154,5 +187,32 @@ class _MessageListState extends State<MessageList> {
                 data: value.data[i], remote: value.data[i].remote);
           });
     }));
+  }
+}
+
+class RemoteImage extends StatelessWidget {
+  const RemoteImage(this.src, {Key? key}) : super(key: key);
+  final String src;
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+        child: Container(
+      child: Column(
+        children: [
+          Image.network(src),
+          TextButton(
+              onPressed: () async {
+                Directory appDocDir = await getApplicationDocumentsDirectory();
+                String appDocPath = appDocDir.path;
+                String _name =
+                    appDocPath + "/" + src.substring(src.length - 30);
+                Dio().download(src, _name);
+                await ImageGallerySaver.saveFile(_name);
+                BotToast.showText(text: "Save Success!");
+              },
+              child: Text("download"))
+        ],
+      ),
+    ));
   }
 }

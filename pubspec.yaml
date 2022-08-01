@@ -43,6 +43,9 @@ dependencies:
   audio_service: any
   bot_toast: ^4.0.3
   web_socket_channel: ^2.2.0
+  image_picker: ^0.8.5
+  path_provider: ^2.0.11
+  image_gallery_saver: ^1.7.1
 
   
 dev_dependencies:

@@ -111,8 +111,8 @@ class WsProvider with ChangeNotifier {
   List<ConstellationData> data = [
     ConstellationData("WebSocket Initalization", true, "")
   ];
-  write(msg,remote) {
-    data.add(ConstellationData(msg,remote,''));
+  write(msg, remote, type) {
+    data.add(ConstellationData(msg, remote, type));
     notifyListeners();
   }
 }
