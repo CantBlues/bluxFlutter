@@ -199,74 +199,77 @@ class _UsageLineChartState extends State<UsageLineChart> {
             List<FlSpot> spots = [];
             double maxY = 0;
             double minY = double.infinity;
-            double maxX = 0;
-            double minX = double.infinity;
             value.data.sort((e1, e2) => DateTime.parse(e1["node"])
                 .compareTo(DateTime.parse(e2["node"])));
+            int i = 0;
             for (var element in value.data) {
               double _usage = element["usage"] / 1;
               if (_usage > maxY) maxY = _usage;
               if (_usage < minY) minY = _usage;
-
-              DateTime _node = DateTime.parse(element["node"]);
-              double _nodeDouble = double.parse(
-                  _node.toString().substring(0, 10).split('-').join());
-              if (_nodeDouble > maxX) maxX = _nodeDouble;
-              if (_nodeDouble < minX) minX = _nodeDouble;
-              FlSpot spot = FlSpot(_nodeDouble, _usage);
+              FlSpot spot = FlSpot(i / 1, _usage);
               spots.add(spot);
+              i++;
             }
-            double xAxisInterval =
-                minX == double.infinity ? 1 : ((maxX - minX) / 5);
-            return LineChart(LineChartData(
-                minY: minY * 0.8,
-                maxY: maxY * 1.05,
-                lineBarsData: [
-                  LineChartBarData(spots: spots, color: Colors.redAccent)
-                ],
-                lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                  fitInsideHorizontally: true,
-                  getTooltipItems: (touchedSpots) {
-                    List<LineTooltipItem> spots = [];
-                    for (var element in touchedSpots) {
-                      String hours = (element.y / 3600).toStringAsFixed(2);
-                      String minutes = (element.y / 60).toStringAsFixed(2);
-                      LineTooltipItem spot = LineTooltipItem(
-                          "${element.x.round().toString()} \n $hours hours \n $minutes minutes",
-                          TextStyle(color: Colors.white));
-                      spots.add(spot);
-                    }
-                    return spots;
-                  },
-                )),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                    rightTitles: AxisTitles(),
-                    topTitles: AxisTitles(),
-                    leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                      interval: 3600,
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        String _hour = (value / 3600).round().toString();
-                        if (value % 3600 == 0)
-                          return Center(child: Text(_hour));
-                        return Container();
-                      },
-                    )),
-                    bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              String _date =
-                                  value.round().toString().substring(4);
-                              return Transform.rotate(
-                                  angle: -0.5,
-                                  child: Center(child: Text(_date)));
-                            },
-                            interval:
-                                xAxisInterval <= 0 ? null : xAxisInterval)))));
+            return LineChart(
+              LineChartData(
+                  minY: minY * 0.8,
+                  maxY: maxY * 1.05,
+                  lineBarsData: [
+                    LineChartBarData(
+                        spots: spots,
+                        color: Colors.redAccent,
+                        dotData: FlDotData(
+                          getDotPainter: (p0, p1, p2, p3) {
+                            return FlDotCirclePainter(
+                                strokeColor: Colors.redAccent,
+                                color: Colors.white,
+                                radius: 3);
+                          },
+                        ))
+                  ],
+                  lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                    fitInsideHorizontally: true,
+                    getTooltipItems: (touchedSpots) {
+                      List<LineTooltipItem> spots = [];
+                      for (var element in touchedSpots) {
+                        String hours = (element.y / 3600).toStringAsFixed(2);
+                        String minutes = (element.y / 60).toStringAsFixed(2);
+                        LineTooltipItem spot = LineTooltipItem(
+                            "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
+                            TextStyle(color: Colors.white));
+                        spots.add(spot);
+                      }
+                      return spots;
+                    },
+                  )),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                      rightTitles: AxisTitles(),
+                      topTitles: AxisTitles(),
+                      leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                        interval: 3600,
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          String _hour = (value / 3600).round().toString();
+                          if (value % 3600 == 0)
+                            return Center(child: Text(_hour));
+                          return Container();
+                        },
+                      )),
+                      bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (x, meta) {
+                                String _date = value.data[x.round()]["node"];
+                                _date = _date.substring(_date.length - 5);
+                                return Transform.rotate(
+                                    angle: -0.5,
+                                    child: Center(child: Text(_date)));
+                              })))),
+              swapAnimationDuration: Duration(milliseconds: 500),
+            );
           },
         ));
   }

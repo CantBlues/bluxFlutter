@@ -112,6 +112,12 @@ class _MessageChannelState extends State<MessageChannel> {
                           maxLines: 3,
                           autofocus: true,
                           controller: _controller,
+                          onSubmitted: (a) {
+                            if (_controller.text != "") {
+                              sendMsg(value, "msg", _controller.text);
+                              Navigator.of(context).pop();
+                            }
+                          },
                         )),
                         Center(
                           child: Row(children: [
