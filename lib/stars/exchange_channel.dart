@@ -167,6 +167,7 @@ class MessageList extends StatefulWidget {
 class _MessageListState extends State<MessageList> {
   late WebSocketChannel channel;
   ScrollController controller = ScrollController();
+  late final _wsProvider;
 
   @override
   void initState() {
@@ -176,9 +177,16 @@ class _MessageListState extends State<MessageList> {
   }
 
   @override
+  void didChangeDependencies() {
+    _wsProvider = context.read<WsProvider>();
+    super.didChangeDependencies();
+  }
+
+  @override
   void dispose() {
     channel.sink.close();
-    context.read<WsProvider>().removeListener(listListener);
+    _wsProvider.removeListener(listListener);
+    controller.dispose();
     super.dispose();
   }
 
@@ -191,6 +199,7 @@ class _MessageListState extends State<MessageList> {
       var message = jsonDecode(data);
       _provider.write(message["msg"], true, message["type"]);
     }, onDone: () {
+      if (!mounted) return; // if page not exist.
       _provider.write("Reconnect.", true, "msg");
       wsConnect();
     });
