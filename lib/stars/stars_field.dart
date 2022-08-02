@@ -136,6 +136,19 @@ class ConstellationListView extends StatefulWidget {
 class _ConstellationListViewState extends State<ConstellationListView> {
   double _prevScrollPos = 0;
   double _scrollVel = 0;
+  double _uploadProgress = 0;
+  bool _uploadProgressShow = false;
+
+  receiveProgress(value) {
+    if (value != 1) {
+      if (!_uploadProgressShow) _uploadProgressShow = true;
+      _uploadProgress = value;
+    } else {
+      _uploadProgressShow = false;
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     //Build list using data
@@ -154,7 +167,11 @@ class _ConstellationListViewState extends State<ConstellationListView> {
               _buildHeaderText(),
               //Top right text
               _buildLocationText(),
-              MessageChannel()
+              MessageChannel(receiveProgress),
+              _uploadProgressShow
+                  ? Center(
+                      child: CircularProgressIndicator(value: _uploadProgress))
+                  : Container()
             ],
           ),
         ),

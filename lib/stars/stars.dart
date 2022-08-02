@@ -1,6 +1,7 @@
 import 'package:blux/stars/stars_field.dart';
 import 'package:flutter/material.dart';
 import 'exchange_channel.dart';
+
 class StarsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,6 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
 
   late AnimationController _starAnimController;
   late Animation<double> _starAnimSequence;
-
 
   @override
   void initState() {
@@ -84,12 +84,17 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
           ),
           //Main content
           SafeArea(
-            child: NestedNavigator(
-              //Need to assign a key to our navigator, so we can pop/push it later
-              navKey: _navigationStackKey,
-              routeBuilder: _buildPageRoute,
-            ),
-          ),
+              child: ConstellationListView(
+            onScrolled: _handleListScroll,
+            onItemTap: _handleListItemTap,
+          )
+              // It's used for Hero Animation when change RoutePage, but cause cannot push new page.
+              // child: NestedNavigator(
+              //   //Need to assign a key to our navigator, so we can pop/push it later
+              //   navKey: _navigationStackKey,
+              //   routeBuilder: _buildPageRoute,
+              // ),
+              ),
         ],
       ),
     );

@@ -57,8 +57,8 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
 }
 
 class MessageChannel extends StatefulWidget {
-  MessageChannel({Key? key}) : super(key: key);
-
+  MessageChannel(this.onProgress, {Key? key}) : super(key: key);
+  final onProgress;
   @override
   State<MessageChannel> createState() => _MessageChannelState();
 }
@@ -94,9 +94,11 @@ class _MessageChannelState extends State<MessageChannel> {
                   'name': img.name,
                   'file': file,
                 });
-                laravel
-                    .post("file/upload", data: _payload)
-                    .then((value) => uploadCallBack(value));
+                laravel.post("file/upload", data: _payload,
+                    onSendProgress: (a, b) {
+                  Future.delayed(Duration(milliseconds: 20));
+                  widget.onProgress(a / b);
+                }).then((value) => uploadCallBack(value));
               }
             },
             onPressed: () {
@@ -108,16 +110,21 @@ class _MessageChannelState extends State<MessageChannel> {
                       contentPadding: EdgeInsets.all(10),
                       children: [
                         Center(
-                            child: TextField(
-                          maxLines: 3,
-                          autofocus: true,
-                          controller: _controller,
-                          onSubmitted: (a) {
-                            if (_controller.text != "") {
-                              sendMsg(value, "msg", _controller.text);
-                              Navigator.of(context).pop();
-                            }
-                          },
+                            child: Container(
+                          height: 100,
+                          child: TextField(
+                            maxLines: null,
+                            minLines: null,
+                            expands: true,
+                            autofocus: true,
+                            controller: _controller,
+                            onSubmitted: (a) {
+                              if (_controller.text != "") {
+                                sendMsg(value, "msg", _controller.text);
+                                Navigator.of(context).pop();
+                              }
+                            },
+                          ),
                         )),
                         Center(
                           child: Row(children: [
@@ -159,31 +166,45 @@ class MessageList extends StatefulWidget {
 
 class _MessageListState extends State<MessageList> {
   late WebSocketChannel channel;
+  ScrollController controller = ScrollController();
 
   @override
   void initState() {
     super.initState();
-
-    context.read<WsProvider>().channel =
-        WebSocketChannel.connect(Uri.parse(wsHost));
-    channel = context.read<WsProvider>().channel;
-    channel.sink.add('{"type":"login","uid":"flutter","msg":"flutter login"}');
-    channel.stream.listen((data) {
-      var message = jsonDecode(data);
-      context.read<WsProvider>().write(message["msg"], true, message["type"]);
-    });
+    wsConnect();
+    context.read<WsProvider>().addListener(listListener);
   }
 
   @override
   void dispose() {
     channel.sink.close();
+    context.read<WsProvider>().removeListener(listListener);
     super.dispose();
+  }
+
+  wsConnect() {
+    var _provider = context.read<WsProvider>();
+    _provider.channel = WebSocketChannel.connect(Uri.parse(wsHost));
+    channel = _provider.channel;
+    channel.sink.add('{"type":"login","uid":"flutter","msg":"flutter login"}');
+    channel.stream.listen((data) {
+      var message = jsonDecode(data);
+      _provider.write(message["msg"], true, message["type"]);
+    }, onDone: () {
+      _provider.write("Reconnect.", true, "msg");
+      wsConnect();
+    });
+  }
+
+  listListener() {
+    controller.jumpTo(controller.position.maxScrollExtent);
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WsProvider>(builder: ((context, value, child) {
       return ListView.builder(
+          controller: controller,
           physics: BouncingScrollPhysics(),
           itemCount: value.data.length,
           //Add some extra padding to the top & bottom of the list
@@ -201,18 +222,19 @@ class RemoteImage extends StatelessWidget {
   final String src;
   @override
   Widget build(BuildContext context) {
-    return Material(
-        child: Container(
+    return Scaffold(
+        body: Container(
+      color: Colors.black,
       child: Column(
         children: [
-          Image.network(src),
+          Image.network(src, height: 600, fit: BoxFit.contain),
           TextButton(
               onPressed: () async {
-                Directory appDocDir = await getApplicationDocumentsDirectory();
+                Directory appDocDir = await getTemporaryDirectory();
                 String appDocPath = appDocDir.path;
                 String _name =
                     appDocPath + "/" + src.substring(src.length - 30);
-                Dio().download(src, _name);
+                await Dio().download(src, _name);
                 await ImageGallerySaver.saveFile(_name);
                 BotToast.showText(text: "Save Success!");
               },

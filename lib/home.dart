@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
           onPageChanged: (e) => setState(() => _lock = true),
           physics:
               _lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
-          children: [StarsPage(),Landscape() ],
+          children: [Landscape(), StarsPage()],
         ));
   }
 }
@@ -45,6 +45,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     bus.on("netChange", (arg) {
       setState(() {
         _ipv = ipv;
@@ -55,10 +56,16 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
     listenNetwork();
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   if (state == AppLifecycleState.resumed) checkPc();
-  // }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) checkPc();
+  }
 
   checkPc() {
     checkOnline().then((value) {
