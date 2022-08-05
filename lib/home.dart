@@ -55,11 +55,10 @@ class FloatCloud extends AnimatedWidget {
   @override
   Widget build(BuildContext context) {
     final animation = listenable as Animation<double>;
-    return Container(
-        alignment: Alignment(-1, -1),
-        margin: EdgeInsets.only(top: 50 + _marginTween.evaluate(animation)),
-        width: 130,
-        child: Image.asset("assets/cloud.png"));
+    return Padding(
+        padding: EdgeInsets.only(top: 50 + _marginTween.evaluate(animation)),
+        child: Image.asset("assets/cloud.png",
+            width: 130, alignment: Alignment(-1, -1)));
   }
 }
 
