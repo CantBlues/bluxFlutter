@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:blux/home.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'exchange_channel.dart';
 import 'package:flutter/material.dart';
@@ -190,16 +191,20 @@ class _ConstellationListViewState extends State<ConstellationListView> {
   }
 
   Widget _buildHeaderText() {
+    var _provider = context.watch<LockProvider>();
     return Positioned(
       width: 180,
       left: 16,
       top: 16,
-      child: Text(
-        "Exchange Channel",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-          height: 1.05,
+      child: GestureDetector(
+        onDoubleTap: () => _provider.toggle(),
+        child: Text(
+          "Exchange Channel",
+          style: TextStyle(
+            color: _provider.lock ? Colors.white : Colors.red,
+            fontSize: 28,
+            height: 1.05,
+          ),
         ),
       ),
     );

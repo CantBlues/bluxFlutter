@@ -7,24 +7,59 @@ import 'dart:async';
 import 'billboard.dart';
 import 'drawer.dart';
 import 'task_layer.dart';
+import 'package:provider/provider.dart';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  bool _lock = true;
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-        onLongPress: () => setState(() => _lock = false),
-        child: PageView(
-          onPageChanged: (e) => setState(() => _lock = true),
-          physics:
-              _lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
-          children: [Landscape(), StarsPage()],
-        ));
+    return ChangeNotifierProvider<LockProvider>(
+        create: (_) => LockProvider(), child: Home());
+  }
+}
+
+class Home extends StatefulWidget {
+  Home({Key? key}) : super(key: key);
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  PageController _pageController = PageController(initialPage: 1);
+
+  @override
+  Widget build(BuildContext context) {
+    var lockProvider = context.watch<LockProvider>();
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (e) => lockProvider.toggle(),
+      physics: lockProvider.lock
+          ? NeverScrollableScrollPhysics()
+          : BouncingScrollPhysics(),
+      children: [StarsPage(), Landscape()],
+    );
+  }
+}
+
+class LockProvider with ChangeNotifier {
+  bool lock = true;
+  toggle() {
+    lock = !lock;
+    notifyListeners();
+  }
+}
+
+class FloatCloud extends AnimatedWidget {
+  FloatCloud(Animation<double> animation) : super(listenable: animation);
+  static final _marginTween = Tween<double>(begin: 0, end: 30);
+  @override
+  Widget build(BuildContext context) {
+    final animation = listenable as Animation<double>;
+    return Container(
+        alignment: Alignment(-1, -1),
+        margin: EdgeInsets.only(top: 50 + _marginTween.evaluate(animation)),
+        width: 130,
+        child: Image.asset("assets/cloud.png"));
   }
 }
 
@@ -33,7 +68,8 @@ class Landscape extends StatefulWidget {
   _LandscapeState createState() => _LandscapeState();
 }
 
-class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
+class _LandscapeState extends State<Landscape>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
@@ -41,10 +77,14 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
   double _dragPos = 0;
   double _dragStartPos = 0;
   bool _draging = false; // maybe its useless
+  late LockProvider lockProvider;
+  late Animation<double> animation;
+  late AnimationController animateController;
 
   @override
   void initState() {
     super.initState();
+    lockProvider = context.read<LockProvider>();
     WidgetsBinding.instance.addObserver(this);
     bus.on("netChange", (arg) {
       setState(() {
@@ -54,11 +94,19 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
     checkPc();
     dioLara.get("/");
     listenNetwork();
+    animateController = AnimationController(
+        duration: const Duration(seconds: 2), vsync: this)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) animateController.reverse();
+        if (status == AnimationStatus.dismissed) animateController.forward();
+      });
+    animation = CurvedAnimation(parent: animateController, curve: Curves.ease);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    animateController.dispose();
     super.dispose();
   }
 
@@ -256,7 +304,20 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver {
                     child: GestureDetector(
                         child: Container(width: 200, height: 80),
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => Navigator.of(context).pushNamed("usage")))
+                        onTap: () => _pcStatus
+                            ? Navigator.of(context).pushNamed("usage")
+                            : null)),
+                GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onDoubleTap: () {
+                      lockProvider.toggle();
+                      if (!lockProvider.lock) {
+                        animateController.forward();
+                      } else {
+                        animateController.stop();
+                      }
+                    },
+                    child: FloatCloud(animation))
               ],
             )),
         _draging
