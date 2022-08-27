@@ -21,7 +21,7 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   static const int starAnimDurationIn = 4500;
 
   //double _speed = idleSpeed;
-  GlobalKey<NavigatorState> _navigationStackKey = GlobalKey<NavigatorState>();
+  // GlobalKey<NavigatorState> _navigationStackKey = GlobalKey<NavigatorState>();
 
   ValueNotifier<double> _speedValue = ValueNotifier(idleSpeed);
 
@@ -101,17 +101,17 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   }
 
   //Create a PageRoute to handle the new page transition
-  Route _buildPageRoute(RouteSettings route) {
-    Widget page;
+  // Route _buildPageRoute(RouteSettings route) {
+  //   Widget page;
 
-    page = ConstellationListView(
-      onScrolled: _handleListScroll,
-      onItemTap: _handleListItemTap,
-    );
+  //   page = ConstellationListView(
+  //     onScrolled: _handleListScroll,
+  //     onItemTap: _handleListItemTap,
+  //   );
 
-    //Use a FadeRouteBuilder which fades the new view in, while fading the old page out. Necessary as the content pages have transparent backgrounds.
-    return FadeRouteBuilder(page: page);
-  }
+  //   //Use a FadeRouteBuilder which fades the new view in, while fading the old page out. Necessary as the content pages have transparent backgrounds.
+  //   return FadeRouteBuilder(page: page);
+  // }
 
   //When the list is scrolled, use it's velocity to control the speed of the starfield
   void _handleListScroll(delta) {
@@ -150,12 +150,12 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   // }
 }
 
-class _DetailViewRouteArguments {
-  final ConstellationData data;
-  final bool redMode;
+// class _DetailViewRouteArguments {
+//   final ConstellationData data;
+//   final bool redMode;
 
-  _DetailViewRouteArguments(this.data, this.redMode);
-}
+//   _DetailViewRouteArguments(this.data, this.redMode);
+// }
 
 class NestedNavigator extends StatefulWidget {
   final Route Function(RouteSettings route) routeBuilder;

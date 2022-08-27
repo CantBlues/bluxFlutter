@@ -10,11 +10,10 @@ class _EventFormState extends State<EventForm> {
   DateTimeRange range = DateTimeRange(
       start: DateTime.now().subtract(Duration(days: 1)), end: DateTime.now());
   TimeOfDay time = TimeOfDay(hour: 0, minute: 0);
-  String? pkgName;
+  String pkgName = "";
   List<int> eventTypes = [];
 
   submit() {
-    print("$range $time $pkgName $eventTypes");
     Navigator.of(context).push(MaterialPageRoute(
         builder: ((context) =>
             UsageEventView(range, time, pkgName, eventTypes))));
@@ -66,8 +65,9 @@ class _EventFormState extends State<EventForm> {
                             ElevatedButton(
                                 onPressed: () async {
                                   time = await showTimePicker(
-                                      context: context,
-                                      initialTime: time) ?? time;
+                                          context: context,
+                                          initialTime: time) ??
+                                      time;
                                   setState(() {});
                                 },
                                 child: Text("Select Time"))

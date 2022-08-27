@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:blux/usage/timeline.dart';
 import 'package:blux/usage/usage_event.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
@@ -57,21 +58,34 @@ class _PhoneStatState extends State<PhoneStat> {
                 itemExtent: 64,
                 onSelectedItemChanged: (v) => selectedApp = v,
                 children: apps)),
-        CupertinoActionSheetAction(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              var curApp = app.apps[selectedApp];
-              app.appId = curApp["id"];
-              var data = await app.getData();
+        Row(
+          children: [
+            Expanded(
+              child: CupertinoActionSheetAction(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel", style: TextStyle(color: Colors.red))),
+            ),
+            Expanded(
+              child: CupertinoActionSheetAction(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    var curApp = app.apps[selectedApp];
+                    app.appId = curApp["id"];
+                    var data = await app.getData();
 
-              setState(() {
-                app.name = curApp["name"] != null && curApp["name"] != ""
-                    ? curApp["name"]
-                    : curApp["package_name"];
-                app.data = data;
-              });
-            },
-            child: Text("Confirm"))
+                    setState(() {
+                      app.name = curApp["name"] != null && curApp["name"] != ""
+                          ? curApp["name"]
+                          : curApp["package_name"];
+                      app.data = data;
+                    });
+                  },
+                  child: Text("Confirm")),
+            )
+          ],
+        )
       ],
     );
   }
@@ -110,21 +124,25 @@ class _PhoneStatState extends State<PhoneStat> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-        child: Provider<AppProvider>(
-            create: (_) => app,
-            child: loading
-                ? CircularProgressIndicator()
-                : Column(
-                    children: [
-                      ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: 100),
-                          child: UsageContribution()),
-                      Expanded(child: UsageLineChart()),
-                      SizedBox(
-                          height: 60,
-                          child: Center(
-                              child: TextButton(
+    return Provider<AppProvider>.value(
+        value: app,
+        child: loading
+            ? Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: 100),
+                      child: UsageContribution()),
+                  Expanded(child: UsageLineChart()),
+                  SizedBox(
+                      height: 80,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 30, right: 30),
+                              child: ElevatedButton(
                                   onPressed: () {
                                     scrollController.dispose();
                                     scrollController =
@@ -133,12 +151,25 @@ class _PhoneStatState extends State<PhoneStat> {
                                     showCupertinoModalPopup(
                                         context: context, builder: showApps);
                                   },
-                                  child: Text(
-                                    app.name,
-                                    style: TextStyle(fontSize: 25),
-                                  ))))
-                    ],
-                  )));
+                                  child: Text(app.name)),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 30, right: 30),
+                              child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: ((context) =>
+                                              UsageTimeLine()))),
+                                  child: Text("Detail")),
+                            ),
+                          )
+                        ],
+                      ))
+                ],
+              ));
   }
 }
 

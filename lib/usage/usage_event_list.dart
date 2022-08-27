@@ -3,30 +3,24 @@ import 'package:usage_stats/usage_stats.dart';
 
 class UsageEventView extends StatefulWidget {
   const UsageEventView(this.range, this.time, this.name, this.eventTypes);
-  final String? name;
+  final String name;
   final DateTimeRange range;
   final TimeOfDay time;
   final List<int> eventTypes;
-
-  @override
-  _UsageEventViewState createState() => _UsageEventViewState();
-}
-
-class _UsageEventViewState extends State<UsageEventView> {
-  List<Map> data = [];
-  bool loading = true;
-  Future<List<Map>> queryEvents() async {
+  static Future<List<Map>> queryEvents(String name, DateTimeRange range,
+      TimeOfDay _time, List<int> eventTypes) async {
     List<Map> result = [];
-    DateTime startDate = widget.range.start;
-    DateTime endDate = widget.range.end;
-    TimeOfDay time = widget.time;
+    DateTime startDate = range.start;
+    DateTime endDate = range.end;
+    TimeOfDay time = _time;
     DateTime start = DateTime(
-        startDate.year, startDate.month, startDate.day, time.hour,time.minute);
-    DateTime end = DateTime(endDate.year, endDate.month, endDate.day,time.hour,time.minute);
+        startDate.year, startDate.month, startDate.day, time.hour, time.minute);
+    DateTime end = DateTime(
+        endDate.year, endDate.month, endDate.day, time.hour, time.minute);
     List<EventUsageInfo> data = await UsageStats.queryEvents(start, end);
     result.add({
-      "PackageName": widget.name,
-      "Event Types": widget.eventTypes,
+      "PackageName": name,
+      "Event Types": eventTypes,
       "start": start,
       "end": end
     });
@@ -38,17 +32,27 @@ class _UsageEventViewState extends State<UsageEventView> {
         "datetime":
             DateTime.fromMillisecondsSinceEpoch(int.parse(element.timeStamp!))
       };
-      if (widget.name != null && widget.name != element.packageName) continue;
-      if (widget.eventTypes.length != 0 &&
-          !widget.eventTypes.contains(int.parse(element.eventType!))) continue;
+      if (name != "" && name != element.packageName) continue;
+      if (eventTypes.length != 0 &&
+          !eventTypes.contains(int.parse(element.eventType!))) continue;
       result.add(eventInfo);
     }
     return result;
   }
 
   @override
+  _UsageEventViewState createState() => _UsageEventViewState();
+}
+
+class _UsageEventViewState extends State<UsageEventView> {
+  List<Map> data = [];
+  bool loading = true;
+
+  @override
   void initState() {
-    queryEvents().then(
+    UsageEventView.queryEvents(
+            widget.name, widget.range, widget.time, widget.eventTypes)
+        .then(
       (value) {
         setState(() {
           data = value;
