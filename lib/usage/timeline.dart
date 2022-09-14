@@ -1,6 +1,4 @@
-import 'dart:html';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_heat_map/flutter_heat_map.dart';
 import 'package:provider/provider.dart';
@@ -12,24 +10,25 @@ class UsageTimeLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Timeline")),
-        backgroundColor: Colors.grey,
-        body: Container(
-            margin: EdgeInsets.all(15),
-            child: ChangeNotifierProvider(
-              create: ((context) => HourProvider()),
-              builder: (context, _) {
-                return LayoutBuilder(builder: (context, constraints) {
-                  context.read<HourProvider>().maxWidth = constraints.maxWidth;
-                  return Column(
-                    children: [
-                      HeaderBox(),
-                      Text(context.watch<HourProvider>().offset.toString())
-                    ],
-                  );
-                });
-              },
-            )));
+      appBar: AppBar(title: Text("Timeline")),
+      backgroundColor: Colors.grey,
+      body: Container(
+          margin: EdgeInsets.all(15),
+          child: ChangeNotifierProvider(
+            create: ((context) => HourProvider()),
+            builder: (context, _) {
+              return LayoutBuilder(builder: (context, constraints) {
+                context.read<HourProvider>().maxWidth = constraints.maxWidth;
+                return NotificationListener(
+                  onNotification: (notification) => true,
+                  child: Column(
+                    children: [HeaderBox(), TimeLineBox()],
+                  ),
+                );
+              });
+            },
+          )),
+    );
   }
 }
 
@@ -100,7 +99,7 @@ class _HeatBoxState extends State<HeatBox> {
     ui.Image? image =
         await HeatMap.imageProviderToUiImage(MemoryImage(imgBytes));
     var data = HeatMapPage(image: image, events: events);
-    var bytes = await HeatMap.process(data,HeatMapConfig());
+    var bytes = await HeatMap.process(data, HeatMapConfig());
 
     return bytes;
   }
@@ -145,25 +144,24 @@ class SlideHandle extends StatefulWidget {
 
 class _SlideHandleState extends State<SlideHandle> {
   double _maxWidth = 0;
-  double _offsetX = -1;
+  late double _offsetX;
   _dragHandle(DragUpdateDetails e) {
     double _x = e.localPosition.dx;
     if (_x >= 0 && _x <= _maxWidth) {
-      double _offset = (_x - _maxWidth / 2) / (_maxWidth / 2);
-      setState(() {
-        _offsetX = _offset;
-      });
-      context.read<HourProvider>().change(_offset);
+      double offset = (_x - _maxWidth / 2) / (_maxWidth / 2);
+      context.read<HourProvider>().change(offset + 1);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     _maxWidth = context.read<HourProvider>().maxWidth;
+    _offsetX = context.watch<HourProvider>().offset;
+
     return GestureDetector(
         onHorizontalDragUpdate: _dragHandle,
         child: OverflowBox(
-            alignment: Alignment(_offsetX, 0),
+            alignment: Alignment(_offsetX - 1, 0),
             maxHeight: 210,
             child: Container(
                 height: 210,
@@ -171,5 +169,73 @@ class _SlideHandleState extends State<SlideHandle> {
                     color: Color.fromRGBO(255, 0, 0, 0.5),
                     borderRadius: BorderRadius.all(Radius.circular(10))),
                 width: 20)));
+  }
+}
+
+class TimeLineBox extends StatefulWidget {
+  TimeLineBox({Key? key}) : super(key: key);
+
+  @override
+  State<TimeLineBox> createState() => _TimeLineBoxState();
+}
+
+class _TimeLineBoxState extends State<TimeLineBox> {
+  List<Widget> _list = [];
+  ScrollController _controller = ScrollController();
+  double _offset = 0;
+  bool _passive = false;
+  double _maxH = 0;
+
+  @override
+  void initState() {
+    for (var i = 0; i < 100; i++) {
+      _list.add(Text(i.toString()));
+    }
+    // listen scroll status to controls offset of slidebox
+    _controller.addListener(() {
+      if (!_passive) {  // prevent callback from build
+        var result = (_controller.position.extentBefore /
+                _controller.position.maxScrollExtent) *
+            2;
+        if (result >= 0 && result <= 2) {
+          context.read<HourProvider>().change(result);
+          _offset = result;
+        }
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var offset = context.watch<HourProvider>().offset;
+
+    // controlled by slide box
+    if (offset != _offset) {
+      if (_maxH == 0) {
+        _maxH = _controller.position.maxScrollExtent;
+      }
+
+      _passive = true;
+      _offset = offset * _maxH / 2;
+      _controller.jumpTo(_offset);
+      _passive = false;
+    }
+
+    return Expanded(
+        child: Container(
+      margin: EdgeInsets.only(top: 20),
+      // color:Colors.white,
+      child: ListView.builder(
+        controller: _controller,
+        itemCount: 500,
+        itemBuilder: ((context, index) {
+          return Text(
+            index.toString(),
+          );
+        }),
+        prototypeItem: Container(height: 100),
+      ),
+    ));
   }
 }
