@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_heat_map/flutter_heat_map.dart';
@@ -22,7 +23,21 @@ class UsageTimeLine extends StatelessWidget {
                 return NotificationListener(
                   onNotification: (notification) => true,
                   child: Column(
-                    children: [HeaderBox(), TimeLineBox()],
+                    children: [
+                      HeaderBox(),
+                      TimeLineBox(),
+                      ElevatedButton(
+                          onPressed: () {},
+                          child: Container(
+                              alignment: Alignment(0, 0),
+                              width: double.infinity,
+                              height: 50,
+                              child: Text(
+                                "Select Date",
+                                style:
+                                    TextStyle(fontSize: 20, letterSpacing: 2),
+                              )))
+                    ],
                   ),
                 );
               });
@@ -33,6 +48,8 @@ class UsageTimeLine extends StatelessWidget {
 }
 
 class HourProvider extends ChangeNotifier {
+  double sunrise = 100;
+  double daytime = 200;
   double offset = 0;
   double _maxWidth = 0;
 
@@ -50,25 +67,72 @@ class HourProvider extends ChangeNotifier {
 class HeaderBox extends StatelessWidget {
   const HeaderBox({Key? key}) : super(key: key);
 
-  Widget _boxDayNight() {
-    return Container();
+  Widget _boxDayNight(double sunrise, double daytime) {
+    return Container(
+        height: 40,
+        padding: EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
+        child: Row(
+          children: [
+            Container(
+              child: Image.asset("assets/moon.png"),
+              width: sunrise,
+              padding: EdgeInsets.all(5),
+              margin: EdgeInsets.only(right: 15),
+              decoration: BoxDecoration(
+                  color: Color.fromRGBO(101, 97, 97, 1),
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+            ),
+            Container(
+              child: Image.asset("assets/sun.png"),
+              width: daytime,
+              padding: EdgeInsets.all(5),
+              margin: EdgeInsets.only(right: 15),
+              decoration: BoxDecoration(
+                  color: Color.fromRGBO(255, 201, 102, 1),
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+            ),
+            Expanded(
+              child: Container(
+                child: Image.asset("assets/moon.png"),
+                padding: EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                    color: Color.fromRGBO(101, 97, 97, 1),
+                    borderRadius: BorderRadius.all(Radius.circular(10))),
+              ),
+            ),
+          ],
+        ));
   }
 
-  Widget _hoursTips() {
-    return Container();
+  Widget _hoursTips(double sunrise, double daytime) {
+    return Container(
+      margin: EdgeInsets.all(10),
+      child: Row(children: [
+        Padding(padding: EdgeInsets.only(right: sunrise), child: Text("00")),
+        Padding(padding: EdgeInsets.only(right: daytime), child: Text("06")),
+        Text("17")
+      ]),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    var _sunrise = context.watch<HourProvider>().sunrise;
+    var _daytime = context.watch<HourProvider>().daytime;
+
     return Container(
-        height: 200,
+        height: 130,
         decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Stack(
           children: [
             Column(
-              children: [_boxDayNight(), HeatBox(), _hoursTips()],
+              children: [
+                _boxDayNight(_sunrise, _daytime),
+                HeatBox(),
+                _hoursTips(_sunrise, _daytime)
+              ],
             ),
             SlideHandle()
           ],
@@ -93,7 +157,7 @@ class _HeatBoxState extends State<HeatBox> {
     Canvas(pictureRecorder);
     var canvasPicture = pictureRecorder.endRecording();
 
-    var _img = await canvasPicture.toImage(_width.toInt(), 50);
+    var _img = await canvasPicture.toImage(_width.toInt(), 40);
     var a = await _img.toByteData(format: ui.ImageByteFormat.png);
     imgBytes = a!.buffer.asUint8List();
     ui.Image? image =
@@ -124,7 +188,7 @@ class _HeatBoxState extends State<HeatBox> {
       builder: (context, snap) {
         var data = snap.data;
         return Container(
-            // color: Color.fromARGB(100, 100, 0, 0),
+            color: Colors.grey,
             child: data != null
                 ? Image(
                     image: MemoryImage(data),
@@ -160,15 +224,19 @@ class _SlideHandleState extends State<SlideHandle> {
 
     return GestureDetector(
         onHorizontalDragUpdate: _dragHandle,
-        child: OverflowBox(
+        child: Padding(
+          padding: EdgeInsets.only(left: 10, right: 10),
+          child: Align(
             alignment: Alignment(_offsetX - 1, 0),
-            maxHeight: 210,
             child: Container(
-                height: 210,
-                decoration: BoxDecoration(
-                    color: Color.fromRGBO(255, 0, 0, 0.5),
-                    borderRadius: BorderRadius.all(Radius.circular(10))),
-                width: 20)));
+              height: 120,
+              width: 20,
+              decoration: BoxDecoration(
+                  color: Color.fromRGBO(255, 0, 0, 0.5),
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+            ),
+          ),
+        ));
   }
 }
 
@@ -186,14 +254,60 @@ class _TimeLineBoxState extends State<TimeLineBox> {
   bool _passive = false;
   double _maxH = 0;
 
+  Widget _timeBlock() {
+    double rand = Random().nextInt(200).toDouble() + 50;
+    Color color = Color.fromARGB(255, Random().nextInt(200),
+        Random().nextInt(200), Random().nextInt(200));
+    Widget tmp = Container(
+        margin: EdgeInsets.only(bottom: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+                width: 100,
+                height: rand,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text("05:23"),
+                    Expanded(child: Container(width: 2, color: color))
+                  ],
+                )),
+            Expanded(
+                child: Container(
+                    child: Row(
+                      children: [
+                        Container(width: 5, color: color),
+                        Container(
+                            margin: EdgeInsets.all(20),
+                            alignment: Alignment(-1, -1),
+                            child: Text("adfsdfsdfsd"))
+                      ],
+                    ),
+                    decoration: BoxDecoration(
+                        color: color.withAlpha(150),
+                        borderRadius: BorderRadius.all(Radius.circular(10))),
+                    clipBehavior: Clip.hardEdge,
+                    height: rand - 30))
+          ],
+        ));
+    return tmp;
+  }
+
   @override
   void initState() {
-    for (var i = 0; i < 100; i++) {
-      _list.add(Text(i.toString()));
-    }
+    // for (var i = 0; i < 100; i++) {
+    //   if (i < 10) {
+    //     Widget tmp = _timeBlock();
+    //     _list.add(tmp);
+    //   } else {
+    //     _list.add(Text(i.toString()));
+    //   }
+    // }
     // listen scroll status to controls offset of slidebox
     _controller.addListener(() {
-      if (!_passive) {  // prevent callback from build
+      if (!_passive) {
+        // prevent callback from build
         var result = (_controller.position.extentBefore /
                 _controller.position.maxScrollExtent) *
             2;
@@ -224,17 +338,18 @@ class _TimeLineBoxState extends State<TimeLineBox> {
 
     return Expanded(
         child: Container(
-      margin: EdgeInsets.only(top: 20),
-      // color:Colors.white,
+      margin: EdgeInsets.only(top: 20, bottom: 20),
       child: ListView.builder(
         controller: _controller,
         itemCount: 500,
         itemBuilder: ((context, index) {
-          return Text(
-            index.toString(),
-          );
+          if (index < 10) {
+            Widget tmp = _timeBlock();
+            return tmp;
+          } else {
+            return Text(index.toString());
+          }
         }),
-        prototypeItem: Container(height: 100),
       ),
     ));
   }
