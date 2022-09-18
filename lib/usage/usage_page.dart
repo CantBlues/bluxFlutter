@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:blux/usage/timeline.dart';
 import 'package:blux/usage/usage_event.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -99,6 +100,12 @@ class _PhoneStatState extends State<PhoneStat> {
       for (var element in data["data"]) {
         if (element["package_name"] == "sum") {
           sumId = element["id"];
+        } else {
+          // generate map of apps
+          app.appMap[element["id"]] =
+              element["name"] != null && element["name"] != ''
+                  ? element["name"]
+                  : element['package_name'];
         }
         if (element["display"] == 1) _apps.add(element);
       }
@@ -122,6 +129,17 @@ class _PhoneStatState extends State<PhoneStat> {
     scrollController.dispose();
   }
 
+  void _watchDate(FlTouchEvent event, LineTouchResponse? response) {
+    if (event is FlTapUpEvent) {
+      var index = response!.lineBarSpots![0].spotIndex;
+      String node = app.data[index]['node'];
+
+      setState(() {
+        app.current = node;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Provider<AppProvider>.value(
@@ -130,10 +148,10 @@ class _PhoneStatState extends State<PhoneStat> {
             ? Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: 100),
-                      child: UsageContribution()),
-                  Expanded(child: UsageLineChart()),
+                  UsageTop(),
+                  Expanded(
+                      child:
+                          Provider.value(value: this, child: UsageLineChart())),
                   SizedBox(
                       height: 80,
                       child: Row(
@@ -178,7 +196,12 @@ class AppProvider {
   String name = "sum";
   int appId = 0;
   List apps = [];
+  Map<int, String> appMap = {};
   List data = [];
+  String current = DateTime.now()
+      .subtract(Duration(days: 1))
+      .toIso8601String()
+      .substring(0, 10);
   Future<List> getData() async {
     var response = await dioLara.get("/api/phone/usages/$appId");
     var data = jsonDecode(response.data);
@@ -211,6 +234,135 @@ class _UsageContributionState extends State<UsageContribution> {
         ));
       },
     ));
+  }
+}
+
+class UsageTop extends StatefulWidget {
+  UsageTop({Key? key}) : super(key: key);
+
+  @override
+  State<UsageTop> createState() => _UsageTopState();
+}
+
+class _UsageTopState extends State<UsageTop> {
+  String _date = '';
+  List _data = [];
+  int _highlight = 0;
+
+  _queryTop() {
+    laravel.get("/phone/usages/top/$_date").then(
+      (value) {
+        var result = value.data["data"];
+        var apps = context.read<AppProvider>().appMap;
+        for (var element in result) {
+          element["name"] = apps[element['appid']];
+        }
+        setState(() => _data = result);
+      },
+    );
+  }
+
+  PieChartData _pieData() {
+    List<PieChartSectionData> sections = [];
+    // high light the first element that largest usages.
+    if(_data.length > 0) _highlight = _data[0]['id'];
+    for (var element in _data) {
+      var color = Color.fromARGB(255, Random().nextInt(255),
+          Random().nextInt(255), Random().nextInt(255));
+      PieChartSectionData tmp = PieChartSectionData(
+          value: (element["usage"] / 60).ceil(), color: color);
+      element['color'] = color;
+      sections.add(tmp);
+    }
+    return PieChartData(sections: sections);
+  }
+
+  Widget _top10() {
+    List<Widget> left = [];
+    List<Widget> right = [];
+    int i = 0;
+    for (var element in _data) {
+      String name = element['name'] != null && element['name'] != ''
+          ? element['name']
+          : element['package_name'];
+      bool highlight = _highlight == element['id'] ? true : false;
+      if (i < 5) {
+        left.add(AppLabel(name, element["color"], highlight));
+      } else {
+        right.add(AppLabel(name, element["color"], highlight));
+      }
+      i++;
+    }
+    Widget row = Row(
+      children: [
+        Container(child: Column(children: left)),
+        Container(child: Column(children: right))
+      ],
+    );
+
+    return row;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final date = context.watch<AppProvider>().current;
+    if (_date != date) {
+      _date = date;
+      _queryTop();
+    }
+    return Container(
+        height: 220,
+        child: Consumer<AppProvider>(
+          builder: ((context, value, child) {
+            return Column(
+              children: [
+                Text(value.current.toString()),
+                Row(
+                  children: [
+                    Container(
+                        width: 160,
+                        height: 160,
+                        margin: EdgeInsets.all(20),
+                        child:
+                            _data != [] ? PieChart(_pieData()) : Container()),
+                    Container(
+                      child: _top10(),
+                    )
+                  ],
+                )
+              ],
+            );
+          }),
+        ));
+  }
+}
+
+class AppLabel extends StatelessWidget {
+  const AppLabel(this.name, this.color, this.highlight, {Key? key})
+      : super(key: key);
+  final String name;
+  final Color color;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        height: 30,
+        width: 130,
+        margin: EdgeInsets.only(bottom: 2, right: 2),
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.all(Radius.circular(10))),
+        child: Row(children: [
+          Container(width: highlight ? 20 : 10, color: color),
+          Expanded(
+              child: Text(
+            name,
+            style: TextStyle(color: Colors.white),
+            overflow: TextOverflow.ellipsis,
+          ))
+        ]));
   }
 }
 
@@ -259,21 +411,24 @@ class _UsageLineChartState extends State<UsageLineChart> {
                         ))
                   ],
                   lineTouchData: LineTouchData(
+                      touchCallback: context.read<_PhoneStatState>()._watchDate,
                       touchTooltipData: LineTouchTooltipData(
-                    fitInsideHorizontally: true,
-                    getTooltipItems: (touchedSpots) {
-                      List<LineTooltipItem> spots = [];
-                      for (var element in touchedSpots) {
-                        String hours = (element.y / 3600).toStringAsFixed(2);
-                        String minutes = (element.y / 60).toStringAsFixed(2);
-                        LineTooltipItem spot = LineTooltipItem(
-                            "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
-                            TextStyle(color: Colors.white));
-                        spots.add(spot);
-                      }
-                      return spots;
-                    },
-                  )),
+                        fitInsideHorizontally: true,
+                        getTooltipItems: (touchedSpots) {
+                          List<LineTooltipItem> spots = [];
+                          for (var element in touchedSpots) {
+                            String hours =
+                                (element.y / 3600).toStringAsFixed(2);
+                            String minutes =
+                                (element.y / 60).toStringAsFixed(2);
+                            LineTooltipItem spot = LineTooltipItem(
+                                "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
+                                TextStyle(color: Colors.white));
+                            spots.add(spot);
+                          }
+                          return spots;
+                        },
+                      )),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
                       rightTitles: AxisTitles(),
