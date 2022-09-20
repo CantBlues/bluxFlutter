@@ -10,6 +10,7 @@ bool ipv = false;
 String host = "http://192.168.0.174:9999/";
 String wsHost = "ws://192.168.0.174:9999/ws";
 String mediaHost = "http://192.168.0.174:9998/";
+const String Domain = "http://192.168.0.174:888/";
 BaseOptions options = BaseOptions(
     baseUrl: "http://192.168.0.174:9999/",
     responseType: ResponseType.plain,
@@ -19,7 +20,7 @@ BaseOptions options = BaseOptions(
 Dio dio = Dio(options);
 
 BaseOptions optionsLara = BaseOptions(
-    baseUrl: "http://blux.lanbin.com/",
+    baseUrl: Domain,
     responseType: ResponseType.plain,
     receiveTimeout: 30000,
     contentType: Headers.jsonContentType);
@@ -35,7 +36,7 @@ class LaravelDio {
   late final Dio dio;
   LaravelDio() {
     BaseOptions optionsLara = BaseOptions(
-        baseUrl: "http://blux.lanbin.com/api/",
+        baseUrl: Domain + "api/",
         responseType: ResponseType.json,
         receiveTimeout: 30000,
         contentType: Headers.jsonContentType);
