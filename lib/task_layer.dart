@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'usage/usage_page.dart';
+import 'usage/usage_utils.dart';
 import 'utils/network.dart';
 
 class TaskWidget extends StatefulWidget {
@@ -169,7 +169,7 @@ class _TaskLayerState extends State<TaskLayer> {
     dioLara.get("/api/phone/usages/recently/node").then((value) {
       var data = jsonDecode(value.data);
       if (data["data"].length == 9) return;
-      AppUsageView.recordPhoneUsage(multi: true);
+      recordPhoneUsage(multi: true);
     });
   }
 

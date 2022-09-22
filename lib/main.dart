@@ -10,6 +10,7 @@ import 'usage/edit_app.dart';
 import 'taskTypeSetting.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:universal_platform/universal_platform.dart';
+import 'usage/usage_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,7 @@ void main() async {
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       FlutterDisplayMode
           .setHighRefreshRate(); // OnePlus 8 refresh rate lock at 60fps, that show obviously not smooth.
-      AppUsageView.recordPhoneUsage();
+      recordPhoneUsage();
     }
   } catch (e) {
     print(e);

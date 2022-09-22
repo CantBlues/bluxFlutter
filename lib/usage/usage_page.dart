@@ -5,8 +5,6 @@ import 'package:blux/usage/usage_event.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:universal_platform/universal_platform.dart';
-import 'package:usage_stats/usage_stats.dart';
 import '../utils/network.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
@@ -265,12 +263,12 @@ class _UsageTopState extends State<UsageTop> {
   PieChartData _pieData() {
     List<PieChartSectionData> sections = [];
     // high light the first element that largest usages.
-    if(_data.length > 0) _highlight = _data[0]['id'];
+    if (_data.length > 0) _highlight = _data[0]['id'];
     for (var element in _data) {
       var color = Color.fromARGB(255, Random().nextInt(255),
           Random().nextInt(255), Random().nextInt(255));
-      PieChartSectionData tmp = PieChartSectionData(
-          value: (element["usage"] / 60).ceil(), color: color);
+      double value = (element["usage"] / 60).roundToDouble();
+      PieChartSectionData tmp = PieChartSectionData(value: value, color: color);
       element['color'] = color;
       sections.add(tmp);
     }
@@ -278,29 +276,18 @@ class _UsageTopState extends State<UsageTop> {
   }
 
   Widget _top10() {
-    List<Widget> left = [];
-    List<Widget> right = [];
-    int i = 0;
+    List<Widget> list = [];
+
     for (var element in _data) {
       String name = element['name'] != null && element['name'] != ''
           ? element['name']
           : element['package_name'];
       bool highlight = _highlight == element['id'] ? true : false;
-      if (i < 5) {
-        left.add(AppLabel(name, element["color"], highlight));
-      } else {
-        right.add(AppLabel(name, element["color"], highlight));
-      }
-      i++;
+      list.add(AppLabel(name, element["color"], highlight));
     }
-    Widget row = Row(
-      children: [
-        Container(child: Column(children: left)),
-        Container(child: Column(children: right))
-      ],
+    return ListView(
+      children: list,
     );
-
-    return row;
   }
 
   @override
@@ -326,6 +313,8 @@ class _UsageTopState extends State<UsageTop> {
                         child:
                             _data != [] ? PieChart(_pieData()) : Container()),
                     Container(
+                      height: 160,
+                      width: 160,
                       child: _top10(),
                     )
                   ],
@@ -458,179 +447,5 @@ class _UsageLineChartState extends State<UsageLineChart> {
             );
           },
         ));
-  }
-}
-
-class EventHandle {
-  EventHandle(this.name, this.lastEvent);
-  final String name;
-  int sum = 0;
-  EventUsageInfo lastEvent;
-
-  show(EventUsageInfo event) {
-    lastEvent = event;
-  }
-
-  hide(EventUsageInfo event) {
-    // when app crossing the day. but The end of day isn't handle.
-    //   will change the way to handle event that crossing day.
-    //    maybe using continuous events, manual divide days.
-
-    // if (lastEvent.eventType == null) {
-    //   int stamp = int.parse(event.timeStamp!);
-    //   var _today = DateTime.fromMillisecondsSinceEpoch(stamp);
-    //   DateTime _beigin = DateTime(_today.year, _today.month, _today.day);
-    //   int timeDiff = stamp - _beigin.millisecondsSinceEpoch;
-    //   sum += timeDiff;
-    // }
-    // except first event of today is stop. Guarantee pre-event is a starting event.
-    if (lastEvent.eventType != null &&
-        (lastEvent.eventType == "1" ||
-            lastEvent.eventType == "15" ||
-            lastEvent.eventType == "19")) {
-      int usage = int.parse(event.timeStamp!) - int.parse(lastEvent.timeStamp!);
-      sum += usage;
-    }
-    lastEvent = event;
-  }
-}
-
-class AppUsageView extends StatefulWidget {
-  @override
-  _APPUsageViewState createState() => _APPUsageViewState();
-
-  static handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
-    Map<String, EventHandle> apps = {};
-
-    origin.forEach((element) {
-      // traverse events   event types : https://developer.android.com/reference/android/app/usage/UsageEvents.Event
-      int eventType = int.parse(element.eventType!);
-      String packageName = element.packageName!;
-
-      // use EventHandle class to deal timestamps about single app.
-      if (!apps.containsKey(packageName))
-        apps[packageName] = EventHandle(packageName, EventUsageInfo());
-      EventHandle app = apps[packageName]!;
-
-      switch (eventType) {
-        case 1: //ACTIVITY_RESUMED
-          app.show(element);
-          break;
-        case 2: //ACTIVITY_PAUSED
-          app.hide(element);
-          break;
-        case 5: //CONFIGURATION_CHANGE
-          break;
-        case 7: //USER_INTERACTION
-          break;
-        case 10: //NOTIFICATION_SEEN
-          break;
-        case 11: //STANDBY_BUCKET_CHANGED
-          break;
-        case 12: //NOTIFICATION_INTERRUPTION
-          break;
-        case 15: //SCREEN_INTERACTIVE
-          app.show(element);
-          break;
-        case 16: //SCREEN_NON_INTERACTIVE
-          app.hide(element);
-          break;
-        case 17: //KEYGUARD_SHOWN
-          break;
-        case 18: //KEYGUARD_HIDDEN
-          break;
-        case 19: //FOREGROUND_SERVICE_START
-          // app.show(element);
-          break;
-        case 20: //FOREGROUND_SERVICE_STOP
-          // app.hide(element);
-          break;
-        case 23: //ACTIVITY_STOPPED
-          // app.hide(element);
-          break;
-      }
-    });
-
-    apps.forEach((key, value) {
-      Map tmp = {"name": key, "usage": value.sum / 1000};
-      if (value.sum != 0) today["data"].add(tmp);
-    });
-  }
-
-  static Future<List<Map>> getUsage(bool multi) async {
-    List<Map> periodUsage = [];
-    DateTime now = new DateTime.now();
-    DateTime endDate = DateTime(now.year, now.month, now.day);
-    DateTime startDate = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: multi ? 9 : 1));
-
-    DateTime cur = startDate;
-    while (cur.isBefore(endDate)) {
-      cur = cur.add(Duration(days: 1));
-      int node =
-          int.parse(startDate.toString().substring(0, 10).split('-').join());
-      Map today = {"node": node, "data": []};
-
-      List<EventUsageInfo> origin =
-          await UsageStats.queryEvents(startDate, cur);
-      handleStatsPerDay(origin, today);
-
-      periodUsage.add(today);
-      startDate = startDate.add(Duration(days: 1));
-    }
-
-    return periodUsage;
-  }
-
-  static recordPhoneUsage({bool multi = false}) async {
-    if (UniversalPlatform.isAndroid) {
-      if (await UsageStats.checkUsagePermission() ?? false) {
-        var data = await AppUsageView.getUsage(multi);
-        dioLara
-            .post("/api/phone/usages", data: data)
-            .then((value) => print(value.data));
-      }
-      UsageStats.grantUsagePermission();
-    }
-  }
-}
-
-class _APPUsageViewState extends State<AppUsageView> {
-  List _infos = ["waiting"];
-
-  showUsage() async {
-    if (!(await UsageStats.checkUsagePermission() ?? false))
-      UsageStats.grantUsagePermission();
-    DateTime now = DateTime.now();
-    var data = await AppUsageView.getUsage(true);
-    var diff = DateTime.now().difference(now);
-    print(diff);
-    List output = [];
-    for (var element in data) {
-      output.add(element["node"]);
-      for (var app in element["data"]) {
-        output.add(app);
-      }
-    }
-    setState(() {
-      _infos = output;
-    });
-  }
-
-  @override
-  void initState() {
-    showUsage();
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      child: ListView.builder(
-          itemCount: _infos.length,
-          itemBuilder: ((context, index) {
-            return Text(_infos[index].toString());
-          })),
-    );
   }
 }
