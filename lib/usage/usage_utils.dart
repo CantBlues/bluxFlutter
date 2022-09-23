@@ -31,7 +31,6 @@ class EventHandle {
 
   show(EventUsageInfo event) {
     lastEvent = event;
-    start = int.parse(event.timeStamp!) ~/ 1000;
   }
 
   hide(EventUsageInfo event) {
@@ -75,7 +74,7 @@ List handleEvents(List<EventUsageInfo> origin) {
         break;
       case 2: //ACTIVITY_PAUSED
         var map = app.end(element);
-        if(map['duration'] > 1000) list.add(map);
+        if (map['duration'] > 1000) list.add(map);
         break;
     }
   });
@@ -135,7 +134,7 @@ handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
   });
 
   apps.forEach((key, value) {
-    Map tmp = {"name": key, "usage": value.sum / 1000, "stamp": value.start};
+    Map tmp = {"name": key, "usage": value.sum / 1000};
     if (value.sum != 0) today["data"].add(tmp);
   });
 }

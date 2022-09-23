@@ -151,7 +151,7 @@ class HeaderBox extends StatelessWidget {
     var _daytime = context.watch<HourProvider>().daytime;
 
     return Container(
-        height: 130,
+        height: 120,
         decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.all(Radius.circular(10))),
@@ -351,7 +351,7 @@ class _TimeLineBoxState extends State<TimeLineBox> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-                width: 100,
+                width: 70,
                 height: height,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,

@@ -255,24 +255,56 @@ class _UsageTopState extends State<UsageTop> {
         for (var element in result) {
           element["name"] = apps[element['appid']];
         }
-        setState(() => _data = result);
+
+        setState(() {
+          _highlight = result[0]
+              ['id']; // high light the first element that largest usages.
+          _data = result;
+        });
       },
     );
   }
 
   PieChartData _pieData() {
     List<PieChartSectionData> sections = [];
-    // high light the first element that largest usages.
-    if (_data.length > 0) _highlight = _data[0]['id'];
+
     for (var element in _data) {
-      var color = Color.fromARGB(255, Random().nextInt(255),
-          Random().nextInt(255), Random().nextInt(255));
+      var color;
+      element as Map;
+      if (!element.containsKey("color")) {
+        color = Color.fromARGB(255, Random().nextInt(255),
+            Random().nextInt(255), Random().nextInt(255));
+        element['color'] = color;
+      } else
+        color = element['color'];
+
       double value = (element["usage"] / 60).roundToDouble();
-      PieChartSectionData tmp = PieChartSectionData(value: value, color: color);
-      element['color'] = color;
+      PieChartSectionData tmp = PieChartSectionData(
+          value: value,
+          color: color,
+          title: value.round().toString(),
+          titleStyle: TextStyle(shadows: [
+            Shadow(color: Colors.white, blurRadius: 1),
+            Shadow(color: Colors.white, blurRadius: 1),
+            Shadow(color: Colors.white, blurRadius: 1),
+          ]),
+          radius: _highlight == element['id'] ? 80 : 66);
+
       sections.add(tmp);
     }
-    return PieChartData(sections: sections);
+    return PieChartData(
+        sections: sections,
+        sectionsSpace: 6,
+        centerSpaceRadius: 15,
+        pieTouchData: PieTouchData(
+          touchCallback: (p0, p1) {
+            if (p0 is FlTapUpEvent && p1 != null) {
+              final index = p1.touchedSection!.touchedSectionIndex;
+              if (index >= 0 && _data[index] != null)
+                setState(() => _highlight = _data[index]['id']);
+            }
+          },
+        ));
   }
 
   Widget _top10() {
