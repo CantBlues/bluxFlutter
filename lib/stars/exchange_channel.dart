@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 class ConstellationData {
   final String title;
@@ -43,6 +44,9 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: ((context) =>
                     RemoteImage("http://" + widget.data.title))));
+          else {
+            Clipboard.setData(ClipboardData(text:widget.data.title));
+          }
         },
         child: Container(
             padding: EdgeInsets.only(bottom: 32),
