@@ -1,3 +1,4 @@
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'home.dart';
 import 'video.dart';
 import 'videoList.dart';
 import 'audios.dart';
+import 'testpage.dart';
 import 'usage/usage_page.dart';
 import 'usage/edit_app.dart';
 import 'taskTypeSetting.dart';
@@ -47,7 +49,8 @@ class MyApp extends StatelessWidget {
           "usage": (context) => UsagePage(),
           "usage_edit_apps": (context) => UsageAppsEditPage(),
           "audios": (context) => AudiosPage(),
-          "taskSetting": (context) => TaskTypeSetting()
+          "taskSetting": (context) => TaskTypeSetting(),
+          "test":(context)=> TestPage()
         });
   }
 }
