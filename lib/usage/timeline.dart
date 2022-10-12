@@ -1,10 +1,10 @@
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:blux/utils/heapmap.dart';
 import 'usage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_heat_map/flutter_heat_map.dart';
 import 'package:provider/provider.dart';
-import 'dart:ui' as ui;
 import 'package:usage_stats/usage_stats.dart';
 
 const BgColor = Color.fromARGB(255, 223, 223, 223);
@@ -140,7 +140,7 @@ class HeaderBox extends StatelessWidget {
         Padding(
             padding: EdgeInsets.only(right: sunrise - 10), child: Text("00")),
         Padding(padding: EdgeInsets.only(right: daytime), child: Text("06")),
-        Text("17")
+        Text("18")
       ]),
     );
   }
@@ -182,66 +182,33 @@ class _HeatBoxState extends State<HeatBox> {
   DateTime _date = DateTime.now().add(Duration(seconds: 1));
   bool _loading = false;
 
-  Future<Uint8List?> _generateImg(
-      double _width, List<HeatMapEvent> events) async {
-    if (events.length == 0) return null;
-    Uint8List imgBytes;
-    final pictureRecorder = ui.PictureRecorder();
-    Canvas(pictureRecorder);
-    var canvasPicture = pictureRecorder.endRecording();
-
-    var _img = await canvasPicture.toImage(_width.toInt() * 50, 130);
-    var a = await _img.toByteData(format: ui.ImageByteFormat.png);
-    imgBytes = a!.buffer.asUint8List();
-    ui.Image? image =
-        await HeatMap.imageProviderToUiImage(MemoryImage(imgBytes));
-    var data = HeatMapPage(image: image, events: events);
-
-    final s = DateTime.now();
-    var bytes = await HeatMap.process(
-        data, HeatMapConfig(uiElementSize: 13, heatMapTransparency: 0.7));
-
-    final e = DateTime.now();
-    final diff = e.difference(s);
-    return bytes;
-  }
-
   _generateHeat(List<EventUsageInfo> events, DateTime date) {
     _date = date;
     var _width = context.read<HourProvider>().maxWidth;
-    _width = _width - 20;
-    double xPerMinute = _width / (60 * 24);
-    List<HeatMapEvent> eventList = [];
+    double xPerMinute = (_width - 20) / (60 * 24);
+    Map<Offset, int> _events = {};
     bool recording = false;
     const int minute = 60;
     int vernier =
         DateTime(date.year, date.month, date.day).millisecondsSinceEpoch ~/
             1000;
-    double vernierX = 0;
+    double vernierX = 10; //offset align top moon label
 
     for (var event in events) {
       int eventStamp = int.parse(event.timeStamp!) ~/ 1000;
+
       while (recording && vernier < eventStamp) {
-        final HeatMapEvent heatpoint =
-            HeatMapEvent(location: Offset(vernierX * 50, 65));
-        vernierX = vernierX + xPerMinute;
-        vernier += minute;
-        eventList.add(heatpoint);
-      }
-      int type = int.parse(event.eventType!);
-      if (type == 15) {
         while (vernier < eventStamp) {
           vernier += minute;
           vernierX += xPerMinute;
         }
-
-        recording = true;
+        _events[Offset(vernierX * 10, 200)] = 6;
       }
-      if (type == 16) {
-        recording = false;
-      }
+      int type = int.parse(event.eventType!);
+      if (type == 1) recording = true;
+      if (type == 2) recording = false;
     }
-    _bytes = _generateImg(_width, eventList);
+    _bytes = GenerateHeatMap(_width * 10, 400, _events, 200);
     setState(() {});
   }
 
@@ -262,7 +229,6 @@ class _HeatBoxState extends State<HeatBox> {
     }
     return Container(
         height: 40,
-        padding: EdgeInsets.only(left: 10, right: 10),
         color: BgColor,
         child: FutureBuilder<Uint8List?>(
           future: _bytes,
@@ -270,10 +236,9 @@ class _HeatBoxState extends State<HeatBox> {
             var data = snap.data;
             return data != null
                 ? Image(
-                    fit: BoxFit.fill,
                     image: MemoryImage(data),
                   )
-                : Container();
+                : Center(child: CircularProgressIndicator());
           },
         ));
   }
@@ -450,7 +415,7 @@ class _TimeLineBoxState extends State<TimeLineBox> {
             baseHeight + (app['duration'] ~/ 60000) * heightPerBlock;
         height = height > 300 ? 300 : height;
 
-        var time = DateTime.fromMillisecondsSinceEpoch(app['start'].ceil());
+        var time = DateTime.fromMillisecondsSinceEpoch(app['start']);
         if (!timeScale.containsKey(time.hour)) timeScale[time.hour] = sumHeight;
 
         final tmp = _timeBlock(app, height);

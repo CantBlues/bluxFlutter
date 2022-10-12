@@ -22,9 +22,11 @@ class EventHandle {
       sum += usage;
     }
     tmp['name'] = event.packageName!;
-    tmp['duration'] =
-        int.parse(event.timeStamp!) - int.parse(lastEvent.timeStamp!);
-    tmp['start'] = double.parse(lastEvent.timeStamp!);
+    var lastStamp = (lastEvent.timeStamp == null
+        ? int.parse(event.timeStamp!)
+        : int.parse(lastEvent.timeStamp!));
+    tmp['duration'] = int.parse(event.timeStamp!) - lastStamp;
+    tmp['start'] = lastStamp;
     lastEvent = event;
     return tmp;
   }
