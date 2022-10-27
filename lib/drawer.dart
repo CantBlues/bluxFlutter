@@ -80,7 +80,13 @@ class DrawerView extends StatelessWidget {
                     child: Text("Test Module",
                         style: TextStyle(fontSize: 15, color: Colors.white70)),
                     onPressed: () => Navigator.of(context).pushNamed("test")),
-                color: Colors.deepPurple)
+                color: Colors.deepPurple),
+            Cave(
+                TextButton(
+                    child: Text("Nodes",
+                        style: TextStyle(fontSize: 15, color: Colors.white70)),
+                    onPressed: () => Navigator.of(context).pushNamed("v2ray")),
+                color: Colors.blue)
           ],
         )),
         Container(height: 50)
