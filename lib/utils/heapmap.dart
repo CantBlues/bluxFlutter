@@ -23,7 +23,7 @@ class _HeatState extends State<Heat> {
     return Scaffold(
       body: Container(
         child: FutureBuilder<Uint8List>(
-            future: GenerateHeatMap(360, 1000, events, 30),
+            future: generateHeatMap(360, 1000, events, 30),
             builder: (context, snapshot) {
               if (snapshot.data == null ||
                   snapshot.connectionState == ConnectionState.waiting) {
@@ -38,7 +38,7 @@ class _HeatState extends State<Heat> {
   }
 }
 
-Future<Uint8List> GenerateHeatMap(
+Future<Uint8List> generateHeatMap(
     double _width, double _height, Map<Offset, int> events,
     [double radius = 80]) async {
   // init empty canvas

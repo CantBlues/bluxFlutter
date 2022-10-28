@@ -119,13 +119,19 @@ class _BillboardState extends State<Billboard> {
 }
 
 class BlurCard extends StatelessWidget {
-  const BlurCard(this.content);
+  const BlurCard(this.content,
+      {this.left = 0, this.right = 0, this.top = 0, this.bottom = 25});
   final Widget content;
+  final double left;
+  final double right;
+  final double top;
+  final double bottom;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: EdgeInsets.only(bottom: 25),
+        padding:
+            EdgeInsets.only(left: left, right: right, top: top, bottom: bottom),
         child: ClipRRect(
             borderRadius: BorderRadius.all(Radius.circular(15)),
             child: Stack(children: [

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:blux/utils/network.dart';
 import 'package:blux/v2ray/nodeCard.dart';
@@ -15,7 +16,7 @@ class V2rayPage extends StatefulWidget {
 
 class V2rayPageState extends State<V2rayPage> {
   List _nodes = [];
-  dynamic _current;
+  dynamic current;
   late Future<List> _fetchData;
   bool _fwStatus = false;
   int selected = 0;
@@ -35,7 +36,7 @@ class V2rayPageState extends State<V2rayPage> {
     double headerHeight = MediaQuery.of(context).size.height * .25;
 
     return Scaffold(
-      backgroundColor: Color(0xff22222b),
+      backgroundColor: Colors.black,
       body: Provider.value(
         value: selected,
         child: Provider.value(
@@ -49,14 +50,14 @@ class V2rayPageState extends State<V2rayPage> {
                     return Center(child: CircularProgressIndicator());
                   return Stack(
                     children: <Widget>[
+                      _buildTopBg(headerHeight),
                       ListView.builder(
                         padding:
-                            EdgeInsets.only(bottom: 40, top: headerHeight + 10),
+                            EdgeInsets.only(bottom: 40, top: headerHeight + 60),
                         itemCount: snap.data!.length,
                         scrollDirection: Axis.vertical,
                         itemBuilder: (context, index) => _buildListItem(index),
                       ),
-                      // _buildTopBg(headerHeight),
                       _buildTopContent(headerHeight),
                     ],
                   );
@@ -71,7 +72,7 @@ class V2rayPageState extends State<V2rayPage> {
     var response = await Dio().get(Openwrt + "/fetch");
     var data = jsonDecode(response.data);
     _nodes = data["nodes"];
-    _current = data["current"];
+    current = data["current"];
     _fwStatus = data["status"];
     setState(() {});
     return _nodes;
@@ -80,7 +81,7 @@ class V2rayPageState extends State<V2rayPage> {
   Widget _buildListItem(int index) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      child: NodeCard(NodeData(title: _nodes[index]["ps"], index: index)),
+      child: NodeCard(NodeData(data: _nodes[index], index: index)),
     );
   }
 
@@ -91,20 +92,17 @@ class V2rayPageState extends State<V2rayPage> {
   }
 
   Widget _buildTopBg(double height) {
-    return RoundedShadow(
-      topLeftRadius: 0,
-      topRightRadius: 0,
-      child: Container(
+    return Container(
         alignment: Alignment.topCenter,
-        height: height,
-        color: Color.fromARGB(255, 19, 37, 94),
-      ),
-    );
+        child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+            child: Image(
+                image: AssetImage("assets/runway.jpg"), fit: BoxFit.fitWidth)));
   }
 
   Widget _buildTopContent(double height) {
     return GestureDetector(
-      onLongPress: () {
+      onDoubleTap: () {
         showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -130,24 +128,76 @@ class V2rayPageState extends State<V2rayPage> {
             });
       },
       child: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
+        child: AnimatedAlign(
+          curve: Curves.elasticOut,
+          duration: Duration(milliseconds: 800),
+          alignment: Alignment(0, _fwStatus ? -1 : -1.5),
           child: Container(
-            padding: EdgeInsets.all(height * .08),
+            color: Colors.black.withAlpha(128),
+            margin: EdgeInsets.all(15),
             constraints: BoxConstraints(maxHeight: height),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Text(
-                  _current != null ? _current["ps"] : "null",
-                  style: TextStyle(fontSize: 28, color: Colors.white),
+                Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Text(
+                    current != null ? current["ps"] : "null",
+                    style: TextStyle(fontSize: 20, color: Colors.white),
+                  ),
                 ),
-                Text(
-                  _fwStatus ? "firewall enable" : "firewall disable",
-                  style: TextStyle(
-                      fontSize: 28,
-                      color: _fwStatus ? Colors.green : Colors.red),
-                ),
+                Divider(color: Colors.grey),
+                !_fwStatus
+                    ? Container()
+                    : Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                                text: TextSpan(children: [
+                              TextSpan(
+                                  text: "addr: ",
+                                  style: TextStyle(
+                                      color: Colors.yellow, fontSize: 20)),
+                              TextSpan(
+                                  text: current["add"],
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 20))
+                            ])),
+                            RichText(
+                                text: TextSpan(children: [
+                              TextSpan(
+                                  text: "port: ",
+                                  style: TextStyle(
+                                      color: Colors.yellow, fontSize: 20)),
+                              TextSpan(
+                                  text: current["port"],
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 20))
+                            ])),
+                            RichText(
+                                text: TextSpan(children: [
+                              TextSpan(
+                                  text: "protocol: ",
+                                  style: TextStyle(
+                                      color: Colors.yellow, fontSize: 20)),
+                              TextSpan(
+                                  text: current["protocol"],
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 20))
+                            ]))
+                          ],
+                        )),
+                _fwStatus
+                    ? Container()
+                    : Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          "firewall disable",
+                          style: TextStyle(fontSize: 28, color: Colors.red),
+                        ),
+                      ),
               ],
             ),
           ),

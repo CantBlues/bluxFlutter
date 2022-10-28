@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:blux/utils/heapmap.dart';
 import 'usage_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_heat_map/flutter_heat_map.dart';
 import 'package:provider/provider.dart';
 import 'package:usage_stats/usage_stats.dart';
 
@@ -208,7 +207,7 @@ class _HeatBoxState extends State<HeatBox> {
       if (type == 1) recording = true;
       if (type == 2) recording = false;
     }
-    _bytes = GenerateHeatMap(_width * 10, 400, _events, 200);
+    _bytes = generateHeatMap(_width * 10, 400, _events, 200);
     setState(() {});
   }
 

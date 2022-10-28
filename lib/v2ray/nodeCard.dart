@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:blux/billboard.dart';
 import 'package:blux/utils/network.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +6,9 @@ import 'package:provider/provider.dart';
 import './page.dart';
 
 class NodeData {
-  final String title;
+  final data;
   final int index;
-  NodeData({this.title = "", this.index = 0});
+  NodeData({this.data, this.index = 0});
 }
 
 class NodeCard extends StatefulWidget {
@@ -22,7 +21,7 @@ class NodeCard extends StatefulWidget {
 
 class _NodeCardState extends State<NodeCard> {
   final double nominalHeightClosed = 80;
-  final double nominalHeightOpen = 300;
+  final double nominalHeightOpen = 180;
   bool _wasOpen = false;
 
   @override
@@ -31,7 +30,9 @@ class _NodeCardState extends State<NodeCard> {
     final selected = context.watch<V2rayPageState>().selected;
     if (selected != widget.nodeData.index) _wasOpen = false;
     final wasOpen = _wasOpen && selected == widget.nodeData.index;
-
+    final currentNode = context.watch<V2rayPageState>().current;
+    bool connected = widget.nodeData.data['port'] == currentNode["port"] &&
+        widget.nodeData.data['add'] == currentNode["add"];
     double cardHeight = wasOpen ? nominalHeightOpen : nominalHeightClosed;
 
     return GestureDetector(
@@ -43,66 +44,114 @@ class _NodeCardState extends State<NodeCard> {
           height: cardHeight,
           //Wrap content in a rounded shadow widget, so it will be rounded on the corners but also have a drop shadow
 
-          child: RoundedShadow.fromRadius(
-            12,
-            child: Container(
-              color: Color(0xff303238),
-              child: Stack(fit: StackFit.expand, children: <Widget>[
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-                  //Wrap content in a ScrollView, so there's no errors on over scroll.
-                  child: SingleChildScrollView(
-                    //We don't actually want the scrollview to scroll, disable it.
-                    physics: NeverScrollableScrollPhysics(),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 24),
-                        //Top Header Row
-                        _buildTopContent(),
-                        //Spacer
-                        SizedBox(height: 12),
-                        //Bottom Content, use AnimatedOpacity to fade
-                        AnimatedOpacity(
-                          duration:
-                              Duration(milliseconds: wasOpen ? 1000 : 500),
-                          curve: Curves.easeOut,
-                          opacity: wasOpen ? 1 : 0,
-                          //Bottom Content
-                          child: _buildMainContent(),
-                        ),
-                      ],
+          child: BlurCard(
+              Container(
+                color: connected
+                    ? Colors.red.withAlpha(196)
+                    : Colors.white.withAlpha(32),
+                child: Stack(fit: StackFit.expand, children: <Widget>[
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                    //Wrap content in a ScrollView, so there's no errors on over scroll.
+                    child: SingleChildScrollView(
+                      //We don't actually want the scrollview to scroll, disable it.
+                      physics: NeverScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          SizedBox(height: 24),
+                          //Top Header Row
+                          _buildTopContent(),
+                          //Spacer
+                          SizedBox(height: 12),
+                          //Bottom Content, use AnimatedOpacity to fade
+                          AnimatedOpacity(
+                            duration:
+                                Duration(milliseconds: wasOpen ? 1000 : 500),
+                            curve: Curves.easeOut,
+                            opacity: wasOpen ? 1 : 0,
+                            //Bottom Content
+                            child: _buildMainContent(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                )
-              ]),
-            ),
-          )),
+                  )
+                ]),
+              ),
+              bottom: 0,
+              left: 20,
+              right: 20)),
     );
-  }
-
-  Widget _buildMainContent() {
-    return Container(
-        child: ElevatedButton(
-      child: Text("Go"),
-      onPressed: () {
-        Dio().get(Openwrt + "change?target=${widget.nodeData.index}").then(
-              (value) => context.read<V2rayPageState>().fetchConfig(),
-            );
-      },
-    ));
   }
 
   Row _buildTopContent() {
     return Row(
       children: <Widget>[
         Expanded(
-          flex: 3,
-          child: Text(widget.nodeData.title,
-              style: TextStyle(fontFamily: "Poppins", color: Colors.white)),
+          flex: 4,
+          child: Text(widget.nodeData.data["ps"],
+              style: TextStyle(color: Colors.white)),
         ),
         Expanded(
           flex: 1,
-          child: Column(children: [Text("aaa"), Text("bbb")]),
+          child: Center(
+              child: Column(
+            children: [
+              Text(
+                (widget.nodeData.data["ping"] ?? "null") + " ms",
+                style: TextStyle(color: Colors.lightGreen),
+              ),
+              Text(
+                (widget.nodeData.data["speed"] ?? "null") + " M/s",
+                style: TextStyle(color: Colors.lightGreen),
+              ),
+            ],
+          )),
+        )
+      ],
+    );
+  }
+
+  Widget _buildMainContent() {
+    var data = widget.nodeData.data;
+    data["port"] = data["port"].toString();
+    return Column(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+                text: TextSpan(children: [
+              TextSpan(text: "addr: ", style: TextStyle(color: Colors.yellow)),
+              TextSpan(text: data["add"], style: TextStyle(color: Colors.white))
+            ])),
+            RichText(
+                text: TextSpan(children: [
+              TextSpan(text: "port: ", style: TextStyle(color: Colors.yellow)),
+              TextSpan(
+                  text: data["port"], style: TextStyle(color: Colors.white))
+            ])),
+            RichText(
+                text: TextSpan(children: [
+              TextSpan(
+                  text: "protocol: ", style: TextStyle(color: Colors.yellow)),
+              TextSpan(
+                  text: data["protocol"], style: TextStyle(color: Colors.white))
+            ]))
+          ],
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: ElevatedButton(
+            child: Text("Go"),
+            onPressed: () {
+              Dio()
+                  .get(Openwrt + "change?target=${widget.nodeData.index}")
+                  .then(
+                    (value) => context.read<V2rayPageState>().fetchConfig(),
+                  );
+            },
+          ),
         )
       ],
     );
@@ -113,58 +162,5 @@ class _NodeCardState extends State<NodeCard> {
       _wasOpen = !_wasOpen;
     });
     context.read<V2rayPageState>().setSelect(widget.nodeData.index);
-  }
-}
-
-class RoundedShadow extends StatelessWidget {
-  final Widget? child;
-  final Color? shadowColor;
-
-  final double topLeftRadius;
-  final double topRightRadius;
-  final double bottomLeftRadius;
-  final double bottomRightRadius;
-
-  const RoundedShadow(
-      {Key? key,
-      this.shadowColor,
-      this.topLeftRadius = 48,
-      this.topRightRadius = 48,
-      this.bottomLeftRadius = 48,
-      this.bottomRightRadius = 48,
-      this.child})
-      : super(key: key);
-
-  const RoundedShadow.fromRadius(double radius,
-      {Key? key, this.child, this.shadowColor})
-      : topLeftRadius = radius,
-        topRightRadius = radius,
-        bottomLeftRadius = radius,
-        bottomRightRadius = radius;
-
-  @override
-  Widget build(BuildContext context) {
-    //Create a border radius, the only applies to the bottom
-    var r = BorderRadius.only(
-      topLeft: Radius.circular(topLeftRadius),
-      topRight: Radius.circular(topRightRadius),
-      bottomLeft: Radius.circular(bottomLeftRadius),
-      bottomRight: Radius.circular(bottomRightRadius),
-    );
-    var sColor = shadowColor ?? Color(0x20000000);
-
-    var maxRadius = [
-      topLeftRadius,
-      topRightRadius,
-      bottomLeftRadius,
-      bottomRightRadius
-    ].reduce(max);
-    return Container(
-      decoration: new BoxDecoration(
-        borderRadius: r,
-        boxShadow: [new BoxShadow(color: sColor, blurRadius: maxRadius * .5)],
-      ),
-      child: ClipRRect(borderRadius: r, child: child),
-    );
   }
 }
