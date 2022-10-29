@@ -172,7 +172,7 @@ class V2rayPageState extends State<V2rayPage> {
                                   style: TextStyle(
                                       color: Colors.yellow, fontSize: 20)),
                               TextSpan(
-                                  text: current["port"],
+                                  text: current["port"].toString(),
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 20))
                             ])),
