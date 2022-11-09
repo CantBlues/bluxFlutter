@@ -26,13 +26,14 @@ class _NodeCardState extends State<NodeCard> {
 
   @override
   Widget build(BuildContext context) {
-    //Determine current fill level, based on _fillTween
-    final selected = context.watch<V2rayPageState>().selected;
+    final selected = context.watch<NodesViewState>().selected;
     if (selected != widget.nodeData.index) _wasOpen = false;
     final wasOpen = _wasOpen && selected == widget.nodeData.index;
-    final currentNode = context.watch<V2rayPageState>().current;
-    bool connected = widget.nodeData.data['port'] == currentNode["port"] &&
-        widget.nodeData.data['add'] == currentNode["add"];
+    final currentNode = context.watch<NodesViewState>().current;
+    bool connected = false;
+    if (currentNode != null)
+      connected = widget.nodeData.data['port'] == currentNode["port"] &&
+          widget.nodeData.data['add'] == currentNode["add"];
     double cardHeight = wasOpen ? nominalHeightOpen : nominalHeightClosed;
 
     return GestureDetector(
@@ -85,6 +86,18 @@ class _NodeCardState extends State<NodeCard> {
   }
 
   Row _buildTopContent() {
+    String delayText = (widget.nodeData.data["delay"] == ""
+            ? "-"
+            : widget.nodeData.data["delay"]) ??
+        "-";
+    if (delayText.length > 4) delayText = delayText.substring(0, 4);
+    delayText += " s";
+    String speedText = (widget.nodeData.data["speed"] == ""
+            ? "-"
+            : widget.nodeData.data["speed"]) ??
+        "-";
+    if (speedText.length > 4) speedText = speedText.substring(0, 4);
+    speedText += " M/s";
     return Row(
       children: <Widget>[
         Expanded(
@@ -98,11 +111,11 @@ class _NodeCardState extends State<NodeCard> {
               child: Column(
             children: [
               Text(
-                (widget.nodeData.data["ping"] ?? "null") + " ms",
+                delayText,
                 style: TextStyle(color: Colors.lightGreen),
               ),
               Text(
-                (widget.nodeData.data["speed"] ?? "null") + " M/s",
+                speedText,
                 style: TextStyle(color: Colors.lightGreen),
               ),
             ],
@@ -129,7 +142,11 @@ class _NodeCardState extends State<NodeCard> {
                 text: TextSpan(children: [
               TextSpan(text: "port: ", style: TextStyle(color: Colors.yellow)),
               TextSpan(
-                  text: data["port"], style: TextStyle(color: Colors.white))
+                  text: data["port"], style: TextStyle(color: Colors.white)),
+              TextSpan(text: " ping:", style: TextStyle(color: Colors.yellow)),
+              TextSpan(
+                  text: " " + widget.nodeData.data["ping"].toString(),
+                  style: TextStyle(color: Colors.lightGreen))
             ])),
             RichText(
                 text: TextSpan(children: [
@@ -148,7 +165,7 @@ class _NodeCardState extends State<NodeCard> {
               Dio()
                   .get(Openwrt + "change?target=${widget.nodeData.index}")
                   .then(
-                    (value) => context.read<V2rayPageState>().fetchConfig(),
+                    (value) => context.read<NodesViewState>().fetchConfig(),
                   );
             },
           ),
@@ -161,6 +178,6 @@ class _NodeCardState extends State<NodeCard> {
     setState(() {
       _wasOpen = !_wasOpen;
     });
-    context.read<V2rayPageState>().setSelect(widget.nodeData.index);
+    context.read<NodesViewState>().setSelect(widget.nodeData.index);
   }
 }

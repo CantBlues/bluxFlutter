@@ -1,4 +1,3 @@
-
 import 'package:blux/v2ray/page.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +23,8 @@ void main() async {
   runApp(MyApp());
   try {
     if (UniversalPlatform.isAndroid) {
-      // FlutterDisplayMode
-      //     .setHighRefreshRate(); // OnePlus 8 refresh rate lock at 60fps, that show obviously not smooth.
+      FlutterDisplayMode
+          .setHighRefreshRate(); // OnePlus 8 refresh rate lock at 60fps, that show obviously not smooth.
       recordPhoneUsage();
     }
   } catch (e) {
@@ -51,8 +50,8 @@ class MyApp extends StatelessWidget {
           "usage_edit_apps": (context) => UsageAppsEditPage(),
           "audios": (context) => AudiosPage(),
           "taskSetting": (context) => TaskTypeSetting(),
-          "test":(context)=> TestPage(),
-          "v2ray":(context)=> V2rayPage()
+          "test": (context) => TestPage(),
+          "v2ray": (context) => V2rayPage()
         });
   }
 }

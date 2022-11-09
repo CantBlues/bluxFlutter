@@ -12,6 +12,8 @@ String wsHost = "ws://192.168.0.174:9999/ws";
 String mediaHost = "http://192.168.0.174:9998/";
 const String Domain = "http://192.168.0.174:888/";
 const String Openwrt = "http://192.168.0.1:89/";
+// use for debug
+// const String Openwrt = "http://127.0.0.1:89/";
 BaseOptions options = BaseOptions(
     baseUrl: "http://192.168.0.174:9999/",
     responseType: ResponseType.plain,

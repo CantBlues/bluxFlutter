@@ -3,25 +3,47 @@ import 'dart:ui';
 
 import 'package:blux/utils/network.dart';
 import 'package:blux/v2ray/nodeCard.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class V2rayPage extends StatefulWidget {
+class V2rayPage extends StatelessWidget {
   const V2rayPage({Key? key}) : super(key: key);
 
   @override
-  State<V2rayPage> createState() => V2rayPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Container(
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/runway.jpg"),
+                  fit: BoxFit.fitWidth)),
+          child: PageView(children: [
+            NodesView(tag: "instant"),
+            NodesView(tag: "mark"),
+            NodesView(tag: "history")
+          ])),
+    );
+  }
 }
 
-class V2rayPageState extends State<V2rayPage> {
-  List _nodes = [];
+class NodesView extends StatefulWidget {
+  const NodesView({Key? key, required this.tag}) : super(key: key);
+  final String tag;
+  @override
+  State<NodesView> createState() => NodesViewState();
+}
+
+class NodesViewState extends State<NodesView> {
+  // List _nodes = [];
   dynamic current;
   late Future<List> _fetchData;
   bool _fwStatus = false;
   int selected = 0;
   Future<Null> _onRefresh() async {
-    await Dio().get(Openwrt + "fetch?refresh=1");
+    await Dio().get(Openwrt + "fetch");
     _fetchData = fetchConfig();
   }
 
@@ -35,34 +57,35 @@ class V2rayPageState extends State<V2rayPage> {
   Widget build(BuildContext context) {
     double headerHeight = MediaQuery.of(context).size.height * .25;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Provider.value(
-        value: selected,
-        child: Provider.value(
-          value: this,
-          child: RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: FutureBuilder<List>(
-                future: _fetchData,
-                builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting)
-                    return Center(child: CircularProgressIndicator());
-                  return Stack(
-                    children: <Widget>[
-                      _buildTopBg(headerHeight),
-                      ListView.builder(
-                        padding:
-                            EdgeInsets.only(bottom: 40, top: headerHeight + 60),
-                        itemCount: snap.data!.length,
-                        scrollDirection: Axis.vertical,
-                        itemBuilder: (context, index) => _buildListItem(index),
-                      ),
-                      _buildTopContent(headerHeight),
-                    ],
-                  );
-                }),
-          ),
+    return Provider.value(
+      value: selected,
+      child: Provider.value(
+        value: this,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: FutureBuilder<List>(
+              future: _fetchData,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting)
+                  return Center(child: CircularProgressIndicator());
+                if (snap.data == null)
+                  return Center(
+                      child: Text("Router server error",
+                          style: TextStyle(fontSize: 30, color: Colors.white)));
+                return Stack(
+                  children: <Widget>[
+                    ListView.builder(
+                      padding:
+                          EdgeInsets.only(bottom: 40, top: headerHeight + 60),
+                      itemCount: snap.data!.length,
+                      scrollDirection: Axis.vertical,
+                      itemBuilder: (context, index) =>
+                          _buildListItem(index, snap.data![index]),
+                    ),
+                    _buildTopContent(headerHeight),
+                  ],
+                );
+              }),
         ),
       ),
     );
@@ -71,17 +94,41 @@ class V2rayPageState extends State<V2rayPage> {
   Future<List> fetchConfig() async {
     var response = await Dio().get(Openwrt + "/fetch");
     var data = jsonDecode(response.data);
-    _nodes = data["nodes"];
+    var nodes = data["nodes"];
     current = data["current"];
     _fwStatus = data["status"];
+    switch (widget.tag) {
+      case "mark":
+        var response = await Dio().get(Openwrt + "nodes/history");
+        var data = jsonDecode(response.data);
+        nodes = data;
+        break;
+      case "history":
+        var response = await laravel.get("v2ray/nodes");
+        nodes = response.data["data"];
+        break;
+      default:
+        break;
+    }
+
     setState(() {});
-    return _nodes;
+    return nodes;
   }
 
-  Widget _buildListItem(int index) {
+  Widget _buildListItem(int index, dynamic data) {
+    if (widget.tag != "mark")
+      return GestureDetector(
+        onLongPress: () {
+          Dio().post(Openwrt + "nodes/mark", data: data);
+        },
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: NodeCard(NodeData(data: data, index: index)),
+        ),
+      );
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      child: NodeCard(NodeData(data: _nodes[index], index: index)),
+      child: NodeCard(NodeData(data: data, index: index)),
     );
   }
 
@@ -89,15 +136,6 @@ class V2rayPageState extends State<V2rayPage> {
     setState(() {
       selected = val;
     });
-  }
-
-  Widget _buildTopBg(double height) {
-    return Container(
-        alignment: Alignment.topCenter,
-        child: ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-            child: Image(
-                image: AssetImage("assets/runway.jpg"), fit: BoxFit.fitWidth)));
   }
 
   Widget _buildTopContent(double height) {
@@ -140,55 +178,91 @@ class V2rayPageState extends State<V2rayPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Padding(
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     current != null ? current["ps"] : "null",
                     style: TextStyle(fontSize: 20, color: Colors.white),
                   ),
                 ),
+                Text(
+                  widget.tag,
+                  style: TextStyle(fontSize: 15, color: Colors.white),
+                ),
                 Divider(color: Colors.grey),
                 !_fwStatus
                     ? Container()
-                    : Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RichText(
-                                text: TextSpan(children: [
-                              TextSpan(
-                                  text: "addr: ",
-                                  style: TextStyle(
-                                      color: Colors.yellow, fontSize: 20)),
-                              TextSpan(
-                                  text: current["add"],
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 20))
-                            ])),
-                            RichText(
-                                text: TextSpan(children: [
-                              TextSpan(
-                                  text: "port: ",
-                                  style: TextStyle(
-                                      color: Colors.yellow, fontSize: 20)),
-                              TextSpan(
-                                  text: current["port"].toString(),
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 20))
-                            ])),
-                            RichText(
-                                text: TextSpan(children: [
-                              TextSpan(
-                                  text: "protocol: ",
-                                  style: TextStyle(
-                                      color: Colors.yellow, fontSize: 20)),
-                              TextSpan(
-                                  text: current["protocol"],
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 20))
-                            ]))
-                          ],
-                        )),
+                    : Row(
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                if (widget.tag == "instant") {
+                                  Dio().get(Openwrt + "fetch?refresh=1");
+                                  BotToast.showText(text: "Refreshing...");
+                                }
+                              },
+                              icon: Icon(Icons.refresh),
+                              color: Colors.white),
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 5, horizontal: 20),
+                              alignment: Alignment.center,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  RichText(
+                                      text: TextSpan(children: [
+                                    TextSpan(
+                                        text: "addr: ",
+                                        style: TextStyle(
+                                            color: Colors.yellow,
+                                            fontSize: 20)),
+                                    TextSpan(
+                                        text: current["add"],
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20))
+                                  ])),
+                                  RichText(
+                                      text: TextSpan(children: [
+                                    TextSpan(
+                                        text: "port: ",
+                                        style: TextStyle(
+                                            color: Colors.yellow,
+                                            fontSize: 20)),
+                                    TextSpan(
+                                        text: current["port"].toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20))
+                                  ])),
+                                  RichText(
+                                      text: TextSpan(children: [
+                                    TextSpan(
+                                        text: "protocol: ",
+                                        style: TextStyle(
+                                            color: Colors.yellow,
+                                            fontSize: 20)),
+                                    TextSpan(
+                                        text: current["protocol"],
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20))
+                                  ]))
+                                ],
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              var data = await _fetchData;
+                              // Dio().post( Openwrt + "/nodes/detect",data:{"source":widget.tag,"nodes":data});
+                              Dio().post(host + "v2ray/detect/nodes",
+                                  data: {"source": widget.tag, "nodes": data});
+                              BotToast.showText(text: "Speed Testing...");
+                            },
+                            icon: Icon(Icons.check),
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
                 _fwStatus
                     ? Container()
                     : Padding(
