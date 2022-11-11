@@ -32,7 +32,8 @@ class _NodeCardState extends State<NodeCard> {
     final currentNode = context.watch<NodesViewState>().current;
     bool connected = false;
     if (currentNode != null)
-      connected = widget.nodeData.data['port'] == currentNode["port"] &&
+      connected = widget.nodeData.data['port'].toString() ==
+              currentNode["port"].toString() &&
           widget.nodeData.data['add'] == currentNode["add"];
     double cardHeight = wasOpen ? nominalHeightOpen : nominalHeightClosed;
 
@@ -52,18 +53,15 @@ class _NodeCardState extends State<NodeCard> {
                     : Colors.white.withAlpha(32),
                 child: Stack(fit: StackFit.expand, children: <Widget>[
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                    margin: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                     //Wrap content in a ScrollView, so there's no errors on over scroll.
                     child: SingleChildScrollView(
                       //We don't actually want the scrollview to scroll, disable it.
                       physics: NeverScrollableScrollPhysics(),
                       child: Column(
                         children: [
-                          SizedBox(height: 24),
                           //Top Header Row
                           _buildTopContent(),
-                          //Spacer
-                          SizedBox(height: 12),
                           //Bottom Content, use AnimatedOpacity to fade
                           AnimatedOpacity(
                             duration:
@@ -118,6 +116,8 @@ class _NodeCardState extends State<NodeCard> {
                 speedText,
                 style: TextStyle(color: Colors.lightGreen),
               ),
+              Text(widget.nodeData.data["ping"].toString(),
+                  style: TextStyle(color: Colors.lightGreen))
             ],
           )),
         )
@@ -142,11 +142,7 @@ class _NodeCardState extends State<NodeCard> {
                 text: TextSpan(children: [
               TextSpan(text: "port: ", style: TextStyle(color: Colors.yellow)),
               TextSpan(
-                  text: data["port"], style: TextStyle(color: Colors.white)),
-              TextSpan(text: " ping:", style: TextStyle(color: Colors.yellow)),
-              TextSpan(
-                  text: " " + widget.nodeData.data["ping"].toString(),
-                  style: TextStyle(color: Colors.lightGreen))
+                  text: data["port"], style: TextStyle(color: Colors.white))
             ])),
             RichText(
                 text: TextSpan(children: [
@@ -162,8 +158,11 @@ class _NodeCardState extends State<NodeCard> {
           child: ElevatedButton(
             child: Text("Go"),
             onPressed: () {
+              if (widget.nodeData.data["bid"] != null)
+                widget.nodeData.data["id"] = widget.nodeData.data[
+                    "bid"]; //  laravel bug convert uid to id using 'as' keyword
               Dio()
-                  .get(Openwrt + "change?target=${widget.nodeData.index}")
+                  .post(Openwrt + "nodes/set", data: widget.nodeData.data)
                   .then(
                     (value) => context.read<NodesViewState>().fetchConfig(),
                   );

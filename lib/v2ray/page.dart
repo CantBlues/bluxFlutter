@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:ui';
-
 import 'package:blux/utils/network.dart';
 import 'package:blux/v2ray/nodeCard.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -120,6 +118,7 @@ class NodesViewState extends State<NodesView> {
       return GestureDetector(
         onLongPress: () {
           Dio().post(Openwrt + "nodes/mark", data: data);
+          BotToast.showText(text: "Marked!");
         },
         child: Container(
           margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
@@ -188,8 +187,8 @@ class NodesViewState extends State<NodesView> {
                   widget.tag,
                   style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
-                Divider(color: Colors.grey),
-                !_fwStatus
+                _fwStatus ? Divider(color: Colors.grey) : Container(),
+                !_fwStatus || current == null
                     ? Container()
                     : Row(
                         children: [
