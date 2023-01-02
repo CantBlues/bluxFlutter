@@ -72,10 +72,9 @@ class _LandscapeState extends State<Landscape>
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
-  double _blurDeep = 1;
+  double _blurDeep = 0;
   double _dragPos = 0;
   double _dragStartPos = 0;
-  bool _draging = false; // maybe its useless
   late LockProvider lockProvider;
   late Animation<double> animation;
   late AnimationController animateController;
@@ -158,7 +157,6 @@ class _LandscapeState extends State<Landscape>
   _clearBlur() {
     setState(() {
       _blurDeep = 0;
-      _draging = false;
     });
   }
 
@@ -319,26 +317,20 @@ class _LandscapeState extends State<Landscape>
                     child: FloatCloud(animation))
               ],
             )),
-        _draging
-            ? BackdropFilter(
+        BackdropFilter(
                 child: Container(),
-                filter: ImageFilter.blur(sigmaX: _blurDeep, sigmaY: _blurDeep))
-            : Container(),
+                filter: ImageFilter.blur(sigmaX: _blurDeep, sigmaY: _blurDeep)),
         Align(
             alignment: Alignment.bottomCenter,
             child: Container(
                 height: 150,
                 child: GestureDetector(
                   onHorizontalDragStart: (e) {
-                    setState(() {
-                      _draging = true;
-                    });
                     _dragStartPos = e.globalPosition.dx;
                   },
                   onHorizontalDragEnd: (e) {
                     if (_dragPos > 100 || _blurDeep < 5) {
                       setState(() {
-                        _draging = false;
                         _blurDeep = 0;
                       });
                     } else {
