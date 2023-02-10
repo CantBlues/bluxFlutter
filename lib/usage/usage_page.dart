@@ -414,68 +414,77 @@ class _UsageLineChartState extends State<UsageLineChart> {
               spots.add(spot);
               i++;
             }
-            return LineChart(
-              LineChartData(
-                  minY: minY * 0.8,
-                  maxY: maxY * 1.05,
-                  lineBarsData: [
-                    LineChartBarData(
-                        spots: spots,
-                        color: Colors.redAccent,
-                        dotData: FlDotData(
-                          getDotPainter: (p0, p1, p2, p3) {
-                            return FlDotCirclePainter(
-                                strokeColor: Colors.redAccent,
-                                color: Colors.white,
-                                radius: 3);
-                          },
-                        ))
-                  ],
-                  lineTouchData: LineTouchData(
-                      touchCallback: context.read<_PhoneStatState>()._watchDate,
-                      touchTooltipData: LineTouchTooltipData(
-                        fitInsideHorizontally: true,
-                        getTooltipItems: (touchedSpots) {
-                          List<LineTooltipItem> spots = [];
-                          for (var element in touchedSpots) {
-                            String hours =
-                                (element.y / 3600).toStringAsFixed(2);
-                            String minutes =
-                                (element.y / 60).toStringAsFixed(2);
-                            LineTooltipItem spot = LineTooltipItem(
-                                "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
-                                TextStyle(color: Colors.white));
-                            spots.add(spot);
-                          }
-                          return spots;
-                        },
-                      )),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                      rightTitles: AxisTitles(),
-                      topTitles: AxisTitles(),
-                      leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                        interval: 3600,
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          String _hour = (value / 3600).round().toString();
-                          if (value % 3600 == 0)
-                            return Center(child: Text(_hour));
-                          return Container();
-                        },
-                      )),
-                      bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (x, meta) {
-                                String _date = value.data[x.round()]["node"];
-                                _date = _date.substring(_date.length - 5);
-                                return Transform.rotate(
-                                    angle: -0.5,
-                                    child: Center(child: Text(_date)));
-                              })))),
-              swapAnimationDuration: Duration(milliseconds: 500),
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                width: value.data.length * 5,
+                padding: EdgeInsets.only(right: 50),
+                child: LineChart(
+                  LineChartData(
+                      minY: minY * 0.8,
+                      maxY: maxY * 1.05,
+                      lineBarsData: [
+                        LineChartBarData(
+                            spots: spots,
+                            color: Colors.redAccent,
+                            dotData: FlDotData(
+                              getDotPainter: (p0, p1, p2, p3) {
+                                return FlDotCirclePainter(
+                                    strokeColor: Colors.redAccent,
+                                    color: Colors.white,
+                                    radius: 3);
+                              },
+                            ))
+                      ],
+                      lineTouchData: LineTouchData(
+                          touchCallback:
+                              context.read<_PhoneStatState>()._watchDate,
+                          touchTooltipData: LineTouchTooltipData(
+                            fitInsideHorizontally: true,
+                            getTooltipItems: (touchedSpots) {
+                              List<LineTooltipItem> spots = [];
+                              for (var element in touchedSpots) {
+                                String hours =
+                                    (element.y / 3600).toStringAsFixed(2);
+                                String minutes =
+                                    (element.y / 60).toStringAsFixed(2);
+                                LineTooltipItem spot = LineTooltipItem(
+                                    "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
+                                    TextStyle(color: Colors.white));
+                                spots.add(spot);
+                              }
+                              return spots;
+                            },
+                          )),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                          rightTitles: AxisTitles(),
+                          topTitles: AxisTitles(),
+                          leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                            interval: 3600,
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              String _hour = (value / 3600).round().toString();
+                              if (value % 3600 == 0)
+                                return Center(child: Text(_hour));
+                              return Container();
+                            },
+                          )),
+                          bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (x, meta) {
+                                    String _date =
+                                        value.data[x.round()]["node"];
+                                    _date = _date.substring(_date.length - 5);
+                                    return Transform.rotate(
+                                        angle: -0.5,
+                                        child: Center(child: Text(_date)));
+                                  })))),
+                  swapAnimationDuration: Duration(milliseconds: 500),
+                ),
+              ),
             );
           },
         ));

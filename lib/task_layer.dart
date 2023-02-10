@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wheel_chooser/wheel_chooser.dart';
 import 'dart:convert';
 import 'usage/usage_utils.dart';
 import 'utils/network.dart';
@@ -18,7 +19,7 @@ class TaskWidget extends StatefulWidget {
 class _TaskWidgetState extends State<TaskWidget> {
   bool _mark = false;
 
-  _taskTap(e) {
+  _taskTap() {
     widget.tap(widget.name, !_mark).then((e) {
       setState(() {
         _mark = !_mark;
@@ -55,36 +56,28 @@ class _TaskWidgetState extends State<TaskWidget> {
             decoration:
                 _mark ? TextDecoration.lineThrough : TextDecoration.none));
     Alignment align = widget.left ? Alignment(-0.6, 0) : Alignment(0.6, 0);
-    return Align(
-        alignment: align, child: Listener(child: text, onPointerUp: _taskTap));
+    return TextButton(
+        onPressed: () => _taskTap(),
+        child: Align(alignment: align, child: text),
+        style: TextButton.styleFrom(padding: EdgeInsets.all(0)));
   }
 }
 
 class TaskLayer extends StatefulWidget {
-  TaskLayer({Key? key, this.clearBlur}) : super(key: key);
-  final clearBlur;
   @override
   State<StatefulWidget> createState() => _TaskLayerState();
 }
 
 class _TaskLayerState extends State<TaskLayer> {
-  late DateTime today;
-  late DateTime preDay;
-  bool yesterday = false;
+  DateTime selectDate = DateTime.now();
+  List<DateTime> nearDate = [];
   bool _loading = true;
   List<int> serverData = [];
   List<Map<String, dynamic>> tasks = [];
 
-  @override
-  void deactivate() {
-    widget.clearBlur();
-    super.deactivate();
-  }
-
   Future tapTask(String name, bool mark) async {
-    var date = yesterday ? preDay : today;
     var ret = await dioLara.post("/api/task/mark", data: {
-      "date": date.millisecondsSinceEpoch,
+      "date": selectDate.millisecondsSinceEpoch,
       "name": name,
       "mark": mark
     });
@@ -100,32 +93,6 @@ class _TaskLayerState extends State<TaskLayer> {
       left = !left;
     }
     return ret;
-  }
-
-  Widget dateTag(int day) {
-    bool big = (yesterday && (day == 1)) || (!yesterday && (day == 0));
-    return Expanded(
-        child: Center(
-            child: Listener(
-      child: Container(
-          padding: EdgeInsets.only(bottom: big ? 20 : 0),
-          child: Text(
-              day == 1
-                  ? "${preDay.month}/${preDay.day}"
-                  : "${today.month}/${today.day}",
-              style: TextStyle(
-                fontSize: big ? 30 : 20,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                shadows: [Shadow(blurRadius: 10, color: Colors.white)],
-              ))),
-      onPointerUp: (event) {
-        setState(() {
-          yesterday = day == 1 ? true : false;
-        });
-        queryTasks(yesterday ? preDay : today);
-      },
-    )));
   }
 
   queryTasks(DateTime day) {
@@ -159,12 +126,27 @@ class _TaskLayerState extends State<TaskLayer> {
     });
   }
 
+  dateChanged(data) {
+    queryTasks(data);
+    selectDate = data;
+  }
+
+  List<DateTime> generateNearDate() {
+    List<DateTime> dates = [];
+    DateTime from = DateTime.now().subtract(Duration(days: 7));
+
+    while (from.isBefore(DateTime.now())) {
+      dates.add(from);
+      from = from.add(Duration(days: 1));
+    }
+    return dates;
+  }
+
   @override
   void initState() {
     super.initState();
-    today = DateTime.now();
-    preDay = today.subtract(Duration(days: 1));
-    queryTasks(today);
+    nearDate = generateNearDate();
+    queryTasks(DateTime.now());
     // check whether need collect UsageStats
     dioLara.get("/api/phone/usages/recently/node").then((value) {
       var data = jsonDecode(value.data);
@@ -176,39 +158,36 @@ class _TaskLayerState extends State<TaskLayer> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-        data: ThemeData(fontFamily: "ShadowsIntoLight"),
-        child: GestureDetector(
-            onDoubleTap: () {
-              Navigator.of(context).pop();
-              widget.clearBlur();
-            },
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                children: [
-                  Container(
-                      height: 100,
-                      child: Row(
-                        children: [
-                          yesterday
-                              ? Expanded(child: Container())
-                              : Container(),
-                          dateTag(
-                              1), // this params means subtract one day from 'today'
-                          dateTag(0),
-                          yesterday ? Container() : Expanded(child: Container())
-                        ],
-                      )),
-                  Expanded(
-                      child: _loading
-                          ? Center(child: CircularProgressIndicator())
-                          : Padding(
-                              padding: EdgeInsets.only(bottom: 50),
-                              child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: _generateTasks())))
-                ],
-              ),
-            )));
+      data: ThemeData(fontFamily: "ShadowsIntoLight"),
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/blackboard.jpg"),
+                  fit: BoxFit.fitWidth)),
+          child: Column(
+            children: [
+              Container(height: 50),
+              Container(
+                  height: 100,
+                  child: WheelChooser(
+                    startPosition: nearDate.length,
+                    onValueChanged: dateChanged,
+                    datas: nearDate,
+                    horizontal: true,
+                    selectTextStyle: TextStyle(color: Colors.blue),
+                    unSelectTextStyle: TextStyle(color: Colors.white),
+                  )),
+              Expanded(
+                  child: _loading
+                      ? Center(child: CircularProgressIndicator())
+                      : ListView(
+                          // mainAxisAlignment: MainAxisAlignment.end,
+                          children: _generateTasks()))
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'package:blux/stars/stars.dart';
+import 'package:blux/usage/timeline.dart';
 import 'package:flutter/material.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
@@ -72,9 +72,6 @@ class _LandscapeState extends State<Landscape>
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
-  double _blurDeep = 0;
-  double _dragPos = 0;
-  double _dragStartPos = 0;
   late LockProvider lockProvider;
   late Animation<double> animation;
   late AnimationController animateController;
@@ -134,16 +131,6 @@ class _LandscapeState extends State<Landscape>
     });
   }
 
-  _showTask() {
-    if (_pcStatus)
-      showDialog(
-          context: context,
-          barrierColor: Colors.transparent,
-          builder: (context) {
-            return TaskLayer(clearBlur: _clearBlur);
-          });
-  }
-
   _showBillboard() {
     if (_pcStatus)
       showDialog(
@@ -152,12 +139,6 @@ class _LandscapeState extends State<Landscape>
           builder: (context) {
             return Billboard();
           });
-  }
-
-  _clearBlur() {
-    setState(() {
-      _blurDeep = 0;
-    });
   }
 
   @override
@@ -303,7 +284,11 @@ class _LandscapeState extends State<Landscape>
                         behavior: HitTestBehavior.opaque,
                         onTap: () => _pcStatus
                             ? Navigator.of(context).pushNamed("usage")
-                            : null)),
+                            : null,
+                        onLongPress: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: ((context) => UsageTimeLine()))))),
+
                 GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onDoubleTap: () {
@@ -317,34 +302,16 @@ class _LandscapeState extends State<Landscape>
                     child: FloatCloud(animation))
               ],
             )),
-        BackdropFilter(
-                child: Container(),
-                filter: ImageFilter.blur(sigmaX: _blurDeep, sigmaY: _blurDeep)),
         Align(
             alignment: Alignment.bottomCenter,
             child: Container(
                 height: 150,
-                child: GestureDetector(
-                  onHorizontalDragStart: (e) {
-                    _dragStartPos = e.globalPosition.dx;
-                  },
-                  onHorizontalDragEnd: (e) {
-                    if (_dragPos > 100 || _blurDeep < 5) {
-                      setState(() {
-                        _blurDeep = 0;
-                      });
-                    } else {
-                      _showTask();
-                    }
-                  },
-                  onHorizontalDragUpdate: (e) {
-                    _dragPos = e.globalPosition.dx;
-                    var tmp = _dragStartPos - _dragPos;
-                    setState(() {
-                      _blurDeep = tmp / 20;
-                    });
-                  },
-                ))),
+                child: GestureDetector(onVerticalDragEnd: (e) {
+                  if (e.primaryVelocity! < -1000) {
+                    Navigator.of(context).push(
+                        MaterialPageRoute(builder: ((context) => TaskLayer())));
+                  }
+                }))),
       ]),
     );
   }
