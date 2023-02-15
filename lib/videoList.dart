@@ -95,6 +95,11 @@ class _VideoListState extends State<VideoList> {
             SliverAppBar(
               title: Text("Learning Materials"),
               backgroundColor: Colors.pinkAccent,
+              actions: [
+                IconButton(
+                    onPressed: () => Navigator.of(context).pushNamed('audios'),
+                    icon: Icon(Icons.audiotrack))
+              ],
             ),
             CupertinoSliverRefreshControl(
               onRefresh: () async {

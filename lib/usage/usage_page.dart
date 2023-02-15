@@ -414,6 +414,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
               spots.add(spot);
               i++;
             }
+            spots = spots.reversed.toList();
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(

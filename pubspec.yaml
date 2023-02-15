@@ -47,6 +47,7 @@ dependencies:
   image_gallery_saver: ^1.7.1
   flutter_heat_map: ^1.2.1
   wheel_chooser: ^1.0.0
+  cached_network_image: ^3.2.1
 
   
 dev_dependencies:

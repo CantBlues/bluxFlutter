@@ -1,3 +1,4 @@
+import 'package:blux/moon.dart';
 import 'package:blux/v2ray/page.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,8 @@ class MyApp extends StatelessWidget {
           "audios": (context) => AudiosPage(),
           "taskSetting": (context) => TaskTypeSetting(),
           "test": (context) => TestPage(),
-          "v2ray": (context) => V2rayPage()
+          "v2ray": (context) => V2rayPage(),
+          "moon": (context) => MoonPage()
         });
   }
 }

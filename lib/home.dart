@@ -269,12 +269,11 @@ class _LandscapeState extends State<Landscape>
                       ),
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
-                        if (_pcStatus)
-                          Navigator.of(context).pushNamed('videoList');
+                        if (_pcStatus) Navigator.of(context).pushNamed('moon');
                       },
                       onLongPress: () {
                         if (_pcStatus)
-                          Navigator.of(context).pushNamed('audios');
+                          Navigator.of(context).pushNamed('videoList');
                       },
                     )),
                 Align(

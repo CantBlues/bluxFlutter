@@ -22,8 +22,12 @@ class TestPage extends StatelessWidget {
                     onPressed: () => laravel.get("audios/test"),
                     child: Text("laravel")),
                 TextButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: ((context) => Heat()))),
-                    child: Text("heatmap"))
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: ((context) => Heat()))),
+                    child: Text("heatmap")),
+                TextButton(
+                    onPressed: () => Navigator.of(context).pushNamed("moon"),
+                    child: Text("moon"))
               ],
             )));
   }
