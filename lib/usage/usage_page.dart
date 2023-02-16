@@ -405,6 +405,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
             double minY = double.infinity;
             value.data.sort((e1, e2) => DateTime.parse(e1["node"])
                 .compareTo(DateTime.parse(e2["node"])));
+            value.data = value.data.reversed.toList();
             int i = 0;
             for (var element in value.data) {
               double _usage = element["usage"] / 1;
@@ -414,7 +415,6 @@ class _UsageLineChartState extends State<UsageLineChart> {
               spots.add(spot);
               i++;
             }
-            spots = spots.reversed.toList();
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(
