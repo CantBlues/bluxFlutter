@@ -70,15 +70,21 @@ class NodesViewState extends State<NodesView> {
                   return Center(
                       child: Text("Router server error",
                           style: TextStyle(fontSize: 30, color: Colors.white)));
+                var nodeData = [];
+                // reverse marked node list
+                if (widget.tag == "mark")
+                  nodeData = snap.data!.reversed.toList();
+                else
+                  nodeData = snap.data!;
                 return Stack(
                   children: <Widget>[
                     ListView.builder(
                       padding:
                           EdgeInsets.only(bottom: 40, top: headerHeight + 60),
-                      itemCount: snap.data!.length,
+                      itemCount: nodeData.length,
                       scrollDirection: Axis.vertical,
                       itemBuilder: (context, index) =>
-                          _buildListItem(index, snap.data![index]),
+                          _buildListItem(index, nodeData[index]),
                     ),
                     _buildTopContent(headerHeight),
                   ],

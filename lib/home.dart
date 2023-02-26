@@ -268,9 +268,7 @@ class _LandscapeState extends State<Landscape>
                         height: 108,
                       ),
                       behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (_pcStatus) Navigator.of(context).pushNamed('moon');
-                      },
+                      onTap: () => Navigator.of(context).pushNamed('moon'),
                       onLongPress: () {
                         if (_pcStatus)
                           Navigator.of(context).pushNamed('videoList');
