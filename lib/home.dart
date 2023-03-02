@@ -304,10 +304,11 @@ class _LandscapeState extends State<Landscape>
             child: Container(
                 height: 150,
                 child: GestureDetector(onVerticalDragEnd: (e) {
-                  if (e.primaryVelocity! < -1000) {
+                  if (e.primaryVelocity! < -1000)
                     Navigator.of(context).push(
                         MaterialPageRoute(builder: ((context) => TaskLayer())));
-                  }
+                  if (e.primaryVelocity! > 1000)
+                    Navigator.pushNamed(context, "v2ray");
                 }))),
       ]),
     );
