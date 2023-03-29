@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:blux/utils/network.dart';
 import 'package:blux/v2ray/nodeCard.dart';
+import 'package:blux/v2ray/routerRule.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -145,6 +146,8 @@ class NodesViewState extends State<NodesView> {
 
   Widget _buildTopContent(double height) {
     return GestureDetector(
+      onLongPress: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: ((context) => RouterRules()))),
       onDoubleTap: () {
         showDialog(
             context: context,
