@@ -37,7 +37,7 @@ class _MoonPhaseState extends State<MoonPhase> {
   double preAngle = 0;
   @override
   Widget build(BuildContext context) {
-    double _width = MediaQueryData.fromWindow(window).size.width;
+    double _width = MediaQueryData.fromView(window).size.width;
     double _halfSize = _width / 2;
     return Container(
         child: GestureDetector(

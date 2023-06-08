@@ -29,7 +29,7 @@ class _VideoListState extends State<VideoList> {
         });
   }
 
-  Widget _buildCard(int index, AsyncSnapshot snap) {
+  Widget _buildCard(int index) {
     return Column(
       children: [
         Card(
@@ -86,54 +86,51 @@ class _VideoListState extends State<VideoList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body:
-        FutureBuilder(builder: (BuildContext context, AsyncSnapshot snap) {
-      return LayoutBuilder(builder: (ctx, cons) {
-        int _nums = (cons.maxWidth / 200).round();
-        return CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              title: Text("Learning Materials"),
-              backgroundColor: Colors.pinkAccent,
-              actions: [
-                IconButton(
-                    onPressed: () => Navigator.of(context).pushNamed('audios'),
-                    icon: Icon(Icons.audiotrack))
-              ],
-            ),
-            CupertinoSliverRefreshControl(
-              onRefresh: () async {
-                Response res = await Dio().get(host + '/update');
-                Dio().get(host + '/updateaudios');
-                if (res.data == '1') {
-                  setState(() {
-                    page = 0;
-                    count = 0;
-                    _list = [];
-                    _getVideoList();
-                  });
-                }
-                return;
-              },
-            ),
-            SliverGrid(
-              delegate:
-                  SliverChildBuilderDelegate((BuildContext context, int pos) {
-                if (pos >= _list.length - 1 &&
-                    _list.length < count! &&
-                    this.page != 0) {
+    return Scaffold(body: LayoutBuilder(builder: (ctx, cons) {
+      int _nums = (cons.maxWidth / 200).round();
+      return CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: Text("Learning Materials"),
+            backgroundColor: Colors.pinkAccent,
+            actions: [
+              IconButton(
+                  onPressed: () => Navigator.of(context).pushNamed('audios'),
+                  icon: Icon(Icons.audiotrack))
+            ],
+          ),
+          CupertinoSliverRefreshControl(
+            onRefresh: () async {
+              Response res = await Dio().get(host + '/update');
+              Dio().get(host + '/updateaudios');
+              if (res.data == '1') {
+                setState(() {
+                  page = 0;
+                  count = 0;
+                  _list = [];
                   _getVideoList();
-                }
-                return _buildCard(pos, snap);
-              }, childCount: _list.length),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  childAspectRatio: 1.1, crossAxisCount: _nums),
-            )
-          ],
-          physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
-        );
-      });
+                });
+              }
+              return;
+            },
+          ),
+          SliverGrid(
+            delegate:
+                SliverChildBuilderDelegate((BuildContext context, int pos) {
+              if (pos >= _list.length - 1 &&
+                  _list.length < count! &&
+                  this.page != 0) {
+                _getVideoList();
+              }
+              return _buildCard(pos);
+            }, childCount: _list.length),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                childAspectRatio: 1.1, crossAxisCount: _nums),
+          )
+        ],
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
+      );
     }));
   }
 }
@@ -189,7 +186,7 @@ class _ProcessImgState extends State<ProcessImg> {
     //double ratio = 16 / 9;
     int row = index ~/ 10;
     int column = index % 10;
-    double width = MediaQueryData.fromWindow(window).size.width;
+    double width = MediaQueryData.fromView(window).size.width;
     double height = width / ratio;
 
     Widget con = Container(

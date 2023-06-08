@@ -60,7 +60,7 @@ class _PlayerState extends State<Player> {
     return _vpController.value.isInitialized
         ? Padding(
             padding: EdgeInsets.only(
-                top: MediaQueryData.fromWindow(window).padding.top),
+                top: MediaQueryData.fromView(window).padding.top),
             child: AspectRatio(
                 aspectRatio: _vpController.value.aspectRatio,
                 child: Chewie(controller: _controller)))

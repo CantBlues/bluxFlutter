@@ -129,7 +129,7 @@ class AudioJustState extends State<AudioJust> {
                               ),
                             ),
                             Text(metadata.album!,
-                                style: Theme.of(context).textTheme.headline6),
+                                style: Theme.of(context).textTheme.titleLarge),
                             Text(metadata.title),
                           ],
                         );
@@ -183,7 +183,7 @@ class AudioJustState extends State<AudioJust> {
                       Expanded(
                         child: Text(
                           "Playlist",
-                          style: Theme.of(context).textTheme.headline6,
+                          style: Theme.of(context).textTheme.titleLarge,
                           textAlign: TextAlign.center,
                         ),
                       ),
