@@ -90,7 +90,6 @@ class _MessageChannelState extends State<MessageChannel> {
             child: Image.asset("assets/rocket.png", width: 50),
             onLongPress: () async {
               List<XFile>? imgs = await imgPicker.pickMultiImage();
-              if (imgs == null) return;
               for (var img in imgs) {
                 var file =
                     await MultipartFile.fromFile(img.path, filename: img.name);
