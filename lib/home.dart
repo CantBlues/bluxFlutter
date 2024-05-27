@@ -12,8 +12,7 @@ import 'package:provider/provider.dart';
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LockProvider>(
-        create: (_) => LockProvider(), child: Home());
+    return ChangeNotifierProvider<LockProvider>(create: (_) => LockProvider(), child: Home());
   }
 }
 
@@ -33,9 +32,7 @@ class _HomeState extends State<Home> {
     return PageView(
       controller: _pageController,
       onPageChanged: (e) => lockProvider.toggle(),
-      physics: lockProvider.lock
-          ? NeverScrollableScrollPhysics()
-          : BouncingScrollPhysics(),
+      physics: lockProvider.lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
       children: [StarsPage(), Landscape()],
     );
   }
@@ -57,8 +54,7 @@ class FloatCloud extends AnimatedWidget {
     final animation = listenable as Animation<double>;
     return Padding(
         padding: EdgeInsets.only(top: 50 + _marginTween.evaluate(animation)),
-        child: Image.asset("assets/cloud.png",
-            width: 130, alignment: Alignment(-1, -1)));
+        child: Image.asset("assets/cloud.png", width: 130, alignment: Alignment(-1, -1)));
   }
 }
 
@@ -67,8 +63,7 @@ class Landscape extends StatefulWidget {
   _LandscapeState createState() => _LandscapeState();
 }
 
-class _LandscapeState extends State<Landscape>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   bool _ipv = ipv;
   bool _pcStatus = false;
   bool _blink = false;
@@ -89,8 +84,7 @@ class _LandscapeState extends State<Landscape>
     checkPc();
     dioLara.get("/");
     listenNetwork();
-    animateController = AnimationController(
-        duration: const Duration(seconds: 2), vsync: this)
+    animateController = AnimationController(duration: const Duration(seconds: 2), vsync: this)
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) animateController.reverse();
         if (status == AnimationStatus.dismissed) animateController.forward();
@@ -143,6 +137,8 @@ class _LandscapeState extends State<Landscape>
 
   @override
   Widget build(BuildContext context) {
+    var m = MediaQuery.of(context);
+    print(m);
     return Scaffold(
       drawer: DrawerView(_ipv, _pcStatus),
       body: Stack(children: [
@@ -157,25 +153,20 @@ class _LandscapeState extends State<Landscape>
                       width: double.infinity,
                       height: 800,
                       decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: [
-                            0,
-                            .8,
-                            1
-                          ],
-                              colors: [
-                            Color.fromRGBO(117, 173, 255, 1),
-                            Color.fromRGBO(253, 213, 202, 1),
-                            Color.fromRGBO(255, 218, 164, 1)
-                          ])),
+                          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: [
+                        0,
+                        .8,
+                        1
+                      ], colors: [
+                        Color.fromRGBO(117, 173, 255, 1),
+                        Color.fromRGBO(253, 213, 202, 1),
+                        Color.fromRGBO(255, 218, 164, 1)
+                      ])),
                     )),
                 // background image
                 Align(
                     alignment: Alignment.bottomCenter,
-                    child: Image.asset("assets/landscape.png",
-                        width: double.infinity)),
+                    child: Image.asset("assets/landscape.png", width: double.infinity, fit: BoxFit.fitWidth)),
                 // billboard tap to show contributions layer.
                 Align(
                     alignment: Alignment(1, 0.5),
@@ -212,8 +203,7 @@ class _LandscapeState extends State<Landscape>
                                 actions: <Widget>[
                                   TextButton(
                                     child: Text("取消"),
-                                    onPressed: () => Navigator.of(context)
-                                        .pop(false), //关闭对话框
+                                    onPressed: () => Navigator.of(context).pop(false), //关闭对话框
                                   ),
                                   TextButton(
                                     child: Text("确定"),
@@ -242,19 +232,12 @@ class _LandscapeState extends State<Landscape>
                                 return RadialGradient(
                                   radius: _pcStatus ? .55 : .5,
                                   colors: <Color>[
-                                    _pcStatus
-                                        ? Colors.red
-                                        : Colors.yellow.shade100,
+                                    _pcStatus ? Colors.red : Colors.yellow.shade100,
                                     Colors.red.withOpacity(0)
                                   ],
                                 ).createShader(bounds);
                               },
-                              child: _blink
-                                  ? BlinkAnimation()
-                                  : Container(
-                                      color: Colors.white,
-                                      width: 50,
-                                      height: 60)),
+                              child: _blink ? BlinkAnimation() : Container(color: Colors.white, width: 50, height: 60)),
                           Image.asset("assets/denglong.png", width: 60)
                         ],
                       )),
@@ -270,8 +253,7 @@ class _LandscapeState extends State<Landscape>
                       behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).pushNamed('moon'),
                       onLongPress: () {
-                        if (_pcStatus)
-                          Navigator.of(context).pushNamed('videoList');
+                        if (_pcStatus) Navigator.of(context).pushNamed('videoList');
                       },
                     )),
                 Align(
@@ -279,12 +261,9 @@ class _LandscapeState extends State<Landscape>
                     child: GestureDetector(
                         child: Container(width: 200, height: 80),
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => _pcStatus
-                            ? Navigator.of(context).pushNamed("usage")
-                            : null,
-                        onLongPress: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: ((context) => UsageTimeLine()))))),
+                        onTap: () => _pcStatus ? Navigator.of(context).pushNamed("usage") : null,
+                        onLongPress: () =>
+                            Navigator.of(context).push(MaterialPageRoute(builder: ((context) => UsageTimeLine()))))),
 
                 GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -305,10 +284,8 @@ class _LandscapeState extends State<Landscape>
                 height: 150,
                 child: GestureDetector(onVerticalDragEnd: (e) {
                   if (e.primaryVelocity! < -1000)
-                    Navigator.of(context).push(
-                        MaterialPageRoute(builder: ((context) => TaskLayer())));
-                  if (e.primaryVelocity! > 1000)
-                    Navigator.pushNamed(context, "v2ray");
+                    Navigator.of(context).push(MaterialPageRoute(builder: ((context) => TaskLayer())));
+                  if (e.primaryVelocity! > 1000) Navigator.pushNamed(context, "v2ray");
                 }))),
       ]),
     );
@@ -320,20 +297,16 @@ class BlinkAnimation extends StatefulWidget {
   _BlinkAnimationState createState() => _BlinkAnimationState();
 }
 
-class _BlinkAnimationState extends State<BlinkAnimation>
-    with TickerProviderStateMixin {
+class _BlinkAnimationState extends State<BlinkAnimation> with TickerProviderStateMixin {
   late AnimationController controller;
   late Animation _color;
 
   @override
   void initState() {
     super.initState();
-    controller = new AnimationController(
-        vsync: this, duration: Duration(milliseconds: 600));
-    _color = ColorTween(begin: Colors.red, end: Colors.yellow.shade200).animate(
-        CurvedAnimation(
-            parent: controller,
-            curve: Interval(0, 0.4, curve: Curves.easeInCirc)));
+    controller = new AnimationController(vsync: this, duration: Duration(milliseconds: 600));
+    _color = ColorTween(begin: Colors.red, end: Colors.yellow.shade200)
+        .animate(CurvedAnimation(parent: controller, curve: Interval(0, 0.4, curve: Curves.easeInCirc)));
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         controller.reverse();

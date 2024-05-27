@@ -53,8 +53,7 @@ class _TaskWidgetState extends State<TaskWidget> {
             shadows: [Shadow(blurRadius: 10)],
             decorationColor: Colors.red,
             decorationThickness: 3,
-            decoration:
-                _mark ? TextDecoration.lineThrough : TextDecoration.none));
+            decoration: _mark ? TextDecoration.lineThrough : TextDecoration.none));
     Alignment align = widget.left ? Alignment(-0.6, 0) : Alignment(0.6, 0);
     return TextButton(
         onPressed: () => _taskTap(),
@@ -70,17 +69,14 @@ class TaskLayer extends StatefulWidget {
 
 class _TaskLayerState extends State<TaskLayer> {
   DateTime selectDate = DateTime.now();
-  List<DateTime> nearDate = [];
+  List nearDate = [];
   bool _loading = true;
   List<int> serverData = [];
   List<Map<String, dynamic>> tasks = [];
 
   Future tapTask(String name, bool mark) async {
-    var ret = await dioLara.post("/api/task/mark", data: {
-      "date": selectDate.millisecondsSinceEpoch,
-      "name": name,
-      "mark": mark
-    });
+    var ret = await dioLara
+        .post("/api/task/mark", data: {"date": selectDate.millisecondsSinceEpoch, "name": name, "mark": mark});
     return ret;
   }
 
@@ -111,9 +107,7 @@ class _TaskLayerState extends State<TaskLayer> {
         });
       },
     );
-    dioLara
-        .get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString())
-        .then((response) {
+    dioLara.get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString()).then((response) {
       var ret = jsonDecode(response.data);
       List<int> _markedTask = [];
       for (var element in ret['data']) {
@@ -127,16 +121,17 @@ class _TaskLayerState extends State<TaskLayer> {
   }
 
   dateChanged(data) {
+    data = DateTime.parse(data);
     queryTasks(data);
     selectDate = data;
   }
 
-  List<DateTime> generateNearDate() {
-    List<DateTime> dates = [];
+  List generateNearDate() {
+    List dates = [];
     DateTime from = DateTime.now().subtract(Duration(days: 7));
 
     while (from.isBefore(DateTime.now())) {
-      dates.add(from);
+      dates.add(from.toString().substring(0, 10));
       from = from.add(Duration(days: 1));
     }
     return dates;
@@ -161,21 +156,20 @@ class _TaskLayerState extends State<TaskLayer> {
       data: ThemeData(fontFamily: "ShadowsIntoLight"),
       child: Scaffold(
         body: Container(
-          decoration: BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage("assets/blackboard.jpg"),
-                  fit: BoxFit.fitWidth)),
+          decoration:
+              BoxDecoration(image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
           child: Column(
             children: [
               Container(height: 50),
               Container(
                   height: 100,
                   child: WheelChooser(
+                    itemSize: 100,
                     startPosition: nearDate.length,
                     onValueChanged: dateChanged,
                     datas: nearDate,
                     horizontal: true,
-                    selectTextStyle: TextStyle(color: Colors.blue),
+                    selectTextStyle: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                     unSelectTextStyle: TextStyle(color: Colors.white),
                   )),
               Expanded(
