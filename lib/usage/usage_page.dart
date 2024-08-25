@@ -483,7 +483,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
                                         angle: -0.5,
                                         child: Center(child: Text(_date)));
                                   })))),
-                  swapAnimationDuration: Duration(milliseconds: 500),
+                  duration: Duration(milliseconds: 500),
                 ),
               ),
             );

@@ -3,7 +3,7 @@ import 'package:blux/utils/network.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import './page.dart';
+import 'page.dart';
 
 class NodeData {
   final data;
