@@ -1,3 +1,4 @@
+import 'package:blux/month_grid.dart';
 import 'package:blux/moon.dart';
 import 'package:blux/v2ray/page.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -55,7 +56,7 @@ class MyApp extends StatelessWidget {
           "taskSetting": (context) => TaskTypeSetting(),
           "test": (context) => TestPage(),
           "v2ray": (context) => const V2rayPage(),
-          "moon": (context) => const MoonPage()
+          "moon": (context) => const MoonPage(),
         });
   }
 }

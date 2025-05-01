@@ -4,6 +4,7 @@ import 'package:blux/stars/stars.dart';
 import 'package:blux/usage/timeline.dart';
 import 'package:bubble_picker/bubble_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
 import 'dart:async';
@@ -289,8 +290,8 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                     child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => _pcStatus ? Navigator.of(context).pushNamed("usage") : null,
-                        onLongPress: () =>
-                            Navigator.of(context).push(MaterialPageRoute(builder: ((context) => const UsageTimeLine()))),
+                        onLongPress: () => Navigator.of(context)
+                            .push(MaterialPageRoute(builder: ((context) => const UsageTimeLine()))),
                         child: Container(width: 200, height: 80))),
 
                 // blur effect mask
@@ -397,6 +398,8 @@ class BubbleLayer extends StatefulWidget {
 
 class _BubbleLayerState extends State<BubbleLayer> {
   List<BubbleData> bubbles = [];
+  List<Widget> typeButtons = [];
+
   layerQuit() {
     Navigator.pop(context);
     widget.clearBlur!();
@@ -411,6 +414,15 @@ class _BubbleLayerState extends State<BubbleLayer> {
           recordHabbit(habbit['id']);
         },
         radius: 0.9,
+      ));
+      typeButtons.add(FloatingActionButton.large(
+        onPressed: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => HabbitRecordPage(id: habbit['id'])));
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(habbit['name']),
+        ),
       ));
     }
     setState(() {});
@@ -430,12 +442,21 @@ class _BubbleLayerState extends State<BubbleLayer> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onDoubleTap: layerQuit,
-      child: Center(
-          child: bubbles.isEmpty
-              ? const CircularProgressIndicator()
-              : BubblePicker(
-                  bubbles: bubbles,
-                )),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButtonLocation: ExpandableFab.location,
+        floatingActionButton: ExpandableFab(
+          type: ExpandableFabType.up,
+          distance: 100.0,
+          children: typeButtons,
+        ),
+        body: Center(
+            child: bubbles.isEmpty
+                ? const CircularProgressIndicator()
+                : BubblePicker(
+                    bubbles: bubbles,
+                  )),
+      ),
     );
   }
 }
