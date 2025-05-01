@@ -100,12 +100,12 @@ class _TaskLayerState extends State<TaskLayer> {
     dioLara.get('/api/tasktypes').then(
       (response) {
         var data = jsonDecode(response.data);
-        List<Map<String, dynamic>> tasks = [];
+        List<Map<String, dynamic>> tasksTmp = [];
         for (var element in data['data']) {
-          tasks.add({"name": element["name"], "type_id": element["id"]});
+          tasksTmp.add({"name": element["name"], "type_id": element["id"]});
         }
         setState(() {
-          tasks = tasks;
+          tasks = tasksTmp;
         });
       },
     );
@@ -158,8 +158,8 @@ class _TaskLayerState extends State<TaskLayer> {
       data: ThemeData(fontFamily: "ShadowsIntoLight"),
       child: Scaffold(
         body: Container(
-          decoration:
-              const BoxDecoration(image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
+          decoration: const BoxDecoration(
+              image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
           child: Column(
             children: [
               Container(height: 50),
