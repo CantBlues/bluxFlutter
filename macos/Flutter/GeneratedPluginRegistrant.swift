@@ -13,7 +13,7 @@ import just_audio
 import local_auth_darwin
 import package_info_plus
 import path_provider_foundation
-import sqflite
+import sqflite_darwin
 import video_player_avfoundation
 import wakelock_plus
 

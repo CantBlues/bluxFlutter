@@ -55,6 +55,8 @@ dependencies:
   wheel_chooser: ^1.0.0
   cached_network_image: ^3.2.1
   image_gallery_saver: ^2.0.3
+  bubble_picker: ^0.0.3
+  hexagon: ^0.2.0
 
 
 dev_dependencies:

@@ -1,5 +1,8 @@
+import 'dart:ui';
+import 'package:blux/month_grid.dart';
 import 'package:blux/stars/stars.dart';
 import 'package:blux/usage/timeline.dart';
+import 'package:bubble_picker/bubble_picker.dart';
 import 'package:flutter/material.dart';
 import 'utils/network.dart';
 import 'utils/eventbus.dart';
@@ -71,6 +74,10 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
   late Animation<double> animation;
   late AnimationController animateController;
 
+  double _blurDeep = 0;
+  double _dragPos = 0;
+  double _dragStartPos = 0;
+
   @override
   void initState() {
     super.initState();
@@ -133,6 +140,22 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
           builder: (context) {
             return Billboard();
           });
+  }
+
+  _showBlurBubble() {
+    if (!_pcStatus) return;
+    showDialog(
+        context: context,
+        barrierColor: Colors.transparent,
+        builder: (context) {
+          return BubbleLayer(clearBlur: _clearBlur);
+        });
+  }
+
+  _clearBlur() {
+    setState(() {
+      _blurDeep = 0;
+    });
   }
 
   @override
@@ -265,6 +288,8 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                         onLongPress: () =>
                             Navigator.of(context).push(MaterialPageRoute(builder: ((context) => UsageTimeLine()))))),
 
+                // blur effect mask
+                BackdropFilter(filter: ImageFilter.blur(sigmaX: _blurDeep, sigmaY: _blurDeep), child: Container()),
                 GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onDoubleTap: () {
@@ -282,11 +307,32 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
             alignment: Alignment.bottomCenter,
             child: Container(
                 height: 150,
-                child: GestureDetector(onVerticalDragEnd: (e) {
-                  if (e.primaryVelocity! < -1000)
-                    Navigator.of(context).push(MaterialPageRoute(builder: ((context) => TaskLayer())));
-                  if (e.primaryVelocity! > 1000) Navigator.pushNamed(context, "v2ray");
-                }))),
+                child: GestureDetector(
+                  onVerticalDragEnd: (e) {
+                    if (e.primaryVelocity! < -1000)
+                      Navigator.of(context).push(MaterialPageRoute(builder: ((context) => TaskLayer())));
+                    if (e.primaryVelocity! > 1000) Navigator.pushNamed(context, "v2ray");
+                  },
+                  onHorizontalDragStart: (e) {
+                    _dragStartPos = e.globalPosition.dx;
+                  },
+                  onHorizontalDragEnd: (e) {
+                    if (_dragPos > 100 || _blurDeep < 5) {
+                      setState(() {
+                        _blurDeep = 0;
+                      });
+                    } else {
+                      _showBlurBubble();
+                    }
+                  },
+                  onHorizontalDragUpdate: (e) {
+                    _dragPos = e.globalPosition.dx;
+                    var tmp = _dragStartPos - _dragPos;
+                    setState(() {
+                      _blurDeep = tmp / 20;
+                    });
+                  },
+                ))),
       ]),
     );
   }
@@ -330,5 +376,58 @@ class _BlinkAnimationState extends State<BlinkAnimation> with TickerProviderStat
         builder: (context, child) {
           return Container(width: 50, height: 60, color: _color.value);
         });
+  }
+}
+
+class BubbleLayer extends StatefulWidget {
+  const BubbleLayer({super.key, this.clearBlur});
+  final Function? clearBlur;
+
+  @override
+  State<BubbleLayer> createState() => _BubbleLayerState();
+}
+
+class _BubbleLayerState extends State<BubbleLayer> {
+  List<BubbleData> bubbles = [];
+  layerQuit() {
+    Navigator.pop(context);
+    widget.clearBlur!();
+  }
+
+  getHabbitData() async {
+    var data = (await laravel.get("habbit_types")).data;
+    for (var habbit in data['data']) {
+      bubbles.add(BubbleData(
+        imageProvider: AssetImage('assets/${habbit["img"]}.png'),
+        onTapBubble: (radius) {
+          recordHabbit(habbit['id']);
+        },
+        radius: 0.9,
+      ));
+    }
+    setState(() {});
+  }
+
+  recordHabbit(id) {
+    laravel.post("habbit/record", data: {"id": id});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getHabbitData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTap: layerQuit,
+      child: Center(
+          child: bubbles.isEmpty
+              ? const CircularProgressIndicator()
+              : BubblePicker(
+                  bubbles: bubbles,
+                )),
+    );
   }
 }
