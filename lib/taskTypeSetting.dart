@@ -5,17 +5,19 @@ import 'package:flutter/material.dart';
 import 'utils/network.dart';
 
 class TaskTypeSetting extends StatelessWidget {
+  const TaskTypeSetting({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("Task Types Setting"),
-          backgroundColor: Color.fromARGB(255, 53, 28, 8),
+          title: const Text("Task Types Setting"),
+          backgroundColor: const Color.fromARGB(255, 53, 28, 8),
           actions: [
             IconButton(
                 onPressed: () => showEditType(context, null,
                     null), // here should pass function "getTypes"
-                icon: Icon(Icons.add))
+                icon: const Icon(Icons.add))
           ],
         ),
         body: Container(
@@ -26,6 +28,8 @@ class TaskTypeSetting extends StatelessWidget {
 }
 
 class TypesList extends StatefulWidget {
+  const TypesList({super.key});
+
   @override
   _TypesListState createState() => _TypesListState();
 }
@@ -62,16 +66,16 @@ class _TypesListState extends State<TypesList> {
   @override
   Widget build(BuildContext context) {
     return _loading
-        ? CircularProgressIndicator()
+        ? const CircularProgressIndicator()
         : ReorderableListView(
-            padding: EdgeInsets.only(left: 30, right: 30, top: 30),
+            padding: const EdgeInsets.only(left: 30, right: 30, top: 30),
             children: _types.map((item) {
-              int _id = item["id"];
-              String _name = item["name"];
-              int _weight = item["weight"];
-              String _classify = item["classify"] ?? "";
-              return TaskTypeCard(_id, _name, _weight, _classify,
-                  key: Key(_id.toString()), tap: getTypes);
+              int id = item["id"];
+              String name = item["name"];
+              int weight = item["weight"];
+              String classify = item["classify"] ?? "";
+              return TaskTypeCard(id, name, weight, classify,
+                  key: Key(id.toString()), tap: getTypes);
             }).toList(),
             onReorder: (int oldIndex, int newIndex) {
               setState(() {
@@ -94,8 +98,8 @@ class TaskTypeCard extends StatelessWidget {
     this.weight,
     this.classify, {
     this.tap,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   final String name;
   final int weight;
   final int id;
@@ -108,24 +112,24 @@ class TaskTypeCard extends StatelessWidget {
       decoration: BoxDecoration(
           color: Color.fromARGB(255, Random().nextInt(256),
               Random().nextInt(256), Random().nextInt(256)),
-          borderRadius: BorderRadius.all(Radius.circular(15))),
+          borderRadius: const BorderRadius.all(Radius.circular(15))),
       height: 60,
-      margin: EdgeInsets.only(bottom: 30),
+      margin: const EdgeInsets.only(bottom: 30),
       child: Row(children: [
         Container(
-            margin: EdgeInsets.only(left: 8),
+            margin: const EdgeInsets.only(left: 8),
+            width: 30,
+            height: double.infinity,
             child: Center(
                 child: Text(weight.toString(),
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 25))),
-            width: 30,
-            height: double.infinity),
+                        fontSize: 25)))),
         Expanded(
             child: Container(
-          padding: EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(
+          padding: const EdgeInsets.only(right: 20),
+          decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
                   topRight: Radius.circular(15),
@@ -133,9 +137,9 @@ class TaskTypeCard extends StatelessWidget {
           child: Row(
             children: [
               Padding(
-                  padding: EdgeInsets.only(left: 15),
+                  padding: const EdgeInsets.only(left: 15),
                   child: Text(name,
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 20))),
               Expanded(child: Container()),
               IconButton(
@@ -145,7 +149,7 @@ class TaskTypeCard extends StatelessWidget {
                         "weight": weight,
                         "classify": classify
                       }),
-                  icon: Icon(Icons.edit)),
+                  icon: const Icon(Icons.edit)),
             ],
           ),
         ))
@@ -158,12 +162,12 @@ showEditType(BuildContext c, tap, info) {
   showDialog(
       context: c,
       builder: (c) {
-        return Dialog(child: TypeInfo(info: info ?? null, tap: tap));
+        return Dialog(child: TypeInfo(info: info, tap: tap));
       });
 }
 
 class TypeInfo extends StatefulWidget {
-  const TypeInfo({this.info, this.tap});
+  const TypeInfo({super.key, this.info, this.tap});
   final info;
   final tap;
 
@@ -177,13 +181,14 @@ class _TypeEditState extends State<TypeInfo> {
   String _name = "";
   int _weight = 0;
   String _classify = "";
-  Map _data = {};
+  final Map _data = {};
 
   _submit() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      if (widget.info != null && widget.info["id"] != null)
+      if (widget.info != null && widget.info["id"] != null) {
         _data["id"] = widget.info["id"];
+      }
       _data["name"] = _name;
       _data["weight"] = _weight;
       _data["classify"] = _classify;
@@ -199,7 +204,7 @@ class _TypeEditState extends State<TypeInfo> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        margin: EdgeInsets.all(30),
+        margin: const EdgeInsets.all(30),
         child: Form(
             key: _formKey,
             child: FormField(builder: (FormFieldState<Object?> a) {
@@ -207,7 +212,7 @@ class _TypeEditState extends State<TypeInfo> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    decoration: InputDecoration(labelText: "Name"),
+                    decoration: const InputDecoration(labelText: "Name"),
                     initialValue:
                         widget.info != null ? widget.info["name"] : null,
                     validator: (value) {
@@ -221,7 +226,7 @@ class _TypeEditState extends State<TypeInfo> {
                     },
                   ),
                   TextFormField(
-                    decoration: InputDecoration(labelText: "Weight"),
+                    decoration: const InputDecoration(labelText: "Weight"),
                     initialValue: widget.info != null
                         ? widget.info["weight"].toString()
                         : null,
@@ -237,15 +242,15 @@ class _TypeEditState extends State<TypeInfo> {
                     },
                   ),
                   TextFormField(
-                    decoration: InputDecoration(labelText: "classify"),
+                    decoration: const InputDecoration(labelText: "classify"),
                     initialValue:
                         widget.info != null ? widget.info["classify"] : null,
                     onSaved: (value) => _classify = value!,
                   ),
                   Padding(
-                      padding: EdgeInsets.only(top: 30),
+                      padding: const EdgeInsets.only(top: 30),
                       child: ElevatedButton(
-                          onPressed: () => _submit(), child: Text("Submit")))
+                          onPressed: () => _submit(), child: const Text("Submit")))
                 ],
               );
             })));

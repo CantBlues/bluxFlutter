@@ -5,7 +5,7 @@ import 'usage/usage_utils.dart';
 import 'utils/network.dart';
 
 class TaskWidget extends StatefulWidget {
-  const TaskWidget(this.name, this.left, this.tap, this.status);
+  const TaskWidget(this.name, this.left, this.tap, this.status, {super.key});
 
   final String name;
   final bool left;
@@ -50,19 +50,21 @@ class _TaskWidgetState extends State<TaskWidget> {
             fontSize: 30,
             fontWeight: FontWeight.bold,
             color: _mark ? Colors.white54 : Colors.white,
-            shadows: [Shadow(blurRadius: 10)],
+            shadows: const [Shadow(blurRadius: 10)],
             decorationColor: Colors.red,
             decorationThickness: 3,
             decoration: _mark ? TextDecoration.lineThrough : TextDecoration.none));
-    Alignment align = widget.left ? Alignment(-0.6, 0) : Alignment(0.6, 0);
+    Alignment align = widget.left ? const Alignment(-0.6, 0) : const Alignment(0.6, 0);
     return TextButton(
         onPressed: () => _taskTap(),
-        child: Align(alignment: align, child: text),
-        style: TextButton.styleFrom(padding: EdgeInsets.all(0)));
+        style: TextButton.styleFrom(padding: const EdgeInsets.all(0)),
+        child: Align(alignment: align, child: text));
   }
 }
 
 class TaskLayer extends StatefulWidget {
+  const TaskLayer({super.key});
+
   @override
   State<StatefulWidget> createState() => _TaskLayerState();
 }
@@ -98,23 +100,23 @@ class _TaskLayerState extends State<TaskLayer> {
     dioLara.get('/api/tasktypes').then(
       (response) {
         var data = jsonDecode(response.data);
-        List<Map<String, dynamic>> _tasks = [];
+        List<Map<String, dynamic>> tasks = [];
         for (var element in data['data']) {
-          _tasks.add({"name": element["name"], "type_id": element["id"]});
+          tasks.add({"name": element["name"], "type_id": element["id"]});
         }
         setState(() {
-          tasks = _tasks;
+          tasks = tasks;
         });
       },
     );
-    dioLara.get("/api/tasks/daily/" + day.millisecondsSinceEpoch.toString()).then((response) {
+    dioLara.get("/api/tasks/daily/${day.millisecondsSinceEpoch}").then((response) {
       var ret = jsonDecode(response.data);
-      List<int> _markedTask = [];
+      List<int> markedTask = [];
       for (var element in ret['data']) {
-        _markedTask.add(element['type_id']);
+        markedTask.add(element['type_id']);
       }
       setState(() {
-        serverData = _markedTask;
+        serverData = markedTask;
         _loading = false;
       });
     });
@@ -128,11 +130,11 @@ class _TaskLayerState extends State<TaskLayer> {
 
   List generateNearDate() {
     List dates = [];
-    DateTime from = DateTime.now().subtract(Duration(days: 7));
+    DateTime from = DateTime.now().subtract(const Duration(days: 7));
 
     while (from.isBefore(DateTime.now())) {
       dates.add(from.toString().substring(0, 10));
-      from = from.add(Duration(days: 1));
+      from = from.add(const Duration(days: 1));
     }
     return dates;
   }
@@ -157,11 +159,11 @@ class _TaskLayerState extends State<TaskLayer> {
       child: Scaffold(
         body: Container(
           decoration:
-              BoxDecoration(image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
+              const BoxDecoration(image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
           child: Column(
             children: [
               Container(height: 50),
-              Container(
+              SizedBox(
                   height: 100,
                   child: WheelChooser(
                     itemSize: 100,
@@ -169,12 +171,12 @@ class _TaskLayerState extends State<TaskLayer> {
                     onValueChanged: dateChanged,
                     datas: nearDate,
                     horizontal: true,
-                    selectTextStyle: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                    unSelectTextStyle: TextStyle(color: Colors.white),
+                    selectTextStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                    unSelectTextStyle: const TextStyle(color: Colors.white),
                   )),
               Expanded(
                   child: _loading
-                      ? Center(child: CircularProgressIndicator())
+                      ? const Center(child: CircularProgressIndicator())
                       : ListView(
                           // mainAxisAlignment: MainAxisAlignment.end,
                           children: _generateTasks()))

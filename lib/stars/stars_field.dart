@@ -11,17 +11,16 @@ class StarField extends StatefulWidget {
   final double starSpeed;
   final int starCount;
 
-  const StarField({Key? key, this.starSpeed = 3, this.starCount = 500})
-      : super(key: key);
+  const StarField({super.key, this.starSpeed = 3, this.starCount = 500});
 
   @override
   _StarFieldState createState() => _StarFieldState();
 }
 
 class _StarFieldState extends State<StarField> {
-  List<Star> _stars = [];
-  double _maxZ = 500;
-  double _minZ = 1;
+  final List<Star> _stars = [];
+  final double _maxZ = 500;
+  final double _minZ = 1;
   bool loading = true;
 
   late Ticker _ticker;
@@ -39,7 +38,7 @@ class _StarFieldState extends State<StarField> {
       var s = _randomizeStar(Star(), true);
       _stars.add(s);
     }
-    _ticker = new Ticker(_handleStarTick)..start();
+    _ticker = Ticker(_handleStarTick)..start();
     setState(() {
       loading = false;
     });
@@ -72,7 +71,7 @@ class _StarFieldState extends State<StarField> {
   }
 
   void advanceStars(double distance) {
-    _stars.forEach((s) {
+    for (var s in _stars) {
       //Move stars on the z, and reset them when they reach the viewport
       s.z -= distance; // * elapsed.inMilliseconds;
       if (s.z < _minZ) {
@@ -80,7 +79,7 @@ class _StarFieldState extends State<StarField> {
       } else if (s.z > _maxZ) {
         s.z = _minZ;
       }
-    });
+    }
   }
 
   Star _randomizeStar(Star star, bool randomZ) {
@@ -91,7 +90,7 @@ class _StarFieldState extends State<StarField> {
     star.rotation = rand.nextDouble() * pi * 2;
     //Some fraction of stars are purple, and bigger than the rest
     if (rand.nextDouble() < .1) {
-      star.color = Color(0xffD4A1FF);
+      star.color = const Color(0xffD4A1FF);
       star.size = 2 + rand.nextDouble() * 2;
     } else {
       star.color = Colors.white;
@@ -125,10 +124,10 @@ class ConstellationListView extends StatefulWidget {
   final void Function(ConstellationData, bool)? onItemTap;
 
   const ConstellationListView({
-    Key? key,
+    super.key,
     required this.onScrolled,
     this.onItemTap,
-  }) : super(key: key);
+  });
 
   @override
   _ConstellationListViewState createState() => _ConstellationListViewState();
@@ -156,7 +155,7 @@ class _ConstellationListViewState extends State<ConstellationListView> {
     return Align(
       child: ChangeNotifierProvider<WsProvider>(
         create: (_) => WsProvider(),
-        child: Container(
+        child: SizedBox(
           width: 600,
           child: Stack(
             children: [
@@ -191,17 +190,17 @@ class _ConstellationListViewState extends State<ConstellationListView> {
   }
 
   Widget _buildHeaderText() {
-    var _provider = context.watch<LockProvider>();
+    var provider = context.watch<LockProvider>();
     return Positioned(
       width: 180,
       left: 16,
       top: 16,
       child: GestureDetector(
-        onDoubleTap: () => _provider.toggle(),
+        onDoubleTap: () => provider.toggle(),
         child: Text(
           "Exchange Channel",
           style: TextStyle(
-            color: _provider.lock ? Colors.white : Colors.red,
+            color: provider.lock ? Colors.white : Colors.red,
             fontSize: 28,
             height: 1.05,
           ),
@@ -216,7 +215,7 @@ class _ConstellationListViewState extends State<ConstellationListView> {
       child: Container(
         decoration: BoxDecoration(
             gradient: LinearGradient(
-                colors: [Colors.black, Color(0x0), Color(0x0), Colors.black],
+                colors: const [Colors.black, Color(0x00000000), Color(0x00000000), Colors.black],
                 stops: [0, firstGradientStop, 1 - firstGradientStop, 1],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter)),
@@ -225,7 +224,7 @@ class _ConstellationListViewState extends State<ConstellationListView> {
   }
 
   Positioned _buildLocationText() {
-    return Positioned(
+    return const Positioned(
       width: 120,
       right: 16,
       top: 12,

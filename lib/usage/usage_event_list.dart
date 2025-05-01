@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:usage_stats/usage_stats.dart';
 
 class UsageEventView extends StatefulWidget {
-  const UsageEventView(this.range, this.time, this.name, this.eventTypes);
+  const UsageEventView(this.range, this.time, this.name, this.eventTypes, {super.key});
   final String name;
   final DateTimeRange range;
   final TimeOfDay time;
   final List<int> eventTypes;
   static Future<List<Map>> queryEvents(String name, DateTimeRange range,
-      TimeOfDay _time, List<int> eventTypes) async {
+      TimeOfDay time_0, List<int> eventTypes) async {
     List<Map> result = [];
     DateTime startDate = range.start;
     DateTime endDate = range.end;
-    TimeOfDay time = _time;
+    TimeOfDay time = time_0;
     DateTime start = DateTime(
         startDate.year, startDate.month, startDate.day, time.hour, time.minute);
     DateTime end = DateTime(
@@ -33,7 +33,7 @@ class UsageEventView extends StatefulWidget {
             DateTime.fromMillisecondsSinceEpoch(int.parse(element.timeStamp!))
       };
       if (name != "" && name != element.packageName) continue;
-      if (eventTypes.length != 0 &&
+      if (eventTypes.isNotEmpty &&
           !eventTypes.contains(int.parse(element.eventType!))) continue;
       result.add(eventInfo);
     }
@@ -67,7 +67,7 @@ class _UsageEventViewState extends State<UsageEventView> {
   Widget build(BuildContext context) {
     return Material(
         child: loading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : ListView.builder(
                 itemCount: data.length,
                 itemBuilder: ((context, index) {

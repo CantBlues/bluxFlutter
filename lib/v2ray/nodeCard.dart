@@ -12,7 +12,7 @@ class NodeData {
 }
 
 class NodeCard extends StatefulWidget {
-  const NodeCard(this.nodeData);
+  const NodeCard(this.nodeData, {super.key});
   final NodeData nodeData;
 
   @override
@@ -31,17 +31,18 @@ class _NodeCardState extends State<NodeCard> {
     final wasOpen = _wasOpen && selected == widget.nodeData.index;
     final currentNode = context.watch<NodesViewState>().current;
     bool connected = false;
-    if (currentNode != null)
+    if (currentNode != null) {
       connected = widget.nodeData.data['port'].toString() ==
               currentNode["port"].toString() &&
           widget.nodeData.data['add'] == currentNode["add"];
+    }
     double cardHeight = wasOpen ? nominalHeightOpen : nominalHeightClosed;
 
     return GestureDetector(
       onTap: _handleTap,
       //Use an animated container so we can easily animate our widget height
       child: AnimatedContainer(
-          curve: !wasOpen ? ElasticOutCurve(.9) : Curves.elasticOut,
+          curve: !wasOpen ? const ElasticOutCurve(.9) : Curves.elasticOut,
           duration: Duration(milliseconds: !wasOpen ? 800 : 1200),
           height: cardHeight,
           //Wrap content in a rounded shadow widget, so it will be rounded on the corners but also have a drop shadow
@@ -53,11 +54,11 @@ class _NodeCardState extends State<NodeCard> {
                     : Colors.white.withAlpha(32),
                 child: Stack(fit: StackFit.expand, children: <Widget>[
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                     //Wrap content in a ScrollView, so there's no errors on over scroll.
                     child: SingleChildScrollView(
                       //We don't actually want the scrollview to scroll, disable it.
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       child: Column(
                         children: [
                           //Top Header Row
@@ -101,7 +102,7 @@ class _NodeCardState extends State<NodeCard> {
         Expanded(
           flex: 4,
           child: Text(widget.nodeData.data["ps"],
-              style: TextStyle(color: Colors.white)),
+              style: const TextStyle(color: Colors.white)),
         ),
         Expanded(
           flex: 1,
@@ -110,14 +111,14 @@ class _NodeCardState extends State<NodeCard> {
             children: [
               Text(
                 delayText,
-                style: TextStyle(color: Colors.lightGreen),
+                style: const TextStyle(color: Colors.lightGreen),
               ),
               Text(
                 speedText,
-                style: TextStyle(color: Colors.lightGreen),
+                style: const TextStyle(color: Colors.lightGreen),
               ),
               Text(widget.nodeData.data["ping"].toString(),
-                  style: TextStyle(color: Colors.lightGreen))
+                  style: const TextStyle(color: Colors.lightGreen))
             ],
           )),
         )
@@ -135,34 +136,35 @@ class _NodeCardState extends State<NodeCard> {
           children: [
             RichText(
                 text: TextSpan(children: [
-              TextSpan(text: "addr: ", style: TextStyle(color: Colors.yellow)),
-              TextSpan(text: data["add"], style: TextStyle(color: Colors.white))
+              const TextSpan(text: "addr: ", style: TextStyle(color: Colors.yellow)),
+              TextSpan(text: data["add"], style: const TextStyle(color: Colors.white))
             ])),
             RichText(
                 text: TextSpan(children: [
-              TextSpan(text: "port: ", style: TextStyle(color: Colors.yellow)),
+              const TextSpan(text: "port: ", style: TextStyle(color: Colors.yellow)),
               TextSpan(
-                  text: data["port"], style: TextStyle(color: Colors.white))
+                  text: data["port"], style: const TextStyle(color: Colors.white))
             ])),
             RichText(
                 text: TextSpan(children: [
-              TextSpan(
+              const TextSpan(
                   text: "protocol: ", style: TextStyle(color: Colors.yellow)),
               TextSpan(
-                  text: data["protocol"], style: TextStyle(color: Colors.white))
+                  text: data["protocol"], style: const TextStyle(color: Colors.white))
             ]))
           ],
         ),
         Padding(
-          padding: EdgeInsets.only(top: 10),
+          padding: const EdgeInsets.only(top: 10),
           child: ElevatedButton(
-            child: Text("Go"),
+            child: const Text("Go"),
             onPressed: () {
-              if (widget.nodeData.data["bid"] != null)
+              if (widget.nodeData.data["bid"] != null) {
                 widget.nodeData.data["id"] = widget.nodeData.data[
                     "bid"]; //  laravel bug convert uid to id using 'as' keyword
+              }
               Dio()
-                  .post(Openwrt + "nodes/set", data: widget.nodeData.data)
+                  .post("${Openwrt}nodes/set", data: widget.nodeData.data)
                   .then(
                     (value) => context.read<NodesViewState>().fetchConfig(),
                   );

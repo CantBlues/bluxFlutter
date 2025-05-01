@@ -8,22 +8,22 @@ import 'package:rxdart/rxdart.dart';
 import 'package:audio_service/audio_service.dart' show MediaItem;
 
 class AudiosPage extends StatelessWidget {
-  AudiosPage({Key? key}) : super(key: key);
+  const AudiosPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.pinkAccent,
-        title: Text("listening practice"),
+        title: const Text("listening practice"),
       ),
-      body: AudioJust(),
+      body: const AudioJust(),
     );
   }
 }
 
 class AudioJust extends StatefulWidget {
-  const AudioJust({Key? key}) : super(key: key);
+  const AudioJust({super.key});
 
   @override
   AudioJustState createState() => AudioJustState();
@@ -48,7 +48,7 @@ class AudioJustState extends State<AudioJust> {
   }
 
   fetchAudios() {
-    List<AudioSource> _list = [];
+    List<AudioSource> list = [];
     laravel.get("audios").then((value) {
       if (value.data["status"] != "success") return;
       var data = value.data["data"];
@@ -64,11 +64,11 @@ class AudioJustState extends State<AudioJust> {
                 // https://api.lolicon.app/setu/v2  docs : https://api.lolicon.app/#/setu 
           ),
         );
-        _list.add(voice);
+        list.add(voice);
       }
       _init();
       setState(() {
-        _playlist = ConcatenatingAudioSource(children: _list);
+        _playlist = ConcatenatingAudioSource(children: list);
         _loading = false;
       });
     });
@@ -103,7 +103,7 @@ class AudioJustState extends State<AudioJust> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: _loading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +263,7 @@ class AudioJustState extends State<AudioJust> {
 class ControlButtons extends StatelessWidget {
   final AudioPlayer player;
 
-  const ControlButtons(this.player, {Key? key}) : super(key: key);
+  const ControlButtons(this.player, {super.key});
 
   @override
   Widget build(BuildContext context) {

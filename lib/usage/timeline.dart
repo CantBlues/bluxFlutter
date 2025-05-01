@@ -9,15 +9,15 @@ import 'package:usage_stats/usage_stats.dart';
 const BgColor = Color.fromARGB(255, 223, 223, 223);
 
 class UsageTimeLine extends StatelessWidget {
-  const UsageTimeLine({Key? key}) : super(key: key);
+  const UsageTimeLine({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Timeline")),
+      appBar: AppBar(title: const Text("Timeline")),
       backgroundColor: BgColor,
       body: Container(
-          margin: EdgeInsets.all(15),
+          margin: const EdgeInsets.all(15),
           child: ChangeNotifierProvider(
             create: ((context) => HourProvider()),
             builder: (context, _) {
@@ -28,25 +28,26 @@ class UsageTimeLine extends StatelessWidget {
                   onNotification: (notification) => true,
                   child: Column(
                     children: [
-                      HeaderBox(),
+                      const HeaderBox(),
                       TimeLineBox(),
                       ElevatedButton(
                           onPressed: () async {
                             final pick = await showDatePicker(
                                 context: context,
                                 initialDate: date,
-                                firstDate: date.subtract(Duration(days: 100)),
+                                firstDate: date.subtract(const Duration(days: 100)),
                                 lastDate: DateTime.now());
-                            if (pick != null)
+                            if (pick != null) {
                               context.read<HourProvider>().date = pick;
+                            }
                           },
                           child: Container(
-                              alignment: Alignment(0, 0),
+                              alignment: const Alignment(0, 0),
                               width: double.infinity,
                               height: 50,
                               child: Text(
                                 "Select Date: ${date.toString().substring(0, 10)}",
-                                style: TextStyle(fontSize: 20),
+                                style: const TextStyle(fontSize: 20),
                               )))
                     ],
                   ),
@@ -93,39 +94,39 @@ class HourProvider extends ChangeNotifier {
 }
 
 class HeaderBox extends StatelessWidget {
-  const HeaderBox({Key? key}) : super(key: key);
+  const HeaderBox({super.key});
 
   Widget _boxDayNight(double sunrise, double daytime) {
     return Container(
         height: 40,
-        padding: EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
+        padding: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
         child: Row(
           children: [
             Container(
-              child: Image.asset("assets/moon.png"),
               width: sunrise,
-              padding: EdgeInsets.all(5),
-              margin: EdgeInsets.only(right: 15),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.all(5),
+              margin: const EdgeInsets.only(right: 15),
+              decoration: const BoxDecoration(
                   color: Color.fromRGBO(101, 97, 97, 1),
                   borderRadius: BorderRadius.all(Radius.circular(10))),
+              child: Image.asset("assets/moon.png"),
             ),
             Container(
-              child: Image.asset("assets/sun.png"),
               width: daytime,
-              padding: EdgeInsets.all(5),
-              margin: EdgeInsets.only(right: 15),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.all(5),
+              margin: const EdgeInsets.only(right: 15),
+              decoration: const BoxDecoration(
                   color: Color.fromRGBO(255, 201, 102, 1),
                   borderRadius: BorderRadius.all(Radius.circular(10))),
+              child: Image.asset("assets/sun.png"),
             ),
             Expanded(
               child: Container(
-                child: Image.asset("assets/moon.png"),
-                padding: EdgeInsets.all(5),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(5),
+                decoration: const BoxDecoration(
                     color: Color.fromRGBO(101, 97, 97, 1),
                     borderRadius: BorderRadius.all(Radius.circular(10))),
+                child: Image.asset("assets/moon.png"),
               ),
             ),
           ],
@@ -134,33 +135,33 @@ class HeaderBox extends StatelessWidget {
 
   Widget _hoursTips(double sunrise, double daytime) {
     return Container(
-      margin: EdgeInsets.all(10),
+      margin: const EdgeInsets.all(10),
       child: Row(children: [
         Padding(
-            padding: EdgeInsets.only(right: sunrise - 10), child: Text("00")),
-        Padding(padding: EdgeInsets.only(right: daytime), child: Text("06")),
-        Text("18")
+            padding: EdgeInsets.only(right: sunrise - 10), child: const Text("00")),
+        Padding(padding: EdgeInsets.only(right: daytime), child: const Text("06")),
+        const Text("18")
       ]),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    var _sunrise = context.watch<HourProvider>().sunrise;
-    var _daytime = context.watch<HourProvider>().daytime;
+    var sunrise = context.watch<HourProvider>().sunrise;
+    var daytime = context.watch<HourProvider>().daytime;
 
     return Container(
         height: 120,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Stack(
           children: [
             Column(
               children: [
-                _boxDayNight(_sunrise, _daytime),
+                _boxDayNight(sunrise, daytime),
                 HeatBox(),
-                _hoursTips(_sunrise, _daytime)
+                _hoursTips(sunrise, daytime)
               ],
             ),
             SlideHandle()
@@ -170,7 +171,7 @@ class HeaderBox extends StatelessWidget {
 }
 
 class HeatBox extends StatefulWidget {
-  HeatBox({Key? key}) : super(key: key);
+  const HeatBox({super.key});
 
   @override
   State<HeatBox> createState() => _HeatBoxState();
@@ -178,14 +179,14 @@ class HeatBox extends StatefulWidget {
 
 class _HeatBoxState extends State<HeatBox> {
   Future<Uint8List?>? _bytes;
-  DateTime _date = DateTime.now().add(Duration(seconds: 1));
+  DateTime _date = DateTime.now().add(const Duration(seconds: 1));
   bool _loading = false;
 
   _generateHeat(List<EventUsageInfo> events, DateTime date) {
     _date = date;
-    var _width = context.read<HourProvider>().maxWidth;
-    double xPerMinute = (_width - 20) / (60 * 24);
-    Map<Offset, int> _events = {};
+    var width = context.read<HourProvider>().maxWidth;
+    double xPerMinute = (width - 20) / (60 * 24);
+    Map<Offset, int> events0 = {};
     bool recording = false;
     const int minute = 60;
     int vernier =
@@ -201,13 +202,13 @@ class _HeatBoxState extends State<HeatBox> {
           vernier += minute;
           vernierX += xPerMinute;
         }
-        _events[Offset(vernierX * 10, 200)] = 6;
+        events0[Offset(vernierX * 10, 200)] = 6;
       }
       int type = int.parse(event.eventType!);
       if (type == 1) recording = true;
       if (type == 2) recording = false;
     }
-    _bytes = generateHeatMap(_width * 10, 400, _events, 200);
+    _bytes = generateHeatMap(width * 10, 400, events0, 200);
     setState(() {});
   }
 
@@ -217,7 +218,7 @@ class _HeatBoxState extends State<HeatBox> {
     if (date != _date && !_loading) {
       _loading = true;
       final start = date;
-      final end = start.add(Duration(days: 1));
+      final end = start.add(const Duration(days: 1));
       UsageStats.queryEvents(DateTime(start.year, start.month, start.day),
               DateTime(end.year, end.month, end.day))
           .then((value) {
@@ -237,14 +238,14 @@ class _HeatBoxState extends State<HeatBox> {
                 ? Image(
                     image: MemoryImage(data),
                   )
-                : Center(child: CircularProgressIndicator());
+                : const Center(child: CircularProgressIndicator());
           },
         ));
   }
 }
 
 class SlideHandle extends StatefulWidget {
-  SlideHandle({Key? key}) : super(key: key);
+  const SlideHandle({super.key});
 
   @override
   State<SlideHandle> createState() => _SlideHandleState();
@@ -254,9 +255,9 @@ class _SlideHandleState extends State<SlideHandle> {
   double _maxWidth = 0;
   late double _offsetX;
   _dragHandle(DragUpdateDetails e) {
-    double _x = e.localPosition.dx;
-    if (_x >= 0 && _x <= _maxWidth) {
-      double offset = (_x - _maxWidth / 2) / (_maxWidth / 2);
+    double x = e.localPosition.dx;
+    if (x >= 0 && x <= _maxWidth) {
+      double offset = (x - _maxWidth / 2) / (_maxWidth / 2);
       context.read<HourProvider>().change(offset + 1);
     }
   }
@@ -269,13 +270,13 @@ class _SlideHandleState extends State<SlideHandle> {
     return GestureDetector(
         onHorizontalDragUpdate: _dragHandle,
         child: Padding(
-          padding: EdgeInsets.only(left: 10, right: 10),
+          padding: const EdgeInsets.only(left: 10, right: 10),
           child: Align(
             alignment: Alignment(_offsetX - 1, 0),
             child: Container(
               height: 120,
               width: 20,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   color: Color.fromRGBO(255, 0, 0, 0.5),
                   borderRadius: BorderRadius.all(Radius.circular(10))),
             ),
@@ -285,7 +286,7 @@ class _SlideHandleState extends State<SlideHandle> {
 }
 
 class TimeLineBox extends StatefulWidget {
-  TimeLineBox({Key? key}) : super(key: key);
+  const TimeLineBox({super.key});
 
   @override
   State<TimeLineBox> createState() => _TimeLineBoxState();
@@ -293,7 +294,7 @@ class TimeLineBox extends StatefulWidget {
 
 class _TimeLineBoxState extends State<TimeLineBox> {
   List<Widget> _list = [];
-  ScrollController _controller = ScrollController();
+  final ScrollController _controller = ScrollController();
   double _offset = 0;
   bool _passive = false;
   double _maxH = 0;
@@ -310,22 +311,27 @@ class _TimeLineBoxState extends State<TimeLineBox> {
         .toString()
         .substring(11, 19);
     Widget tmp = Container(
-        margin: EdgeInsets.only(bottom: 20),
+        margin: const EdgeInsets.only(bottom: 20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
+            SizedBox(
                 width: 70,
                 height: height,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text("$date"),
+                    Text(date),
                     Expanded(child: Container(width: 2, color: color))
                   ],
                 )),
             Expanded(
                 child: Container(
+                    decoration: BoxDecoration(
+                        color: color.withAlpha(150),
+                        borderRadius: const BorderRadius.all(Radius.circular(10))),
+                    clipBehavior: Clip.hardEdge,
+                    height: height - 30,
                     child: Row(
                       children: [
                         Container(width: 5, color: color),
@@ -335,12 +341,7 @@ class _TimeLineBoxState extends State<TimeLineBox> {
                             child: Text(
                                 '$name\n$duration seconds or ${duration ~/ 60} minutes'))
                       ],
-                    ),
-                    decoration: BoxDecoration(
-                        color: color.withAlpha(150),
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    clipBehavior: Clip.hardEdge,
-                    height: height - 30))
+                    )))
           ],
         ));
     return tmp;
@@ -429,10 +430,10 @@ class _TimeLineBoxState extends State<TimeLineBox> {
     }
     return Expanded(
         child: Container(
-      margin: EdgeInsets.only(top: 20, bottom: 20),
+      margin: const EdgeInsets.only(top: 20, bottom: 20),
       child: ListView(
-        children: _list,
         controller: _controller,
+        children: _list,
       ),
     ));
   }

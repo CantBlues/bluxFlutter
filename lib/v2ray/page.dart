@@ -8,18 +8,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class V2rayPage extends StatelessWidget {
-  const V2rayPage({Key? key}) : super(key: key);
+  const V2rayPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
               image: DecorationImage(
                   image: AssetImage("assets/runway.jpg"),
                   fit: BoxFit.fitWidth)),
-          child: PageView(children: [
+          child: PageView(children: const [
             NodesView(tag: "instant"),
             NodesView(tag: "mark"),
             NodesView(tag: "history")
@@ -29,7 +29,7 @@ class V2rayPage extends StatelessWidget {
 }
 
 class NodesView extends StatefulWidget {
-  const NodesView({Key? key, required this.tag}) : super(key: key);
+  const NodesView({super.key, required this.tag});
   final String tag;
   @override
   State<NodesView> createState() => NodesViewState();
@@ -42,7 +42,7 @@ class NodesViewState extends State<NodesView> {
   bool _fwStatus = false;
   int selected = 0;
   Future<Null> _onRefresh() async {
-    await Dio().get(Openwrt + "fetch");
+    await Dio().get("${Openwrt}fetch");
     _fetchData = fetchConfig();
   }
 
@@ -65,18 +65,21 @@ class NodesViewState extends State<NodesView> {
           child: FutureBuilder<List>(
               future: _fetchData,
               builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting)
-                  return Center(child: CircularProgressIndicator());
-                if (snap.data == null)
-                  return Center(
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snap.data == null) {
+                  return const Center(
                       child: Text("Router server error",
                           style: TextStyle(fontSize: 30, color: Colors.white)));
+                }
                 var nodeData = [];
                 // reverse marked node list
-                if (widget.tag == "mark")
+                if (widget.tag == "mark") {
                   nodeData = snap.data!.reversed.toList();
-                else
+                } else {
                   nodeData = snap.data!;
+                }
                 return Stack(
                   children: <Widget>[
                     ListView.builder(
@@ -97,14 +100,14 @@ class NodesViewState extends State<NodesView> {
   }
 
   Future<List> fetchConfig() async {
-    var response = await Dio().get(Openwrt + "/fetch");
+    var response = await Dio().get("$Openwrt/fetch");
     var data = jsonDecode(response.data);
     var nodes = data["nodes"];
     current = data["current"];
     _fwStatus = data["status"];
     switch (widget.tag) {
       case "mark":
-        var response = await Dio().get(Openwrt + "nodes/history");
+        var response = await Dio().get("${Openwrt}nodes/history");
         var data = jsonDecode(response.data);
         nodes = data;
         break;
@@ -121,19 +124,20 @@ class NodesViewState extends State<NodesView> {
   }
 
   Widget _buildListItem(int index, dynamic data) {
-    if (widget.tag != "mark")
+    if (widget.tag != "mark") {
       return GestureDetector(
         onLongPress: () {
-          Dio().post(Openwrt + "nodes/mark", data: data);
+          Dio().post("${Openwrt}nodes/mark", data: data);
           BotToast.showText(text: "Marked!");
         },
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
           child: NodeCard(NodeData(data: data, index: index)),
         ),
       );
+    }
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
       child: NodeCard(NodeData(data: data, index: index)),
     );
   }
@@ -153,17 +157,17 @@ class NodesViewState extends State<NodesView> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text("提示"),
-                content: Text("确定切换iptables?"),
+                title: const Text("提示"),
+                content: const Text("确定切换iptables?"),
                 actions: <Widget>[
                   TextButton(
-                    child: Text("取消"),
+                    child: const Text("取消"),
                     onPressed: () => Navigator.of(context).pop(false), //关闭对话框
                   ),
                   TextButton(
-                    child: Text("确定"),
+                    child: const Text("确定"),
                     onPressed: () {
-                      Dio().get(Openwrt + "/iptable/toggle").then(((value) {
+                      Dio().get("$Openwrt/iptable/toggle").then(((value) {
                         if (value.data == "ok") fetchConfig();
                       }));
                       Navigator.of(context).pop(true); //关闭对话框
@@ -176,27 +180,27 @@ class NodesViewState extends State<NodesView> {
       child: SafeArea(
         child: AnimatedAlign(
           curve: Curves.elasticOut,
-          duration: Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 800),
           alignment: Alignment(0, _fwStatus ? -1 : -1.5),
           child: Container(
             color: Colors.black.withAlpha(128),
-            margin: EdgeInsets.all(15),
+            margin: const EdgeInsets.all(15),
             constraints: BoxConstraints(maxHeight: height),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
                     current != null ? current["ps"] : "null",
-                    style: TextStyle(fontSize: 20, color: Colors.white),
+                    style: const TextStyle(fontSize: 20, color: Colors.white),
                   ),
                 ),
                 Text(
                   widget.tag,
-                  style: TextStyle(fontSize: 15, color: Colors.white),
+                  style: const TextStyle(fontSize: 15, color: Colors.white),
                 ),
-                _fwStatus ? Divider(color: Colors.grey) : Container(),
+                _fwStatus ? const Divider(color: Colors.grey) : Container(),
                 !_fwStatus || current == null
                     ? Container()
                     : Row(
@@ -204,15 +208,15 @@ class NodesViewState extends State<NodesView> {
                           IconButton(
                               onPressed: () {
                                 if (widget.tag == "instant") {
-                                  Dio().get(Openwrt + "fetch?refresh=1");
+                                  Dio().get("${Openwrt}fetch?refresh=1");
                                   BotToast.showText(text: "Refreshing...");
                                 }
                               },
-                              icon: Icon(Icons.refresh),
+                              icon: const Icon(Icons.refresh),
                               color: Colors.white),
                           Expanded(
                             child: Container(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                   vertical: 5, horizontal: 20),
                               alignment: Alignment.center,
                               child: Column(
@@ -220,38 +224,38 @@ class NodesViewState extends State<NodesView> {
                                 children: [
                                   RichText(
                                       text: TextSpan(children: [
-                                    TextSpan(
+                                    const TextSpan(
                                         text: "addr: ",
                                         style: TextStyle(
                                             color: Colors.yellow,
                                             fontSize: 20)),
                                     TextSpan(
                                         text: current["add"],
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             color: Colors.white, fontSize: 20))
                                   ])),
                                   RichText(
                                       text: TextSpan(children: [
-                                    TextSpan(
+                                    const TextSpan(
                                         text: "port: ",
                                         style: TextStyle(
                                             color: Colors.yellow,
                                             fontSize: 20)),
                                     TextSpan(
                                         text: current["port"].toString(),
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             color: Colors.white, fontSize: 20))
                                   ])),
                                   RichText(
                                       text: TextSpan(children: [
-                                    TextSpan(
+                                    const TextSpan(
                                         text: "protocol: ",
                                         style: TextStyle(
                                             color: Colors.yellow,
                                             fontSize: 20)),
                                     TextSpan(
                                         text: current["protocol"],
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             color: Colors.white, fontSize: 20))
                                   ]))
                                 ],
@@ -262,18 +266,18 @@ class NodesViewState extends State<NodesView> {
                             onPressed: () async {
                               var data = await _fetchData;
                               // Dio().post( Openwrt + "/nodes/detect",data:{"source":widget.tag,"nodes":data});
-                              Dio().post(host + "v2ray/detect/nodes",
+                              Dio().post("${host}v2ray/detect/nodes",
                                   data: {"source": widget.tag, "nodes": data});
                               BotToast.showText(text: "Speed Testing...");
                             },
-                            icon: Icon(Icons.check),
+                            icon: const Icon(Icons.check),
                             color: Colors.white,
                           ),
                         ],
                       ),
                 _fwStatus
                     ? Container()
-                    : Padding(
+                    : const Padding(
                         padding: EdgeInsets.all(20),
                         child: Text(
                           "firewall disable",

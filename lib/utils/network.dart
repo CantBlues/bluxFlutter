@@ -9,15 +9,15 @@ import 'eventbus.dart';
 String hostIp = '192.168.0.141';
 
 bool ipv = false;
-String host = "http://${hostIp}:9999/";
-String wsHost = "ws://${hostIp}:9999/ws";
-String mediaHost = "http://${hostIp}:9998/";
-String Domain = "http://${hostIp}:888/";
+String host = "http://$hostIp:9999/";
+String wsHost = "ws://$hostIp:9999/ws";
+String mediaHost = "http://$hostIp:9998/";
+String Domain = "http://$hostIp:888/";
 const String Openwrt = "http://192.168.0.1:89/";
 // use for debug
 // const String Openwrt = "http://127.0.0.1:89/";
 BaseOptions options = BaseOptions(
-    baseUrl: "http://${hostIp}:9999/",
+    baseUrl: "http://$hostIp:9999/",
     responseType: ResponseType.plain,
     // connectTimeout: 30000,
     receiveTimeout: 30000,
@@ -38,7 +38,7 @@ class LaravelDio {
   late final Dio dio;
   LaravelDio() {
     BaseOptions optionsLara = BaseOptions(
-        baseUrl: Domain + "api/",
+        baseUrl: "${Domain}api/",
         responseType: ResponseType.json,
         receiveTimeout: 30000,
         contentType: Headers.jsonContentType);
@@ -46,8 +46,8 @@ class LaravelDio {
     (dio.transformer as DefaultTransformer).jsonDecodeCallback = parseJson;
     dio.interceptors.add(InterceptorsWrapper(onResponse: (response, handler) {
       if (response.data["status"] != "success") {
-        String _info = "${response.data["status"]}:${response.data["data"]}";
-        BotToast.showText(text: _info);
+        String info = "${response.data["status"]}:${response.data["data"]}";
+        BotToast.showText(text: info);
       }
       return handler.next(response);
     }, onError: (e, handler) {
@@ -64,13 +64,13 @@ class LaravelDio {
   }
 }
 
-String local = "http://${hostIp}:9999/";
+String local = "http://$hostIp:9999/";
 void listenNetwork() {
   Connectivity().onConnectivityChanged.listen((data) async {
     for (var element in data) {
       if (element == ConnectivityResult.wifi) {
         Response response;
-        response = await Dio().get(local + "/checkonline");
+        response = await Dio().get("$local/checkonline");
         var ret = response.data.toString();
         if (ret == "online") {
           switchIpv(false);
@@ -90,8 +90,8 @@ void switchIpv(bool ipv6) {
     host = "http://127.0.0.1:19999/";
     mediaHost = "http://127.0.0.1:19998/";
   } else {
-    host = "http://${hostIp}:9999/";
-    mediaHost = "http://${hostIp}:9998/";
+    host = "http://$hostIp:9999/";
+    mediaHost = "http://$hostIp:9998/";
   }
   dio = Dio(options.copyWith(baseUrl: host));
   bus.emit("netChange");
@@ -99,7 +99,7 @@ void switchIpv(bool ipv6) {
 
 Future<bool> sendShutDown() async {
   Response response;
-  response = await Dio().get(host + "/shutdown");
+  response = await Dio().get("$host/shutdown");
   var ret = jsonDecode(response.data.toString());
   if (response.statusCode == 200 && ret["Status"]) {
     return true;
@@ -112,7 +112,7 @@ void sendUDP(String ip) {
     socket.broadcastEnabled = true;
     print('Sending from ${socket.address.address}:${socket.port}');
     int port = 9;
-    socket.send(_hexStr2ListInt("FFFFFFFFFFFF" + "00E05A6805B4" * 16), InternetAddress(ip), port);
+    socket.send(_hexStr2ListInt("FFFFFFFFFFFF${"00E05A6805B4" * 16}"), InternetAddress(ip), port);
   });
 }
 
@@ -140,7 +140,7 @@ int _hexToInt(String hex) {
       // a..f
       val += (hexDigit - 87) * (1 << (4 * (len - 1 - i)));
     } else {
-      throw new FormatException("Invalid hexadecimal value");
+      throw const FormatException("Invalid hexadecimal value");
     }
   }
   return val;
@@ -156,11 +156,11 @@ void remoteWake(String ip) async {
 
   // send hello
   socket.add(<int>[1, 35, 51]);
-  await Future.delayed(Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
   socket.add(<int>[5, 35, 51]);
 
   // wait 5 seconds
-  await Future.delayed(Duration(seconds: 5));
+  await Future.delayed(const Duration(seconds: 5));
 
   // .. and close the socket
   socket.close();

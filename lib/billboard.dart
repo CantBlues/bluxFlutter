@@ -8,6 +8,8 @@ import 'utils/network.dart';
 import 'dart:convert';
 
 class Billboard extends StatefulWidget {
+  const Billboard({super.key});
+
   @override
   State<StatefulWidget> createState() => _BillboardState();
 }
@@ -34,12 +36,12 @@ class _BillboardState extends State<Billboard> {
   getBarData() {
     dioLara.get("/api/tasks/compare2month").then((response) {
       var data = jsonDecode(response.data);
-      Map<String, List> _tmp = {
+      Map<String, List> tmp = {
         "this_month": data["data"]["this_month"],
         "last_month": data["data"]["last_month"]
       };
       setState(() {
-        _barData = _tmp;
+        _barData = tmp;
       });
     });
   }
@@ -63,13 +65,13 @@ class _BillboardState extends State<Billboard> {
     return Material(
         color: Colors.transparent,
         child: _loading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : Container(
-                margin: EdgeInsets.all(20),
+                margin: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     BlurCard(_contributionLoading
-                        ? Center(
+                        ? const Center(
                             child: CircularProgressIndicator(),
                           )
                         : ContributionView(_type, _contributionData)),
@@ -77,17 +79,17 @@ class _BillboardState extends State<Billboard> {
                     BlurCard(PercentageView(_barData, _typeMenu)),
                     Row(children: [
                       Expanded(
-                          child: BlurCard(Container(
+                          child: BlurCard(SizedBox(
                         width: double.infinity,
                         height: 60,
                         child: PopupMenuButton(
-                          offset: Offset(80, 0),
+                          offset: const Offset(80, 0),
                           child: Center(
                               child: Text(_type,
-                                  style: TextStyle(color: Colors.white))),
+                                  style: const TextStyle(color: Colors.white))),
                           itemBuilder: (context) {
                             List<PopupMenuEntry> menus = [];
-                            menus.add(PopupMenuItem(
+                            menus.add(const PopupMenuItem(
                                 value: "Sum", child: Text("Sum")));
                             for (var element in _typeMenu) {
                               String name = element["name"];
@@ -98,18 +100,18 @@ class _BillboardState extends State<Billboard> {
                             return menus;
                           },
                           onSelected: (value) {
-                            String _name = value.toString();
-                            getContributionData(_name);
+                            String name0 = value.toString();
+                            getContributionData(name0);
                           },
                         ),
                       ))),
                       Container(width: 25),
                       Expanded(
-                          child: BlurCard(Container(
+                          child: BlurCard(SizedBox(
                               width: double.infinity,
                               height: 60,
                               child: TextButton(
-                                child: Icon(Icons.close, color: Colors.white),
+                                child: const Icon(Icons.close, color: Colors.white),
                                 onPressed: () => Navigator.of(context).pop(),
                               ))))
                     ]),
@@ -120,7 +122,7 @@ class _BillboardState extends State<Billboard> {
 
 class BlurCard extends StatelessWidget {
   const BlurCard(this.content,
-      {this.left = 0, this.right = 0, this.top = 0, this.bottom = 25});
+      {super.key, this.left = 0, this.right = 0, this.top = 0, this.bottom = 25});
   final Widget content;
   final double left;
   final double right;
@@ -133,20 +135,20 @@ class BlurCard extends StatelessWidget {
         padding:
             EdgeInsets.only(left: left, right: right, top: top, bottom: bottom),
         child: ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderRadius: const BorderRadius.all(Radius.circular(15)),
             child: Stack(children: [
               BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: Container(
-                    color: Color.fromARGB(20, 0, 0, 0),
+                    color: const Color.fromARGB(20, 0, 0, 0),
                     child: content,
-                  ),
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15)),
+                  )),
             ])));
   }
 }
 
 class ContributionView extends StatelessWidget {
-  const ContributionView(this.name, this.data);
+  const ContributionView(this.name, this.data, {super.key});
   final String name;
   final List data;
 
@@ -167,20 +169,20 @@ class ContributionView extends StatelessWidget {
         height: 220,
         child: Center(
             child: Padding(
-                padding: EdgeInsets.only(left: 10, right: 10),
+                padding: const EdgeInsets.only(left: 10, right: 10),
                 child: HeatMap(
                     scrollable: true,
                     datasets: datasets,
                     showColorTip: false,
-                    defaultColor: Color.fromARGB(99, 236, 236, 236),
-                    colorsets: {
+                    defaultColor: const Color.fromARGB(99, 236, 236, 236),
+                    colorsets: const {
                       1: Colors.pink,
                     }))));
   }
 }
 
 class BarChartView extends StatelessWidget {
-  const BarChartView(this.data);
+  const BarChartView(this.data, {super.key});
   final Map<String, List> data;
 
   BarChartGroupData makeGroupData(int x, double y1, double y2) {
@@ -200,7 +202,7 @@ class BarChartView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<BarChartGroupData> _items = [];
+    List<BarChartGroupData> items = [];
     Map<String, List<double>> tasks = {};
     if (data["this_month"] != null) {
       for (var element in data["this_month"]!) {
@@ -212,18 +214,18 @@ class BarChartView extends StatelessWidget {
     }
 
     int i = 0;
-    List<String> _name = [];
+    List<String> name = [];
     tasks.forEach((key, value) {
       BarChartGroupData tmp =
           makeGroupData(i, value[0], value.length == 2 ? value[1] : 0);
-      if (i < 7) _items.add(tmp);
-      _name.add(key);
+      if (i < 7) items.add(tmp);
+      name.add(key);
       i++;
     });
 
     return Container(
         child: data["this_month"] == null
-            ? CircularProgressIndicator()
+            ? const CircularProgressIndicator()
             : BarChart(BarChartData(
                 maxY: 31,
                 minY: 0,
@@ -240,23 +242,23 @@ class BarChartView extends StatelessWidget {
                             return Transform.rotate(
                                 angle: -0.8,
                                 child: Center(
-                                    child: Text("${_name[num.round()]}")));
+                                    child: Text(name[num.round()])));
                           })),
-                  leftTitles: AxisTitles(),
-                  rightTitles: AxisTitles(),
-                  topTitles: AxisTitles(),
+                  leftTitles: const AxisTitles(),
+                  rightTitles: const AxisTitles(),
+                  topTitles: const AxisTitles(),
                 ),
                 borderData: FlBorderData(
                   show: false,
                 ),
-                barGroups: _items,
-                gridData: FlGridData(show: false),
+                barGroups: items,
+                gridData: const FlGridData(show: false),
               )));
   }
 }
 
 class PercentageView extends StatelessWidget {
-  const PercentageView(this.data, this.types);
+  const PercentageView(this.data, this.types, {super.key});
 
   final Map<String, List> data;
   final List types;
@@ -300,20 +302,22 @@ class PercentageView extends StatelessWidget {
           pieData.add(element);
         }
 
-        int _weight = element["weight"];
+        int weight = element["weight"];
         if (soul.contains(element["name"])) {
-          soulNum += int.parse(element["times"].toString()) * _weight;
+          soulNum += int.parse(element["times"].toString()) * weight;
         }
         if (steps.contains(element["name"])) {
-          stepsNum += int.parse(element["times"].toString()) * _weight;
+          stepsNum += int.parse(element["times"].toString()) * weight;
         }
       }
     }
 
     int drop = stepsNum - soulNum;
-    double _angle = drop / 50;
+    double angle = drop / 50;
     return Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
+        height: 200,
+        width: double.infinity,
         child: Row(
           children: [
             Expanded(
@@ -321,11 +325,11 @@ class PercentageView extends StatelessWidget {
                     child: Stack(
               children: [
                 Align(
-                    alignment: Alignment(0, -0.6),
+                    alignment: const Alignment(0, -0.6),
                     child: Text("Soul: $soulNum , Steps: $stepsNum ")),
                 CustomPaint(
-                  size: Size(300, 300),
-                  painter: Seesaw(_angle),
+                  size: const Size(300, 300),
+                  painter: Seesaw(angle),
                 )
               ],
             ))),
@@ -335,9 +339,7 @@ class PercentageView extends StatelessWidget {
               onTap: () => popPE(context, pieData),
             ))
           ],
-        ),
-        height: 200,
-        width: double.infinity);
+        ));
   }
 }
 
@@ -383,12 +385,12 @@ class Seesaw extends CustomPainter {
     Path tri = Path()..moveTo(peak.dx, peak.dy);
     tri.lineTo(left.dx, left.dy);
     tri.lineTo(right.dx, right.dy);
-    double _width = size.width / 2.5;
+    double width = size.width / 2.5;
 
-    Path plank = Path()..moveTo(peak.dx - _width, peak.dy - 10);
-    plank.lineTo(peak.dx - _width, peak.dy);
-    plank.lineTo(peak.dx + _width, peak.dy);
-    plank.lineTo(peak.dx + _width, peak.dy - 10);
+    Path plank = Path()..moveTo(peak.dx - width, peak.dy - 10);
+    plank.lineTo(peak.dx - width, peak.dy);
+    plank.lineTo(peak.dx + width, peak.dy);
+    plank.lineTo(peak.dx + width, peak.dy - 10);
 
     double degree = angle;
     plank = plank.transform(rotate(degree));
@@ -407,7 +409,7 @@ class Seesaw extends CustomPainter {
 }
 
 class PhysicalPie extends StatelessWidget {
-  const PhysicalPie(this.data, this.big);
+  const PhysicalPie(this.data, this.big, {super.key});
   final List data;
   final bool big;
 
@@ -417,13 +419,13 @@ class PhysicalPie extends StatelessWidget {
     num pieSum = 0;
     for (var element in data) {
       pieSum += element["times"];
-      PieChartSectionData _part = PieChartSectionData(
+      PieChartSectionData part = PieChartSectionData(
           radius: big ? 100 : 45,
           title: "${element["name"]}:${element["times"]}",
           value: element["times"] / 1,
           color: Color.fromARGB(255, Random().nextInt(128) + 128,
               Random().nextInt(128) + 128, Random().nextInt(128) + 128));
-      pieData.add(_part);
+      pieData.add(part);
     }
 
     return Stack(
@@ -433,12 +435,12 @@ class PhysicalPie extends StatelessWidget {
             sections: pieData,
             sectionsSpace: 8,
           ),
-          swapAnimationDuration: Duration(seconds: 2),
+          swapAnimationDuration: const Duration(seconds: 2),
         ),
         Center(
             child: Text(
           pieSum.toString(),
-          style: TextStyle(
+          style: const TextStyle(
               fontSize: 30,
               shadows: [Shadow(color: Colors.white, blurRadius: 20)]),
         ))
@@ -448,7 +450,7 @@ class PhysicalPie extends StatelessWidget {
 }
 
 class ExerciseList extends StatefulWidget {
-  ExerciseList(this.pie);
+  const ExerciseList(this.pie, {super.key});
   final pie;
   @override
   _ExerciseListState createState() => _ExerciseListState();
@@ -459,7 +461,7 @@ class _ExerciseListState extends State<ExerciseList> {
   @override
   void initState() {
     list.add(Container(
-        margin: EdgeInsets.only(top: 30),
+        margin: const EdgeInsets.only(top: 30),
         width: 260,
         height: 260,
         child: PhysicalPie(widget.pie, true)));
@@ -468,61 +470,65 @@ class _ExerciseListState extends State<ExerciseList> {
   }
 
   sortTask(data) {
-    DateTime _now = DateTime.now();
-    List<Map?> _tasks = [];
+    DateTime now = DateTime.now();
+    List<Map?> tasks = [];
     for (var element in data["data"]) {
-      DateTime _date = DateTime.parse(element['date']);
-      int _days = _now.difference(_date).inDays;
-      Map? _task;
+      DateTime date = DateTime.parse(element['date']);
+      int days = now.difference(date).inDays;
+      Map? task;
 
-      if (_days >= 1) {
-        if (_days == 1)
-          _task = {"sort": 2, "content": "${element["name"]} >24h"};
-        if (_days == 2)
-          _task = {"sort": 3, "content": "${element["name"]} >48h"};
-        if (_days > 2 && _days < 5)
-          _task = {"sort": 4, "content": "${element["name"]} >72h"};
-        if (_days >= 5)
-          _task = {"sort": 1, "content": "${element["name"]} >120h"};
+      if (days >= 1) {
+        if (days == 1) {
+          task = {"sort": 2, "content": "${element["name"]} >24h"};
+        }
+        if (days == 2) {
+          task = {"sort": 3, "content": "${element["name"]} >48h"};
+        }
+        if (days > 2 && days < 5) {
+          task = {"sort": 4, "content": "${element["name"]} >72h"};
+        }
+        if (days >= 5) {
+          task = {"sort": 1, "content": "${element["name"]} >120h"};
+        }
       }
 
-      if (_task != null) _tasks.add(_task);
+      if (task != null) tasks.add(task);
     }
 
-    _tasks.sort(((a, b) => a?["sort"] - b?["sort"]));
+    tasks.sort(((a, b) => a?["sort"] - b?["sort"]));
 
-    for (var i = 0; i < _tasks.length; i++) {
-      double _scale = 1;
-      Color _color;
-      switch (_tasks[i]!["sort"]) {
+    for (var i = 0; i < tasks.length; i++) {
+      double scale = 1;
+      Color color;
+      switch (tasks[i]!["sort"]) {
         case 4:
-          _color = Colors.red;
-          _scale = 4;
+          color = Colors.red;
+          scale = 4;
           break;
         case 3:
-          _color = Colors.orange;
-          _scale = 3.3;
+          color = Colors.orange;
+          scale = 3.3;
           break;
         case 2:
-          _color = Colors.blue;
-          _scale = 2.5;
+          color = Colors.blue;
+          scale = 2.5;
           break;
         case 1:
-          _color = Colors.deepPurple;
-          _scale = 2;
+          color = Colors.deepPurple;
+          scale = 2;
           break;
         default:
-          _color = Colors.black;
+          color = Colors.black;
       }
-      Widget _widget = Container(
-          padding: EdgeInsets.only(top: 20),
-          child: Text(_tasks[i]!['content'],
+      Widget widget = Container(
+          padding: const EdgeInsets.only(top: 20),
+          child: Text(tasks[i]!['content'],
               style: TextStyle(
-                  color: _color,
+                  color: color,
                   fontWeight: FontWeight.bold,
-                  fontSize: _scale * 12,
-                  shadows: [Shadow(color: Colors.white, blurRadius: 5)])));
-      list.add(_widget);
+                  fontSize: scale * 12,
+                  shadows: const [Shadow(color: Colors.white, blurRadius: 5)])));
+      list.add(widget);
     }
     setState(() {});
   }
@@ -532,13 +538,13 @@ class _ExerciseListState extends State<ExerciseList> {
     return Material(
         color: Colors.transparent,
         child: Container(
+          margin: const EdgeInsets.all(20),
           child: Column(
-            children: list,
             verticalDirection: VerticalDirection.up,
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
+            children: list,
           ),
-          margin: EdgeInsets.all(20),
         ));
   }
 }

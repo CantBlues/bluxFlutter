@@ -7,6 +7,8 @@ import 'package:vector_math/vector_math_64.dart' as v;
 import 'utils/network.dart';
 
 class VideoList extends StatefulWidget {
+  const VideoList({super.key});
+
   @override
   _VideoListState createState() => _VideoListState();
 }
@@ -33,6 +35,9 @@ class _VideoListState extends State<VideoList> {
     return Column(
       children: [
         Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          clipBehavior: Clip.antiAlias,
           child: AspectRatio(
               aspectRatio: 1.5,
               child: Ink.image(
@@ -47,18 +52,15 @@ class _VideoListState extends State<VideoList> {
                               "/imgs/${_list[index]["Md5"]}thumb.jpg")
                           : AssetImage("assets/imgPlaceHolder.png"))
                       as ImageProvider<Object>)),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          clipBehavior: Clip.antiAlias,
         ),
         Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
             child: Text(
               "${_list[index]["Name"]}",
               style: TextStyle(color: Colors.black, fontSize: 14),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
-            ),
-            padding: EdgeInsets.only(left: 10, right: 10))
+            ))
       ],
     );
   }
@@ -87,22 +89,22 @@ class _VideoListState extends State<VideoList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: LayoutBuilder(builder: (ctx, cons) {
-      int _nums = (cons.maxWidth / 200).round();
+      int nums = (cons.maxWidth / 200).round();
       return CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: Text("Learning Materials"),
+            title: const Text("Learning Materials"),
             backgroundColor: Colors.pinkAccent,
             actions: [
               IconButton(
                   onPressed: () => Navigator.of(context).pushNamed('audios'),
-                  icon: Icon(Icons.audiotrack))
+                  icon: const Icon(Icons.audiotrack))
             ],
           ),
           CupertinoSliverRefreshControl(
             onRefresh: () async {
-              Response res = await Dio().get(host + '/update');
-              Dio().get(host + '/updateaudios');
+              Response res = await Dio().get('$host/update');
+              Dio().get('$host/updateaudios');
               if (res.data == '1') {
                 setState(() {
                   page = 0;
@@ -119,13 +121,13 @@ class _VideoListState extends State<VideoList> {
                 SliverChildBuilderDelegate((BuildContext context, int pos) {
               if (pos >= _list.length - 1 &&
                   _list.length < count! &&
-                  this.page != 0) {
+                  page != 0) {
                 _getVideoList();
               }
               return _buildCard(pos);
             }, childCount: _list.length),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                childAspectRatio: 1.1, crossAxisCount: _nums),
+                childAspectRatio: 1.1, crossAxisCount: nums),
           )
         ],
         physics: const BouncingScrollPhysics(
@@ -157,7 +159,7 @@ class CustomRect extends CustomClipper<Rect> {
 }
 
 class ProcessImg extends StatefulWidget {
-  ProcessImg({this.md5, this.title});
+  const ProcessImg({super.key, this.md5, this.title});
   final String? md5;
   final String? title;
   @override
@@ -171,9 +173,9 @@ class _ProcessImgState extends State<ProcessImg> {
   @override
   void initState() {
     super.initState();
-    Image img = Image.network(mediaHost + "/imgs/${widget.md5}process.jpg");
+    Image img = Image.network("$mediaHost/imgs/${widget.md5}process.jpg");
     img.image
-        .resolve(ImageConfiguration())
+        .resolve(const ImageConfiguration())
         .addListener(ImageStreamListener((ImageInfo info, _) {
       setState(() {
         ratio = info.image.width / info.image.height;
@@ -195,7 +197,7 @@ class _ProcessImgState extends State<ProcessImg> {
             v.Quaternion(0, 0, 0, 0), v.Vector3(10, 10, 1)),
         child: ClipRect(
           clipper: CustomRect(index, row: row, column: column, ratio: ratio),
-          child: Image.network(mediaHost + "/imgs/${widget.md5}process.jpg"),
+          child: Image.network("$mediaHost/imgs/${widget.md5}process.jpg"),
         ));
     return Material(
       color: Colors.transparent,
@@ -204,6 +206,7 @@ class _ProcessImgState extends State<ProcessImg> {
           children: [
             con,
             Align(
+              alignment: const Alignment(0, 0.3),
               child: Text(
                 widget.title!,
                 style: TextStyle(
@@ -211,7 +214,6 @@ class _ProcessImgState extends State<ProcessImg> {
                     color: Colors.black,
                     backgroundColor: Colors.orange),
               ),
-              alignment: Alignment(0, 0.3),
             ),
             Slider(
                 value: index.toDouble(),

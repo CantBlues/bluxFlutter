@@ -62,12 +62,13 @@ class EventHandle {
 List handleEvents(List<EventUsageInfo> origin) {
   Map<String, EventHandle> apps = {};
   List<Map> list = [];
-  origin.forEach((element) {
+  for (var element in origin) {
     int eventType = int.parse(element.eventType!);
     String packageName = element.packageName!;
 
-    if (!apps.containsKey(packageName))
+    if (!apps.containsKey(packageName)) {
       apps[packageName] = EventHandle(packageName, EventUsageInfo());
+    }
     EventHandle app = apps[packageName]!;
 
     switch (eventType) {
@@ -79,21 +80,22 @@ List handleEvents(List<EventUsageInfo> origin) {
         if (map['duration'] > 1000) list.add(map);
         break;
     }
-  });
+  }
   return list;
 }
 
 handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
   Map<String, EventHandle> apps = {};
 
-  origin.forEach((element) {
+  for (var element in origin) {
     // traverse events   event types : https://developer.android.com/reference/android/app/usage/UsageEvents.Event
     int eventType = int.parse(element.eventType!);
     String packageName = element.packageName!;
 
     // use EventHandle class to deal timestamps about single app.
-    if (!apps.containsKey(packageName))
+    if (!apps.containsKey(packageName)) {
       apps[packageName] = EventHandle(packageName, EventUsageInfo());
+    }
     EventHandle app = apps[packageName]!;
 
     switch (eventType) {
@@ -133,7 +135,7 @@ handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
         // app.hide(element);
         break;
     }
-  });
+  }
 
   apps.forEach((key, value) {
     Map tmp = {"name": key, "usage": value.sum / 1000};
@@ -144,14 +146,14 @@ handleStatsPerDay(List<EventUsageInfo> origin, Map today) {
 Future<List<Map>> getUsage(bool multi) async {
   if (!UniversalPlatform.isAndroid) return [{}];
   List<Map> periodUsage = [];
-  DateTime now = new DateTime.now();
+  DateTime now = DateTime.now();
   DateTime endDate = DateTime(now.year, now.month, now.day);
   DateTime startDate = DateTime(now.year, now.month, now.day)
       .subtract(Duration(days: multi ? 9 : 1));
 
   DateTime cur = startDate;
   while (cur.isBefore(endDate)) {
-    cur = cur.add(Duration(days: 1));
+    cur = cur.add(const Duration(days: 1));
     int node =
         int.parse(startDate.toString().substring(0, 10).split('-').join());
     Map today = {"node": node, "data": []};
@@ -160,7 +162,7 @@ Future<List<Map>> getUsage(bool multi) async {
     handleStatsPerDay(origin, today);
 
     periodUsage.add(today);
-    startDate = startDate.add(Duration(days: 1));
+    startDate = startDate.add(const Duration(days: 1));
   }
 
   return periodUsage;
@@ -179,6 +181,8 @@ recordPhoneUsage({bool multi = false}) async {
 }
 
 class AppUsageView extends StatefulWidget {
+  const AppUsageView({super.key});
+
   @override
   _APPUsageViewState createState() => _APPUsageViewState();
 }
@@ -187,8 +191,9 @@ class _APPUsageViewState extends State<AppUsageView> {
   List _infos = ["waiting"];
 
   showUsage() async {
-    if (!(await UsageStats.checkUsagePermission() ?? false))
+    if (!(await UsageStats.checkUsagePermission() ?? false)) {
       UsageStats.grantUsagePermission();
+    }
     DateTime now = DateTime.now();
     var data = await getUsage(true);
     var diff = DateTime.now().difference(now);

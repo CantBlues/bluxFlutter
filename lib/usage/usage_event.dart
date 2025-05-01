@@ -2,14 +2,16 @@ import 'package:blux/usage/usage_event_list.dart';
 import 'package:flutter/material.dart';
 
 class EventForm extends StatefulWidget {
+  const EventForm({super.key});
+
   @override
   _EventFormState createState() => _EventFormState();
 }
 
 class _EventFormState extends State<EventForm> {
   DateTimeRange range = DateTimeRange(
-      start: DateTime.now().subtract(Duration(days: 1)), end: DateTime.now());
-  TimeOfDay time = TimeOfDay(hour: 0, minute: 0);
+      start: DateTime.now().subtract(const Duration(days: 1)), end: DateTime.now());
+  TimeOfDay time = const TimeOfDay(hour: 0, minute: 0);
   String pkgName = "";
   List<int> eventTypes = [];
 
@@ -27,15 +29,16 @@ class _EventFormState extends State<EventForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Event Options")),
+        appBar: AppBar(title: const Text("Event Options")),
         body: Container(
-            margin: EdgeInsets.all(20),
-            alignment: Alignment(0, 0),
+            margin: const EdgeInsets.all(20),
+            alignment: const Alignment(0, 0),
             child: Form(child: FormField(
               builder: (field) {
-                DateTime _now = DateTime.now();
-                DateTime _today = DateTime(_now.year, _now.month, _now.day);
+                DateTime now = DateTime.now();
+                DateTime today = DateTime(now.year, now.month, now.day);
                 return Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -49,16 +52,16 @@ class _EventFormState extends State<EventForm> {
                                   range = await showDateRangePicker(
                                         context: context,
                                         firstDate:
-                                            _today.subtract(Duration(days: 15)),
-                                        lastDate: _today.add(Duration(days: 1)),
+                                            today.subtract(const Duration(days: 15)),
+                                        lastDate: today.add(const Duration(days: 1)),
                                       ) ??
                                       range;
                                   setState(() {});
                                 },
-                                child: Text("Select Date"))
+                                child: const Text("Select Date"))
                           ],
                         ),
-                        SizedBox(width: 30),
+                        const SizedBox(width: 30),
                         Column(
                           children: [
                             Text("$time"),
@@ -70,48 +73,47 @@ class _EventFormState extends State<EventForm> {
                                       time;
                                   setState(() {});
                                 },
-                                child: Text("Select Time"))
+                                child: const Text("Select Time"))
                           ],
                         )
                       ],
                     ),
                     TextFormField(
-                        decoration: InputDecoration(label: Text("PackageName")),
-                        onChanged: (_value) => pkgName = _value),
-                    SizedBox(height: 10),
-                    Text("Event Id:"),
-                    SizedBox(height: 10),
+                        decoration: const InputDecoration(label: Text("PackageName")),
+                        onChanged: (value) => pkgName = value),
+                    const SizedBox(height: 10),
+                    const Text("Event Id:"),
+                    const SizedBox(height: 10),
                     Expanded(
                         // height: 400,
                         child: GridView.builder(
                             itemCount: 25,
                             gridDelegate:
-                                SliverGridDelegateWithMaxCrossAxisExtent(
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
                                     maxCrossAxisExtent: 80,
                                     crossAxisSpacing: 5,
                                     mainAxisSpacing: 5),
-                            itemBuilder: (context, idx) {
-                              int _idx = idx + 1;
+                            itemBuilder: (context, index) {
+                              int idx = index + 1;
                               return Row(
                                 children: [
-                                  Text("$_idx"),
+                                  Text("$idx"),
                                   Checkbox(
-                                      value: eventTypes.contains(_idx),
+                                      value: eventTypes.contains(idx),
                                       onChanged: (selected) {
                                         selected!
-                                            ? eventTypes.add(_idx)
-                                            : eventTypes.remove(_idx);
+                                            ? eventTypes.add(idx)
+                                            : eventTypes.remove(idx);
                                         setState(() {});
                                       })
                                 ],
                               );
                             })),
                     Padding(
-                        padding: EdgeInsets.only(top: 30),
+                        padding: const EdgeInsets.only(top: 30),
                         child: ElevatedButton(
-                            onPressed: () => submit(), child: Text("Submit")))
+                            onPressed: () => submit(), child: const Text("Submit")))
                   ],
-                  mainAxisSize: MainAxisSize.min,
                 );
               },
             ))));

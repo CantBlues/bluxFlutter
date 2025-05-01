@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'utils/network.dart';
 
 class DrawerView extends StatelessWidget {
-  const DrawerView(this.ipv, this.pcStatus);
+  const DrawerView(this.ipv, this.pcStatus, {super.key});
   final bool ipv;
   final bool pcStatus;
   @override
   Widget build(BuildContext context) {
     return Drawer(
         child: Container(
+      decoration: const BoxDecoration(
+          image: DecorationImage(
+              fit: BoxFit.fill, image: AssetImage("assets/drawer.png"))),
       child: Column(children: [
         Container(
             alignment: Alignment(-1, 0.3),
@@ -91,15 +94,12 @@ class DrawerView extends StatelessWidget {
         )),
         Container(height: 50)
       ]),
-      decoration: BoxDecoration(
-          image: DecorationImage(
-              fit: BoxFit.fill, image: AssetImage("assets/drawer.png"))),
     ));
   }
 }
 
 class Cave extends StatelessWidget {
-  const Cave(this.widget, {this.color})
+  const Cave(this.widget, {super.key, this.color})
       : _color = (color != null) ? color : Colors.deepOrange;
   final Widget widget;
   final Color? color;
@@ -110,11 +110,11 @@ class Cave extends StatelessWidget {
     return Container(
         height: 60,
         width: double.infinity,
-        margin: EdgeInsets.only(left: 30, top: 10, right: 30, bottom: 10),
+        margin: const EdgeInsets.only(left: 30, top: 10, right: 30, bottom: 10),
         decoration: BoxDecoration(
             color: _color,
-            borderRadius: BorderRadius.all(Radius.circular(20)),
-            boxShadow: [
+            borderRadius: const BorderRadius.all(Radius.circular(20)),
+            boxShadow: const [
               BoxShadow(
                   color: Colors.black,
                   blurStyle: BlurStyle.outer,

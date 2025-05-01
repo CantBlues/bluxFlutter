@@ -9,14 +9,14 @@ class StarFieldPainter extends CustomPainter {
   void paint(Canvas canvas, Size canvasSize) {
     canvas.translate(canvasSize.width / 2, canvasSize.height / 2);
     var paint = Paint()..color = Colors.white;
-    stars.forEach((s) {
+    for (var s in stars) {
       var scale = .1 + map(s.z, 0, canvasSize.width, s.size, 0);
       var sx = map(s.x / s.z, 0, 1, 0, canvasSize.width);
       var sy = map(s.y / s.z, 0, 1, 0, canvasSize.height);
       paint.color = s.color;
       var pos = Offset(sx,sy);
       canvas.drawCircle( pos, scale, paint,);
-    });
+    }
   }
 
   @override

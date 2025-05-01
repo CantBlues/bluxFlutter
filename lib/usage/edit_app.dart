@@ -3,6 +3,8 @@ import 'package:blux/utils/network.dart';
 import 'package:flutter/material.dart';
 
 class UsageAppsEditPage extends StatefulWidget {
+  const UsageAppsEditPage({super.key});
+
   @override
   _UsageAppsEditPageState createState() => _UsageAppsEditPageState();
 }
@@ -34,7 +36,7 @@ class _UsageAppsEditPageState extends State<UsageAppsEditPage> {
     return Material(
         child: Center(
             child: loading
-                ? CircularProgressIndicator()
+                ? const CircularProgressIndicator()
                 : Container(
                     child: ListView.builder(
                         itemCount: apps.length,
@@ -45,14 +47,14 @@ class _UsageAppsEditPageState extends State<UsageAppsEditPage> {
 }
 
 class AppsRow extends StatelessWidget {
-  const AppsRow(this.info, this.tap);
+  const AppsRow(this.info, this.tap, {super.key});
   final Map info;
   final tap;
 
   @override
   Widget build(BuildContext context) {
-    String _packageName = info["package_name"];
-    String _name = info["name"] ?? "";
+    String packageName = info["package_name"];
+    String name = info["name"] ?? "";
 
     showEdit(Map info) {
       showDialog(
@@ -66,14 +68,14 @@ class AppsRow extends StatelessWidget {
 
     return Center(
         child: Card(
-            margin: EdgeInsets.all(10),
+            margin: const EdgeInsets.all(10),
             child: InkWell(
                 onTap: () => showEdit(info),
-                child: Container(
+                child: SizedBox(
                   child: Column(
                     children: [
-                       Text(_packageName),
-                      if(_name != "" ) Text(_name) 
+                       Text(packageName),
+                      if(name != "" ) Text(name) 
                     ],
                   ),
                   height: 50,width:double.infinity
@@ -82,7 +84,7 @@ class AppsRow extends StatelessWidget {
 }
 
 class AppInfo extends StatefulWidget {
-  const AppInfo(this.info, this.tap);
+  const AppInfo(this.info, this.tap, {super.key});
   final Map info;
   final tap;
 
@@ -94,13 +96,14 @@ class _AppInfoState extends State<AppInfo> {
   final _formKey = GlobalKey<FormState>();
 
   String _name = "";
-  Map _data = {};
+  final Map _data = {};
 
   _submit() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      if (widget.info["id"] != null)
+      if (widget.info["id"] != null) {
         _data["id"] = widget.info["id"];
+      }
         _data["name"] = _name;
 
       dioLara.post("/api/phone/app/edit", data: _data);
@@ -115,7 +118,7 @@ class _AppInfoState extends State<AppInfo> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        margin: EdgeInsets.all(30),
+        margin: const EdgeInsets.all(30),
         child: Form(
             key: _formKey,
             child: FormField(builder: (FormFieldState<Object?> a) {
@@ -124,7 +127,7 @@ class _AppInfoState extends State<AppInfo> {
                 children: [
                   Text(widget.info["package_name"]),
                   TextFormField(
-                    decoration: InputDecoration(labelText: "Name"),
+                    decoration: const InputDecoration(labelText: "Name"),
                     initialValue:
                         widget.info["name"],
                     validator: (value) {
@@ -138,9 +141,9 @@ class _AppInfoState extends State<AppInfo> {
                     },
                   ),
                   Padding(
-                      padding: EdgeInsets.only(top: 30),
+                      padding: const EdgeInsets.only(top: 30),
                       child: ElevatedButton(
-                          onPressed: () => _submit(), child: Text("Submit")))
+                          onPressed: () => _submit(), child: const Text("Submit")))
                 ],
               );
             })));

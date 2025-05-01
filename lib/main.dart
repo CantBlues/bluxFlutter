@@ -34,6 +34,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -52,8 +54,8 @@ class MyApp extends StatelessWidget {
           "audios": (context) => AudiosPage(),
           "taskSetting": (context) => TaskTypeSetting(),
           "test": (context) => TestPage(),
-          "v2ray": (context) => V2rayPage(),
-          "moon": (context) => MoonPage()
+          "v2ray": (context) => const V2rayPage(),
+          "moon": (context) => const MoonPage()
         });
   }
 }

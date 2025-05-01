@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 class Heat extends StatefulWidget {
-  Heat({Key? key}) : super(key: key);
+  const Heat({super.key});
 
   @override
   State<Heat> createState() => _HeatState();
@@ -14,11 +14,11 @@ class Heat extends StatefulWidget {
 class _HeatState extends State<Heat> {
   @override
   Widget build(BuildContext context) {
-    var events = {Offset(100, 200): 50};
+    var events = {const Offset(100, 200): 50};
     for (var i = 0; i < 10000; i++) {
-      var _offset =
+      var offset =
           Offset(Random().nextDouble() * 300, Random().nextDouble() * 1000);
-      events[_offset] = Random().nextInt(20);
+      events[offset] = Random().nextInt(20);
     }
     return Scaffold(
       body: Container(
@@ -27,7 +27,7 @@ class _HeatState extends State<Heat> {
             builder: (context, snapshot) {
               if (snapshot.data == null ||
                   snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
               return Image(
                 image: MemoryImage(snapshot.data!),
@@ -39,7 +39,7 @@ class _HeatState extends State<Heat> {
 }
 
 Future<Uint8List> generateHeatMap(
-    double _width, double _height, Map<Offset, int> events,
+    double width, double height, Map<Offset, int> events,
     [double radius = 80]) async {
   // init empty canvas
   final pictureRecorder = ui.PictureRecorder();
@@ -52,14 +52,14 @@ Future<Uint8List> generateHeatMap(
   var canvasPicture = pictureRecorder.endRecording();
 
   //  process raw image data
-  var _img = await canvasPicture.toImage(_width.toInt(), _height.toInt());
-  var data = await _img.toByteData();
+  var img0 = await canvasPicture.toImage(width.toInt(), height.toInt());
+  var data = await img0.toByteData();
   var dataList = data!.buffer.asUint8List();
   dataList = _mapRainbow(dataList);
 
   // decode raw rgba to png format
   final Completer<ui.Image> completer = Completer<ui.Image>();
-  ui.decodeImageFromPixels(dataList, _width.toInt(), _height.toInt(),
+  ui.decodeImageFromPixels(dataList, width.toInt(), height.toInt(),
       ui.PixelFormat.rgba8888, completer.complete);
   var img = await completer.future;
   var png = await img.toByteData(format: ui.ImageByteFormat.png);

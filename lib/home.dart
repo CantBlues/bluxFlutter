@@ -13,6 +13,8 @@ import 'task_layer.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<LockProvider>(create: (_) => LockProvider(), child: Home());
@@ -20,14 +22,14 @@ class HomePage extends StatelessWidget {
 }
 
 class Home extends StatefulWidget {
-  Home({Key? key}) : super(key: key);
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  PageController _pageController = PageController(initialPage: 1);
+  final PageController _pageController = PageController(initialPage: 1);
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,7 @@ class _HomeState extends State<Home> {
     return PageView(
       controller: _pageController,
       onPageChanged: (e) => lockProvider.toggle(),
-      physics: lockProvider.lock ? NeverScrollableScrollPhysics() : BouncingScrollPhysics(),
+      physics: lockProvider.lock ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
       children: [StarsPage(), Landscape()],
     );
   }
@@ -50,18 +52,20 @@ class LockProvider with ChangeNotifier {
 }
 
 class FloatCloud extends AnimatedWidget {
-  FloatCloud(Animation<double> animation) : super(listenable: animation);
+  const FloatCloud(Animation<double> animation, {super.key}) : super(listenable: animation);
   static final _marginTween = Tween<double>(begin: 0, end: 30);
   @override
   Widget build(BuildContext context) {
     final animation = listenable as Animation<double>;
     return Padding(
         padding: EdgeInsets.only(top: 50 + _marginTween.evaluate(animation)),
-        child: Image.asset("assets/cloud.png", width: 130, alignment: Alignment(-1, -1)));
+        child: Image.asset("assets/cloud.png", width: 130, alignment: const Alignment(-1, -1)));
   }
 }
 
 class Landscape extends StatefulWidget {
+  const Landscape({super.key});
+
   @override
   _LandscapeState createState() => _LandscapeState();
 }
@@ -133,13 +137,14 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
   }
 
   _showBillboard() {
-    if (_pcStatus)
+    if (_pcStatus) {
       showDialog(
           context: context,
           barrierColor: Colors.transparent,
           builder: (context) {
-            return Billboard();
+            return const Billboard();
           });
+    }
   }
 
   _showBlurBubble() {
@@ -165,7 +170,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
     return Scaffold(
       drawer: DrawerView(_ipv, _pcStatus),
       body: Stack(children: [
-        Container(
+        SizedBox(
             width: double.infinity,
             height: double.infinity,
             child: Stack(
@@ -175,7 +180,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                     child: Container(
                       width: double.infinity,
                       height: 800,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                           gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: [
                         0,
                         .8,
@@ -192,7 +197,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                     child: Image.asset("assets/landscape.png", width: double.infinity, fit: BoxFit.fitWidth)),
                 // billboard tap to show contributions layer.
                 Align(
-                    alignment: Alignment(1, 0.5),
+                    alignment: const Alignment(1, 0.5),
                     child: SizedBox(
                         width: 150,
                         height: 160,
@@ -201,7 +206,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                         ))),
                 // denglong
                 Align(
-                  alignment: Alignment(-1.05, 0.255),
+                  alignment: const Alignment(-1.05, 0.255),
                   child: GestureDetector(
                       onDoubleTap: () {
                         sendUDP("192.168.0.255");
@@ -209,7 +214,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                         checkPc();
                         int count = 0;
                         if (!_pcStatus) {
-                          Timer.periodic(Duration(seconds: 30), (t) {
+                          Timer.periodic(const Duration(seconds: 30), (t) {
                             count++;
                             checkPc();
                             if (count > 2) t.cancel();
@@ -221,15 +226,15 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                title: Text("提示"),
-                                content: Text("您确定要关机吗?"),
+                                title: const Text("提示"),
+                                content: const Text("您确定要关机吗?"),
                                 actions: <Widget>[
                                   TextButton(
-                                    child: Text("取消"),
+                                    child: const Text("取消"),
                                     onPressed: () => Navigator.of(context).pop(false), //关闭对话框
                                   ),
                                   TextButton(
-                                    child: Text("确定"),
+                                    child: const Text("确定"),
                                     onPressed: () {
                                       Navigator.of(context).pop(true); //关闭对话框
                                       setState(() {
@@ -248,7 +253,7 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                             });
                       },
                       child: Stack(
-                        alignment: Alignment(1, 0.2),
+                        alignment: const Alignment(1, 0.2),
                         children: [
                           ShaderMask(
                               shaderCallback: (bounds) {
@@ -267,26 +272,26 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
                 ),
                 // window tap to enter video list page
                 Align(
-                    alignment: Alignment(-0.5, 0.5),
+                    alignment: const Alignment(-0.5, 0.5),
                     child: GestureDetector(
-                      child: Container(
-                        width: 48,
-                        height: 108,
-                      ),
                       behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).pushNamed('moon'),
                       onLongPress: () {
                         if (_pcStatus) Navigator.of(context).pushNamed('videoList');
                       },
+                      child: Container(
+                        width: 48,
+                        height: 108,
+                      ),
                     )),
                 Align(
-                    alignment: Alignment(0.9, -0.7),
+                    alignment: const Alignment(0.9, -0.7),
                     child: GestureDetector(
-                        child: Container(width: 200, height: 80),
                         behavior: HitTestBehavior.opaque,
                         onTap: () => _pcStatus ? Navigator.of(context).pushNamed("usage") : null,
                         onLongPress: () =>
-                            Navigator.of(context).push(MaterialPageRoute(builder: ((context) => UsageTimeLine()))))),
+                            Navigator.of(context).push(MaterialPageRoute(builder: ((context) => const UsageTimeLine()))),
+                        child: Container(width: 200, height: 80))),
 
                 // blur effect mask
                 BackdropFilter(filter: ImageFilter.blur(sigmaX: _blurDeep, sigmaY: _blurDeep), child: Container()),
@@ -305,12 +310,13 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
             )),
         Align(
             alignment: Alignment.bottomCenter,
-            child: Container(
+            child: SizedBox(
                 height: 150,
                 child: GestureDetector(
                   onVerticalDragEnd: (e) {
-                    if (e.primaryVelocity! < -1000)
+                    if (e.primaryVelocity! < -1000) {
                       Navigator.of(context).push(MaterialPageRoute(builder: ((context) => TaskLayer())));
+                    }
                     if (e.primaryVelocity! > 1000) Navigator.pushNamed(context, "v2ray");
                   },
                   onHorizontalDragStart: (e) {
@@ -339,6 +345,8 @@ class _LandscapeState extends State<Landscape> with WidgetsBindingObserver, Sing
 }
 
 class BlinkAnimation extends StatefulWidget {
+  const BlinkAnimation({super.key});
+
   @override
   _BlinkAnimationState createState() => _BlinkAnimationState();
 }
@@ -350,9 +358,9 @@ class _BlinkAnimationState extends State<BlinkAnimation> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    controller = new AnimationController(vsync: this, duration: Duration(milliseconds: 600));
+    controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _color = ColorTween(begin: Colors.red, end: Colors.yellow.shade200)
-        .animate(CurvedAnimation(parent: controller, curve: Interval(0, 0.4, curve: Curves.easeInCirc)));
+        .animate(CurvedAnimation(parent: controller, curve: const Interval(0, 0.4, curve: Curves.easeInCirc)));
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         controller.reverse();

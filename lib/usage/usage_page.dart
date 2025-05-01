@@ -10,18 +10,18 @@ import 'package:provider/provider.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
 
 class UsagePage extends StatelessWidget {
-  UsagePage({Key? key}) : super(key: key);
+  const UsagePage({super.key});
 
   @override
   Widget build(context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("Phone Usage Stats"),
+          title: const Text("Phone Usage Stats"),
           actions: [
             IconButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: ((context) => EventForm()))),
-                icon: Icon(Icons.search))
+                icon: const Icon(Icons.search))
           ],
         ),
         body: Container(child: PhoneStat()));
@@ -29,6 +29,8 @@ class UsagePage extends StatelessWidget {
 }
 
 class PhoneStat extends StatefulWidget {
+  const PhoneStat({super.key});
+
   @override
   _PhoneStatState createState() => _PhoneStatState();
 }
@@ -42,12 +44,12 @@ class _PhoneStatState extends State<PhoneStat> {
   Widget showApps(context) {
     List<Widget> apps = [];
 
-    app.apps.forEach((element) {
+    for (var element in app.apps) {
       var name = (element["name"] != null && element["name"] != "")
           ? element["name"]
           : element["package_name"];
       apps.add(Center(child: Text(name)));
-    });
+    }
     return CupertinoActionSheet(
       actions: [
         SizedBox(
@@ -64,7 +66,7 @@ class _PhoneStatState extends State<PhoneStat> {
                   onPressed: () async {
                     Navigator.of(context).pop();
                   },
-                  child: Text("Cancel", style: TextStyle(color: Colors.red))),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.red))),
             ),
             Expanded(
               child: CupertinoActionSheetAction(
@@ -81,7 +83,7 @@ class _PhoneStatState extends State<PhoneStat> {
                       app.data = data;
                     });
                   },
-                  child: Text("Confirm")),
+                  child: const Text("Confirm")),
             )
           ],
         )
@@ -93,7 +95,7 @@ class _PhoneStatState extends State<PhoneStat> {
   void initState() {
     dioLara.get("/api/phone/apps").then((value) async {
       var data = jsonDecode(value.data);
-      List _apps = [];
+      List apps = [];
       int sumId = 0;
       for (var element in data["data"]) {
         if (element["package_name"] == "sum") {
@@ -105,12 +107,12 @@ class _PhoneStatState extends State<PhoneStat> {
                   ? element["name"]
                   : element['package_name'];
         }
-        if (element["display"] == 1) _apps.add(element);
+        if (element["display"] == 1) apps.add(element);
       }
       app.appId = sumId;
       var usageStats = await app.getData();
       setState(() {
-        app.apps = _apps;
+        app.apps = apps;
         app.data = usageStats;
         loading = false;
       });
@@ -143,7 +145,7 @@ class _PhoneStatState extends State<PhoneStat> {
     return Provider<AppProvider>.value(
         value: app,
         child: loading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
                   UsageTop(),
@@ -178,8 +180,8 @@ class _PhoneStatState extends State<PhoneStat> {
                                   onPressed: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                           builder: ((context) =>
-                                              UsageTimeLine()))),
-                                  child: Text("Detail")),
+                                              const UsageTimeLine()))),
+                                  child: const Text("Detail")),
                             ),
                           )
                         ],
@@ -197,7 +199,7 @@ class AppProvider {
   Map<int, String> appMap = {};
   List data = [];
   String current = DateTime.now()
-      .subtract(Duration(days: 1))
+      .subtract(const Duration(days: 1))
       .toIso8601String()
       .substring(0, 10);
   Future<List> getData() async {
@@ -208,6 +210,8 @@ class AppProvider {
 }
 
 class UsageContribution extends StatefulWidget {
+  const UsageContribution({super.key});
+
   @override
   _UsageContributionState createState() => _UsageContributionState();
 }
@@ -226,7 +230,7 @@ class _UsageContributionState extends State<UsageContribution> {
             child: HeatMap(
           datasets: datasets,
           defaultColor: Colors.grey[300],
-          colorsets: {1: Colors.blue},
+          colorsets: const {1: Colors.blue},
           scrollable: true,
           showColorTip: false,
         ));
@@ -236,7 +240,7 @@ class _UsageContributionState extends State<UsageContribution> {
 }
 
 class UsageTop extends StatefulWidget {
-  UsageTop({Key? key}) : super(key: key);
+  const UsageTop({super.key});
 
   @override
   State<UsageTop> createState() => _UsageTopState();
@@ -275,15 +279,16 @@ class _UsageTopState extends State<UsageTop> {
         color = Color.fromARGB(255, Random().nextInt(255),
             Random().nextInt(255), Random().nextInt(255));
         element['color'] = color;
-      } else
+      } else {
         color = element['color'];
+      }
 
       double value = (element["usage"] / 60).roundToDouble();
       PieChartSectionData tmp = PieChartSectionData(
           value: value,
           color: color,
           title: value.round().toString(),
-          titleStyle: TextStyle(shadows: [
+          titleStyle: const TextStyle(shadows: [
             Shadow(color: Colors.white, blurRadius: 1),
             Shadow(color: Colors.white, blurRadius: 1),
             Shadow(color: Colors.white, blurRadius: 1),
@@ -300,8 +305,9 @@ class _UsageTopState extends State<UsageTop> {
           touchCallback: (p0, p1) {
             if (p0 is FlTapUpEvent && p1 != null) {
               final index = p1.touchedSection!.touchedSectionIndex;
-              if (index >= 0 && _data[index] != null)
+              if (index >= 0 && _data[index] != null) {
                 setState(() => _highlight = _data[index]['id']);
+              }
             }
           },
         ));
@@ -329,7 +335,7 @@ class _UsageTopState extends State<UsageTop> {
       _date = date;
       _queryTop();
     }
-    return Container(
+    return SizedBox(
         height: 220,
         child: Consumer<AppProvider>(
           builder: ((context, value, child) {
@@ -341,10 +347,10 @@ class _UsageTopState extends State<UsageTop> {
                     Container(
                         width: 160,
                         height: 160,
-                        margin: EdgeInsets.all(20),
+                        margin: const EdgeInsets.all(20),
                         child:
                             _data != [] ? PieChart(_pieData()) : Container()),
-                    Container(
+                    SizedBox(
                       height: 160,
                       width: 160,
                       child: _top10(),
@@ -359,8 +365,7 @@ class _UsageTopState extends State<UsageTop> {
 }
 
 class AppLabel extends StatelessWidget {
-  const AppLabel(this.name, this.color, this.highlight, {Key? key})
-      : super(key: key);
+  const AppLabel(this.name, this.color, this.highlight, {super.key});
   final String name;
   final Color color;
   final bool highlight;
@@ -370,9 +375,9 @@ class AppLabel extends StatelessWidget {
     return Container(
         height: 30,
         width: 130,
-        margin: EdgeInsets.only(bottom: 2, right: 2),
+        margin: const EdgeInsets.only(bottom: 2, right: 2),
         clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
             color: Colors.black,
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Row(children: [
@@ -380,7 +385,7 @@ class AppLabel extends StatelessWidget {
           Expanded(
               child: Text(
             name,
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
             overflow: TextOverflow.ellipsis,
           ))
         ]));
@@ -388,6 +393,8 @@ class AppLabel extends StatelessWidget {
 }
 
 class UsageLineChart extends StatefulWidget {
+  const UsageLineChart({super.key});
+
   @override
   _UsageLineChartState createState() => _UsageLineChartState();
 }
@@ -396,10 +403,10 @@ class _UsageLineChartState extends State<UsageLineChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        padding: EdgeInsets.only(left: 10, top: 20, right: 20),
+        padding: const EdgeInsets.only(left: 10, top: 20, right: 20),
         child: Consumer<AppProvider>(
           builder: (context, value, child) {
-            if (value.data.length == 0) return LineChart(LineChartData());
+            if (value.data.isEmpty) return LineChart(LineChartData());
             List<FlSpot> spots = [];
             double maxY = 0;
             double minY = double.infinity;
@@ -408,10 +415,10 @@ class _UsageLineChartState extends State<UsageLineChart> {
             value.data = value.data.reversed.toList();
             int i = 0;
             for (var element in value.data) {
-              double _usage = element["usage"] / 1;
-              if (_usage > maxY) maxY = _usage;
-              if (_usage < minY) minY = _usage;
-              FlSpot spot = FlSpot(i / 1, _usage);
+              double usage = element["usage"] / 1;
+              if (usage > maxY) maxY = usage;
+              if (usage < minY) minY = usage;
+              FlSpot spot = FlSpot(i / 1, usage);
               spots.add(spot);
               i++;
             }
@@ -419,7 +426,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
               scrollDirection: Axis.horizontal,
               child: Container(
                 width: value.data.length * 5,
-                padding: EdgeInsets.only(right: 50),
+                padding: const EdgeInsets.only(right: 50),
                 child: LineChart(
                   LineChartData(
                       minY: minY * 0.8,
@@ -451,7 +458,7 @@ class _UsageLineChartState extends State<UsageLineChart> {
                                     (element.y / 60).toStringAsFixed(2);
                                 LineTooltipItem spot = LineTooltipItem(
                                     "${value.data[element.x.round()]["node"]} \n $hours hours \n $minutes minutes",
-                                    TextStyle(color: Colors.white));
+                                    const TextStyle(color: Colors.white));
                                 spots.add(spot);
                               }
                               return spots;
@@ -459,16 +466,17 @@ class _UsageLineChartState extends State<UsageLineChart> {
                           )),
                       borderData: FlBorderData(show: false),
                       titlesData: FlTitlesData(
-                          rightTitles: AxisTitles(),
-                          topTitles: AxisTitles(),
+                          rightTitles: const AxisTitles(),
+                          topTitles: const AxisTitles(),
                           leftTitles: AxisTitles(
                               sideTitles: SideTitles(
                             interval: 3600,
                             showTitles: true,
                             getTitlesWidget: (value, meta) {
-                              String _hour = (value / 3600).round().toString();
-                              if (value % 3600 == 0)
-                                return Center(child: Text(_hour));
+                              String hour = (value / 3600).round().toString();
+                              if (value % 3600 == 0) {
+                                return Center(child: Text(hour));
+                              }
                               return Container();
                             },
                           )),
@@ -476,14 +484,14 @@ class _UsageLineChartState extends State<UsageLineChart> {
                               sideTitles: SideTitles(
                                   showTitles: true,
                                   getTitlesWidget: (x, meta) {
-                                    String _date =
+                                    String date =
                                         value.data[x.round()]["node"];
-                                    _date = _date.substring(_date.length - 5);
+                                    date = date.substring(date.length - 5);
                                     return Transform.rotate(
                                         angle: -0.5,
-                                        child: Center(child: Text(_date)));
+                                        child: Center(child: Text(date)));
                                   })))),
-                  duration: Duration(milliseconds: 500),
+                  duration: const Duration(milliseconds: 500),
                 ),
               ),
             );

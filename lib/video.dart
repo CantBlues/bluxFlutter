@@ -6,7 +6,7 @@ import 'utils/network.dart';
 import 'package:flutter/services.dart';
 
 class VideoPage extends StatelessWidget {
-  VideoPage({Key? key}) : super(key: key);
+  const VideoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class VideoPage extends StatelessWidget {
             Player(url: args["Path"]),
             Expanded(
                 child: ListView(
-              padding: EdgeInsets.all(0),
+              padding: const EdgeInsets.all(0),
               children: [VideoTitle(args["Name"])],
             ))
           ]),
@@ -28,7 +28,7 @@ class VideoPage extends StatelessWidget {
 }
 
 class Player extends StatefulWidget {
-  Player({Key? key, required this.url}) : super(key: key);
+  const Player({super.key, required this.url});
   final String? url;
 
   @override
@@ -65,8 +65,8 @@ class _PlayerState extends State<Player> {
                 aspectRatio: _vpController.value.aspectRatio,
                 child: Chewie(controller: _controller)))
         : Container(
-            child: CircularProgressIndicator(),
             alignment: Alignment.center,
+            child: CircularProgressIndicator(),
           );
   }
 
@@ -79,7 +79,7 @@ class _PlayerState extends State<Player> {
 }
 
 class VideoTitle extends StatelessWidget {
-  VideoTitle(this.name);
+  const VideoTitle(this.name, {super.key});
   final String name;
 
   @override
@@ -87,7 +87,7 @@ class VideoTitle extends StatelessWidget {
     return Center(
       child: Text(
         name,
-        style: TextStyle(color: Colors.orangeAccent, fontSize: 30),
+        style: const TextStyle(color: Colors.orangeAccent, fontSize: 30),
       ),
     );
   }

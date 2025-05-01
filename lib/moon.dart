@@ -4,16 +4,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class MoonPage extends StatelessWidget {
-  const MoonPage({Key? key}) : super(key: key);
+  const MoonPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Material(
         child: Container(
-            margin: EdgeInsets.only(top: 50),
+            margin: const EdgeInsets.only(top: 50),
             child: Column(
               children: [
-                Text("Moon Phase 2023",
+                const Text("Moon Phase 2023",
                     style:
                         TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
                 MoonPhase()
@@ -23,7 +23,7 @@ class MoonPage extends StatelessWidget {
 }
 
 class MoonPhase extends StatefulWidget {
-  MoonPhase({Key? key}) : super(key: key);
+  const MoonPhase({super.key});
 
   @override
   State<MoonPhase> createState() => _MoonPhaseState();
@@ -37,23 +37,23 @@ class _MoonPhaseState extends State<MoonPhase> {
   double preAngle = 0;
   @override
   Widget build(BuildContext context) {
-    double _width = MediaQueryData.fromView(window).size.width;
-    double _halfSize = _width / 2;
+    double width = MediaQueryData.fromView(window).size.width;
+    double halfSize = width / 2;
     return Container(
         child: GestureDetector(
       onPanDown: (details) {
         var x = details.localPosition.dx;
         var y = details.localPosition.dy;
         initAngle =
-            details.localPosition.translate(-_halfSize, -_halfSize).direction *
+            details.localPosition.translate(-halfSize, -halfSize).direction *
                 57;
         // angle = radian * 180 / pi
         // detect pan down on outter or inner
 
-        if ((x < _width / 4) ||
-            (y < _width / 4) ||
-            (x > 3 * _width / 4) ||
-            (y > 3 * _width / 4)) {
+        if ((x < width / 4) ||
+            (y < width / 4) ||
+            (x > 3 * width / 4) ||
+            (y > 3 * width / 4)) {
           outter = true;
           preAngle = angleCalendar;
         } else {
@@ -63,7 +63,7 @@ class _MoonPhaseState extends State<MoonPhase> {
       },
       onPanUpdate: ((details) {
         var angle =
-            (details.localPosition.translate(-_halfSize, -_halfSize).direction *
+            (details.localPosition.translate(-halfSize, -halfSize).direction *
                         57 -
                     initAngle) /
                 30;
@@ -82,13 +82,13 @@ class _MoonPhaseState extends State<MoonPhase> {
         Transform.rotate(
             angle: angleCalendar,
             child:
-                CachedNetworkImage(imageUrl: Domain + "/storage/calendar.png")),
+                CachedNetworkImage(imageUrl: "$Domain/storage/calendar.png")),
         Transform.rotate(
           angle: angleEarth,
           child:
-              CachedNetworkImage(imageUrl: Domain + "/storage/viewonearth.png"),
+              CachedNetworkImage(imageUrl: "$Domain/storage/viewonearth.png"),
         ),
-        CachedNetworkImage(imageUrl: Domain + "/storage/main.png")
+        CachedNetworkImage(imageUrl: "$Domain/storage/main.png")
       ]),
     ));
   }

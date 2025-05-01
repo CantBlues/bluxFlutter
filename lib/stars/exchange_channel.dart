@@ -27,8 +27,7 @@ class ConstellationListRenderer extends StatefulWidget {
   final Function(ConstellationData, bool)? onTap;
 
   const ConstellationListRenderer(
-      {Key? key, required this.data, this.remote = false, this.onTap})
-      : super(key: key);
+      {super.key, required this.data, this.remote = false, this.onTap});
 
   @override
   _ConstellationListRendererState createState() =>
@@ -40,16 +39,16 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () {
-          if (widget.data.type == "image")
+          if (widget.data.type == "image") {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: ((context) =>
-                    RemoteImage("http://" + widget.data.title))));
-          else {
+                    RemoteImage("http://${widget.data.title}"))));
+          } else {
             Clipboard.setData(ClipboardData(text:widget.data.title));
           }
         },
         child: Container(
-            padding: EdgeInsets.only(bottom: 32),
+            padding: const EdgeInsets.only(bottom: 32),
             alignment:
                 widget.remote ? Alignment.centerLeft : Alignment.centerRight,
             child: Text(
@@ -61,7 +60,7 @@ class _ConstellationListRendererState extends State<ConstellationListRenderer> {
 }
 
 class MessageChannel extends StatefulWidget {
-  MessageChannel(this.onProgress, {Key? key}) : super(key: key);
+  const MessageChannel(this.onProgress, {super.key});
   final onProgress;
   @override
   State<MessageChannel> createState() => _MessageChannelState();
@@ -72,20 +71,20 @@ class _MessageChannelState extends State<MessageChannel> {
 
   void sendMsg(WsProvider value, String type, String msg) {
     value.write(msg, false, type);
-    Map _msg = {"type": type, "uid": "flutter", "msg": msg};
-    value.channel.sink.add(jsonEncode(_msg));
+    Map msg0 = {"type": type, "uid": "flutter", "msg": msg};
+    value.channel.sink.add(jsonEncode(msg0));
   }
 
   uploadCallBack(value) {
-    var _provider = context.read<WsProvider>();
-    sendMsg(_provider, "image", value.data["data"]);
+    var provider = context.read<WsProvider>();
+    sendMsg(provider, "image", value.data["data"]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WsProvider>(builder: (context, value, _) {
       return Align(
-          alignment: Alignment(0, 0.8),
+          alignment: const Alignment(0, 0.8),
           child: TextButton(
             child: Image.asset("assets/rocket.png", width: 50),
             onLongPress: () async {
@@ -93,13 +92,13 @@ class _MessageChannelState extends State<MessageChannel> {
               for (var img in imgs) {
                 var file =
                     await MultipartFile.fromFile(img.path, filename: img.name);
-                var _payload = FormData.fromMap({
+                var payload = FormData.fromMap({
                   'name': img.name,
                   'file': file,
                 });
-                laravel.post("file/upload", data: _payload,
+                laravel.post("file/upload", data: payload,
                     onSendProgress: (a, b) {
-                  Future.delayed(Duration(milliseconds: 20));
+                  Future.delayed(const Duration(milliseconds: 20));
                   widget.onProgress(a / b);
                 }).then((value) => uploadCallBack(value));
               }
@@ -108,22 +107,22 @@ class _MessageChannelState extends State<MessageChannel> {
               showDialog(
                   context: context,
                   builder: (context) {
-                    final _controller = TextEditingController();
+                    final controller = TextEditingController();
                     return SimpleDialog(
-                      contentPadding: EdgeInsets.all(10),
+                      contentPadding: const EdgeInsets.all(10),
                       children: [
                         Center(
-                            child: Container(
+                            child: SizedBox(
                           height: 100,
                           child: TextField(
                             maxLines: null,
                             minLines: null,
                             expands: true,
                             autofocus: true,
-                            controller: _controller,
+                            controller: controller,
                             onSubmitted: (a) {
-                              if (_controller.text != "") {
-                                sendMsg(value, "msg", _controller.text);
+                              if (controller.text != "") {
+                                sendMsg(value, "msg", controller.text);
                                 Navigator.of(context).pop();
                               }
                             },
@@ -133,17 +132,17 @@ class _MessageChannelState extends State<MessageChannel> {
                           child: Row(children: [
                             Expanded(
                               child: TextButton(
-                                child: Text("Cancel",
+                                child: const Text("Cancel",
                                     style: TextStyle(color: Colors.red)),
                                 onPressed: () => Navigator.of(context).pop(),
                               ),
                             ),
                             Expanded(
                               child: TextButton(
-                                child: Text("Confirm", style: TextStyle()),
+                                child: const Text("Confirm", style: TextStyle()),
                                 onPressed: () {
-                                  if (_controller.text != "") {
-                                    sendMsg(value, "msg", _controller.text);
+                                  if (controller.text != "") {
+                                    sendMsg(value, "msg", controller.text);
                                     Navigator.of(context).pop();
                                   }
                                 },
@@ -161,7 +160,7 @@ class _MessageChannelState extends State<MessageChannel> {
 }
 
 class MessageList extends StatefulWidget {
-  MessageList({Key? key}) : super(key: key);
+  const MessageList({super.key});
 
   @override
   State<MessageList> createState() => _MessageListState();
@@ -194,16 +193,16 @@ class _MessageListState extends State<MessageList> {
   }
 
   wsConnect() {
-    var _provider = context.read<WsProvider>();
-    _provider.channel = WebSocketChannel.connect(Uri.parse(wsHost));
-    channel = _provider.channel;
+    var provider = context.read<WsProvider>();
+    provider.channel = WebSocketChannel.connect(Uri.parse(wsHost));
+    channel = provider.channel;
     channel.sink.add('{"type":"login","uid":"flutter","msg":"flutter login"}');
     channel.stream.listen((data) {
       var message = jsonDecode(data);
-      _provider.write(message["msg"], true, message["type"]);
+      provider.write(message["msg"], true, message["type"]);
     }, onDone: () {
       if (!mounted) return; // if page not exist.
-      _provider.write("Reconnect.", true, "msg");
+      provider.write("Reconnect.", true, "msg");
       wsConnect();
     });
   }
@@ -217,10 +216,10 @@ class _MessageListState extends State<MessageList> {
     return Consumer<WsProvider>(builder: ((context, value, child) {
       return ListView.builder(
           controller: controller,
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           itemCount: value.data.length,
           //Add some extra padding to the top & bottom of the list
-          padding: EdgeInsets.only(top: 150, bottom: 200, left: 50, right: 50),
+          padding: const EdgeInsets.only(top: 150, bottom: 200, left: 50, right: 50),
           itemBuilder: (context, i) {
             return ConstellationListRenderer(
                 data: value.data[i], remote: value.data[i].remote);
@@ -230,7 +229,7 @@ class _MessageListState extends State<MessageList> {
 }
 
 class RemoteImage extends StatelessWidget {
-  const RemoteImage(this.src, {Key? key}) : super(key: key);
+  const RemoteImage(this.src, {super.key});
   final String src;
   @override
   Widget build(BuildContext context) {
@@ -244,13 +243,13 @@ class RemoteImage extends StatelessWidget {
               onPressed: () async {
                 Directory appDocDir = await getTemporaryDirectory();
                 String appDocPath = appDocDir.path;
-                String _name =
-                    appDocPath + "/" + src.substring(src.length - 30);
-                await Dio().download(src, _name);
-                await ImageGallerySaver.saveFile(_name);
+                String name =
+                    "$appDocPath/${src.substring(src.length - 30)}";
+                await Dio().download(src, name);
+                await ImageGallerySaver.saveFile(name);
                 BotToast.showText(text: "Save Success!");
               },
-              child: Text("download"))
+              child: const Text("download"))
         ],
       ),
     ));

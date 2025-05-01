@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 
 class RouterRules extends StatefulWidget {
-  RouterRules({Key? key}) : super(key: key);
+  const RouterRules({super.key});
 
   @override
   State<RouterRules> createState() => _RouterRulesState();
@@ -45,7 +45,7 @@ class _RouterRulesState extends State<RouterRules> {
                       flex: 12,
                       child: FutureBuilder(
                           future: Dio()
-                              .get(Openwrt + "routerule/get")
+                              .get("${Openwrt}routerule/get")
                               .then((value) {
                             var data = jsonDecode(value.data.toString());
                             context.read<RulesProvider>().directRules =
@@ -54,8 +54,9 @@ class _RouterRulesState extends State<RouterRules> {
                                 data["proxyDomain"];
                           }),
                           builder: (context, snap) {
-                            if (snap.connectionState == ConnectionState.waiting)
-                              return Center(child: CircularProgressIndicator());
+                            if (snap.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
                             return RulesPanel();
                           })),
                   Expanded(
@@ -65,17 +66,17 @@ class _RouterRulesState extends State<RouterRules> {
                         width: double.infinity,
                         child: ElevatedButton(
                             onPressed: () {
-                              var _directRules =
+                              var directRules =
                                   context.read<RulesProvider>().directRules;
-                              var _proxyRules =
+                              var proxyRules =
                                   context.read<RulesProvider>().proxyRules;
-                              Dio().post(Openwrt + "routerule/set", data: {
-                                "proxy": _proxyRules,
-                                "direct": _directRules
+                              Dio().post("${Openwrt}routerule/set", data: {
+                                "proxy": proxyRules,
+                                "direct": directRules
                               }).then(((value) =>
                                   BotToast.showText(text: "Posted!")));
                             },
-                            child: Text(
+                            child: const Text(
                               "Confirm",
                               style: TextStyle(fontSize: 26),
                             ))),
@@ -87,7 +88,7 @@ class _RouterRulesState extends State<RouterRules> {
 }
 
 class RulesPanel extends StatefulWidget {
-  RulesPanel({Key? key}) : super(key: key);
+  const RulesPanel({super.key});
 
   @override
   State<RulesPanel> createState() => _RulesPanelState();
@@ -109,7 +110,7 @@ class _RulesPanelState extends State<RulesPanel> {
 }
 
 class RulesScroll extends StatefulWidget {
-  RulesScroll(this.tag, {Key? key}) : super(key: key);
+  const RulesScroll(this.tag, {super.key});
   final String tag;
 
   @override
@@ -128,14 +129,15 @@ class _RulesScrollState extends State<RulesScroll> {
             child: ListView.builder(
           itemCount: data.length + 2,
           itemBuilder: (context, index) {
-            if (index == 0)
+            if (index == 0) {
               return Center(
-                  child: Text(widget.tag, style: TextStyle(fontSize: 24)));
-            if (index == data.length + 1)
+                  child: Text(widget.tag, style: const TextStyle(fontSize: 24)));
+            }
+            if (index == data.length + 1) {
               return Container(
-                  padding: EdgeInsets.only(left: 60, right: 60),
+                  padding: const EdgeInsets.only(left: 60, right: 60),
                   child: ElevatedButton(
-                      child: Icon(Icons.add),
+                      child: const Icon(Icons.add),
                       onPressed: () {
                         if (isDirect) {
                           data.add("");
@@ -145,16 +147,19 @@ class _RulesScrollState extends State<RulesScroll> {
                           value.proxyRules = data;
                         }
                       }));
+            }
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onLongPress: () {
                 data.removeAt(index - 1);
-                if (isDirect)
+                if (isDirect) {
                   value.directRules = data;
-                else
+                } else {
                   value.proxyRules = data;
+                }
               },
               child: Container(
+                margin: const EdgeInsets.all(10),
                 child: TextFormField(
                   initialValue: data[index - 1],
                   onChanged: (v) {
@@ -165,7 +170,6 @@ class _RulesScrollState extends State<RulesScroll> {
                       value.proxyRules = data;
                   },
                 ),
-                margin: EdgeInsets.all(10),
               ),
             );
           },

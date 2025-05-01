@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'exchange_channel.dart';
 
 class StarsPage extends StatelessWidget {
+  const StarsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ConstellationsListDemo();
@@ -10,6 +12,8 @@ class StarsPage extends StatelessWidget {
 }
 
 class ConstellationsListDemo extends StatefulWidget {
+  const ConstellationsListDemo({super.key});
+
   @override
   _ConstellationsListDemoState createState() => _ConstellationsListDemoState();
 }
@@ -23,7 +27,7 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   //double _speed = idleSpeed;
   // GlobalKey<NavigatorState> _navigationStackKey = GlobalKey<NavigatorState>();
 
-  ValueNotifier<double> _speedValue = ValueNotifier(idleSpeed);
+  final ValueNotifier<double> _speedValue = ValueNotifier(idleSpeed);
 
   late AnimationController _starAnimController;
   late Animation<double> _starAnimSequence;
@@ -32,8 +36,8 @@ class _ConstellationsListDemoState extends State<ConstellationsListDemo>
   void initState() {
     _starAnimController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: starAnimDurationIn),
-      reverseDuration: Duration(milliseconds: starAnimDurationIn ~/ 3),
+      duration: const Duration(milliseconds: starAnimDurationIn),
+      reverseDuration: const Duration(milliseconds: starAnimDurationIn ~/ 3),
     );
     _starAnimController.addListener(() {
       _speedValue.value = _starAnimSequence.value;
@@ -163,11 +167,10 @@ class NestedNavigator extends StatefulWidget {
   final Function? onBackPop;
 
   const NestedNavigator(
-      {Key? key,
+      {super.key,
       required this.routeBuilder,
       required this.navKey,
-      this.onBackPop})
-      : super(key: key);
+      this.onBackPop});
 
   @override
   _NestedNavigatorState createState() => _NestedNavigatorState();
