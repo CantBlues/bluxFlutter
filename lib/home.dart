@@ -409,7 +409,7 @@ class _BubbleLayerState extends State<BubbleLayer> {
     var data = (await laravel.get("habbit_types")).data;
     for (var habbit in data['data']) {
       bubbles.add(BubbleData(
-        imageProvider: AssetImage('assets/${habbit["img"]}.png'),
+        imageProvider: NetworkImage(habbit["img"]),
         onTapBubble: (radius) {
           recordHabbit(habbit['id']);
         },
