@@ -1,10 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/network.dart';
 
-class DrawerView extends StatelessWidget {
+class DrawerView extends StatefulWidget {
   const DrawerView(this.ipv, this.pcStatus, {super.key});
   final bool ipv;
   final bool pcStatus;
+
+  @override
+  State<DrawerView> createState() => _DrawerViewState();
+}
+
+class _DrawerViewState extends State<DrawerView> {
+  TextEditingController? _controller;
+  String? _serverAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServerAddress();
+  }
+
+  Future<void> _loadServerAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? addr = prefs.getString('server_address');
+    setState(() {
+      _serverAddress = addr ?? Domain;
+      _controller = TextEditingController(text: _serverAddress);
+    });
+  }
+
+  Future<void> _saveServerAddress(String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('server_address', value);
+    setState(() {
+      _serverAddress = value;
+    });
+    Domain = value;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -23,7 +57,7 @@ class DrawerView extends StatelessWidget {
               margin: EdgeInsets.only(left: 25),
               child: Align(
                   alignment: Alignment.bottomCenter,
-                  child: !ipv
+                  child: !widget.ipv
                       ? SizedBox(
                           height: 60,
                           width: 120,
@@ -37,6 +71,37 @@ class DrawerView extends StatelessWidget {
               width: 120,
               height: 80,
             )),
+        // 新增服务器地址设置入口
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Row(
+            children: [
+              const Text('服务器地址:', style: TextStyle(color: Colors.white)),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: '输入服务器地址',
+                    hintStyle: TextStyle(color: Colors.white54),
+                    border: UnderlineInputBorder(),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) _saveServerAddress(value);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.save, color: Colors.white),
+                onPressed: () {
+                  if (_controller != null && _controller!.text.isNotEmpty) {
+                    _saveServerAddress(_controller!.text);
+                  }
+                },
+              )
+            ],
+          ),
+        ),
         Expanded(
             child: Column(
           verticalDirection: VerticalDirection.up,
@@ -53,9 +118,9 @@ class DrawerView extends StatelessWidget {
                   ),
                   Expanded(child: Container()),
                   Switch(
-                      value: ipv,
+                      value: widget.ipv,
                       onChanged: (v) {
-                        switchIpv(!ipv);
+                        switchIpv(!widget.ipv);
                       })
                 ],
               ),
@@ -64,7 +129,7 @@ class DrawerView extends StatelessWidget {
                 TextButton(
                   child: Text("Task Types Setting",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => pcStatus
+                  onPressed: () => widget.pcStatus
                       ? Navigator.of(context).pushNamed("taskSetting")
                       : null,
                 ),
@@ -73,7 +138,7 @@ class DrawerView extends StatelessWidget {
                 TextButton(
                   child: Text("UsageStat Apps Setting",
                       style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => pcStatus
+                  onPressed: () => widget.pcStatus
                       ? Navigator.of(context).pushNamed("usage_edit_apps")
                       : null,
                 ),

@@ -15,6 +15,7 @@ import 'taskTypeSetting.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'usage/usage_utils.dart';
+import 'utils/network.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,8 @@ void main() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
+  // 加载本地服务器地址
+  await loadDomainFromPrefs();
   runApp(MyApp());
   try {
     if (UniversalPlatform.isAndroid && !kDebugMode) {

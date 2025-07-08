@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'eventbus.dart';
 
 String hostIp = '192.168.0.141';
@@ -13,6 +14,14 @@ String host = "http://$hostIp:9999/";
 String wsHost = "ws://$hostIp:9999/ws";
 String mediaHost = "http://$hostIp:9998/";
 String Domain = "http://$hostIp:888/";
+// 初始化Domain为本地存储的服务器地址
+Future<void> loadDomainFromPrefs() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? addr = prefs.getString('server_address');
+  if (addr != null && addr.isNotEmpty) {
+    Domain = addr;
+  }
+}
 const String Openwrt = "http://192.168.0.1:89/";
 // use for debug
 // const String Openwrt = "http://127.0.0.1:89/";

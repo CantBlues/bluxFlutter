@@ -58,6 +58,7 @@ dependencies:
   bubble_picker: ^0.0.3
   hexagon: ^0.2.0
   flutter_expandable_fab: ^2.5.0
+  shared_preferences: ^2.2.2
 
 
 dev_dependencies:
