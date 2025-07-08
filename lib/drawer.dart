@@ -43,30 +43,22 @@ class _DrawerViewState extends State<DrawerView> {
   Widget build(BuildContext context) {
     return Drawer(
         child: Container(
-      decoration: const BoxDecoration(
-          image: DecorationImage(
-              fit: BoxFit.fill, image: AssetImage("assets/drawer.png"))),
+      decoration: const BoxDecoration(image: DecorationImage(fit: BoxFit.fill, image: AssetImage("assets/drawer.png"))),
       child: Column(children: [
         Container(
             alignment: Alignment(-1, 0.3),
             constraints: BoxConstraints(minHeight: 300),
             child: Container(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                  color: Color.fromARGB(255, 255, 206, 111)),
+                  borderRadius: BorderRadius.all(Radius.circular(15)), color: Color.fromARGB(255, 255, 206, 111)),
               margin: EdgeInsets.only(left: 25),
               child: Align(
                   alignment: Alignment.bottomCenter,
                   child: !widget.ipv
-                      ? SizedBox(
-                          height: 60,
-                          width: 120,
-                          child: Image.asset("assets/me.png"))
+                      ? SizedBox(height: 60, width: 120, child: Image.asset("assets/me.png"))
                       : SizedBox(
                           width: 120,
-                          child: Align(
-                              alignment: Alignment(0.6, 1.2),
-                              child: Image.asset("assets/cat.png", width: 50)),
+                          child: Align(alignment: Alignment(0.6, 1.2), child: Image.asset("assets/cat.png", width: 50)),
                         )),
               width: 120,
               height: 80,
@@ -127,32 +119,24 @@ class _DrawerViewState extends State<DrawerView> {
             ),
             Cave(
                 TextButton(
-                  child: Text("Task Types Setting",
-                      style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => widget.pcStatus
-                      ? Navigator.of(context).pushNamed("taskSetting")
-                      : null,
+                  child: Text("Task Types Setting", style: TextStyle(fontSize: 15, color: Colors.white70)),
+                  onPressed: () => widget.pcStatus ? Navigator.of(context).pushNamed("taskSetting") : null,
                 ),
                 color: Colors.deepPurple),
             Cave(
                 TextButton(
-                  child: Text("UsageStat Apps Setting",
-                      style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => widget.pcStatus
-                      ? Navigator.of(context).pushNamed("usage_edit_apps")
-                      : null,
+                  child: Text("UsageStat Apps Setting", style: TextStyle(fontSize: 15, color: Colors.white70)),
+                  onPressed: () => widget.pcStatus ? Navigator.of(context).pushNamed("usage_edit_apps") : null,
                 ),
                 color: Colors.deepPurple),
             Cave(
                 TextButton(
-                    child: Text("Test Module",
-                        style: TextStyle(fontSize: 15, color: Colors.white70)),
+                    child: Text("Test Module", style: TextStyle(fontSize: 15, color: Colors.white70)),
                     onPressed: () => Navigator.of(context).pushNamed("test")),
                 color: Colors.deepPurple),
             Cave(
                 TextButton(
-                    child: Text("Nodes",
-                        style: TextStyle(fontSize: 15, color: Colors.white70)),
+                    child: Text("Nodes", style: TextStyle(fontSize: 15, color: Colors.white70)),
                     onPressed: () => Navigator.of(context).pushNamed("v2ray")),
                 color: Colors.blue)
           ],
@@ -164,8 +148,7 @@ class _DrawerViewState extends State<DrawerView> {
 }
 
 class Cave extends StatelessWidget {
-  const Cave(this.widget, {super.key, this.color})
-      : _color = (color != null) ? color : Colors.deepOrange;
+  const Cave(this.widget, {super.key, this.color}) : _color = (color != null) ? color : Colors.deepOrange;
   final Widget widget;
   final Color? color;
   final Color? _color;
@@ -179,12 +162,7 @@ class Cave extends StatelessWidget {
         decoration: BoxDecoration(
             color: _color,
             borderRadius: const BorderRadius.all(Radius.circular(20)),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black,
-                  blurStyle: BlurStyle.outer,
-                  blurRadius: 10)
-            ]),
+            boxShadow: const [BoxShadow(color: Colors.black, blurStyle: BlurStyle.outer, blurRadius: 10)]),
         child: widget);
   }
 }

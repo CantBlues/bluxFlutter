@@ -22,6 +22,7 @@ Future<void> loadDomainFromPrefs() async {
     Domain = addr;
   }
 }
+
 const String Openwrt = "http://192.168.0.1:89/";
 // use for debug
 // const String Openwrt = "http://127.0.0.1:89/";
