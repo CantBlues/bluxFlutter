@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:blux/local/local_db.dart';
 import 'package:usage_stats/usage_stats.dart';
 import 'package:universal_platform/universal_platform.dart';
-import '../utils/network.dart';
 
 class EventHandle {
   EventHandle(this.name, this.lastEvent);
@@ -168,15 +168,17 @@ Future<List<Map>> getUsage(bool multi) async {
   return periodUsage;
 }
 
+/// Collects phone usage via usage_stats and stores it in the local
+/// database. No server involved; runs again whenever the cockpit wakes.
 recordPhoneUsage({bool multi = false}) async {
   if (UniversalPlatform.isAndroid) {
     if (await UsageStats.checkUsagePermission() ?? false) {
       var data = await getUsage(multi);
-      dioLara
-          .post("/api/phone/usages", data: data)
-          .then((value) => print(value.data));
+      await UsageRepo.savePeriod(data);
+      print("usage stored locally (${data.length} days)");
+    } else {
+      UsageStats.grantUsagePermission();
     }
-    UsageStats.grantUsagePermission();
   }
 }
 

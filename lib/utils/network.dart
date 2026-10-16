@@ -7,6 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'eventbus.dart';
 
+/// Online-only plumbing. Everything the phone can own by itself lives in
+/// lib/local/local_db.dart; these clients serve the media server, the
+/// OpenWrt box, the moon atlas images and the sky-link websocket only.
 String hostIp = '192.168.0.141';
 
 bool ipv = false;
@@ -14,6 +17,7 @@ String host = "http://$hostIp:9999/";
 String wsHost = "ws://$hostIp:9999/ws";
 String mediaHost = "http://$hostIp:9998/";
 String Domain = "http://$hostIp:888/";
+
 // 初始化Domain为本地存储的服务器地址
 Future<void> loadDomainFromPrefs() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -26,52 +30,55 @@ Future<void> loadDomainFromPrefs() async {
 const String Openwrt = "http://192.168.0.1:89/";
 // use for debug
 // const String Openwrt = "http://127.0.0.1:89/";
+
 BaseOptions options = BaseOptions(
     baseUrl: "http://$hostIp:9999/",
     responseType: ResponseType.plain,
-    // connectTimeout: 30000,
     receiveTimeout: 30000,
     contentType: Headers.jsonContentType);
 Dio dio = Dio(options);
-
-BaseOptions optionsLara = BaseOptions(
-    baseUrl: Domain, responseType: ResponseType.plain, receiveTimeout: 30000, contentType: Headers.jsonContentType);
-final dioLara = Dio(optionsLara);
-final laravel = LaravelDio().dio;
 
 _parseAndDecode(String response) {
   return jsonDecode(response);
 }
 
-class LaravelDio {
-  static LaravelDio? _instance;
-  late final Dio dio;
-  LaravelDio() {
-    BaseOptions optionsLara = BaseOptions(
-        baseUrl: "${Domain}api/",
-        responseType: ResponseType.json,
-        receiveTimeout: 30000,
-        contentType: Headers.jsonContentType);
-    dio = Dio(optionsLara);
-    (dio.transformer as DefaultTransformer).jsonDecodeCallback = parseJson;
-    dio.interceptors.add(InterceptorsWrapper(onResponse: (response, handler) {
-      if (response.data["status"] != "success") {
-        String info = "${response.data["status"]}:${response.data["data"]}";
-        BotToast.showText(text: info);
-      }
-      return handler.next(response);
-    }, onError: (e, handler) {
-      BotToast.showText(text: "$e");
-    }));
-  }
+/// plain client against Domain (v1 endpoints used by media/PC services)
+Dio _makeDioLara() => Dio(BaseOptions(
+    baseUrl: Domain,
+    responseType: ResponseType.plain,
+    receiveTimeout: 30000,
+    contentType: Headers.jsonContentType));
 
-  parseJson(String text) {
-    return compute(_parseAndDecode, text);
-  }
+/// JSON api client ("${Domain}api/") with friendly toasts
+Dio _makeLaravel() {
+  final d = Dio(BaseOptions(
+      baseUrl: "${Domain}api/",
+      responseType: ResponseType.json,
+      receiveTimeout: 30000,
+      contentType: Headers.jsonContentType));
+  (d.transformer as DefaultTransformer).jsonDecodeCallback =
+      (String text) => compute(_parseAndDecode, text);
+  d.interceptors.add(InterceptorsWrapper(
+      onResponse: (response, handler) {
+        if (response.data is Map && response.data["status"] != "success") {
+          String info = "${response.data["status"]}:${response.data["data"]}";
+          BotToast.showText(text: info);
+        }
+        return handler.next(response);
+      },
+      onError: (e, handler) {
+        BotToast.showText(text: "$e");
+      }));
+  return d;
+}
 
-  static LaravelDio getInstance() {
-    return _instance ??= LaravelDio();
-  }
+Dio dioLara = _makeDioLara();
+Dio laravel = _makeLaravel();
+
+/// point every online client at the current Domain
+void resetClients() {
+  dioLara = _makeDioLara();
+  laravel = _makeLaravel();
 }
 
 String local = "http://$hostIp:9999/";
@@ -79,12 +86,11 @@ void listenNetwork() {
   Connectivity().onConnectivityChanged.listen((data) async {
     for (var element in data) {
       if (element == ConnectivityResult.wifi) {
-        Response response;
-        response = await Dio().get("$local/checkonline");
-        var ret = response.data.toString();
-        if (ret == "online") {
-          switchIpv(false);
-        } else {
+        try {
+          Response response = await Dio().get("$local/checkonline");
+          var ret = response.data.toString();
+          switchIpv(ret != "online");
+        } catch (_) {
           switchIpv(true);
         }
       } else {

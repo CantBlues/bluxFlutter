@@ -1,12 +1,15 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
+import 'package:blux/local/local_db.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
-import 'utils/network.dart';
-import 'dart:convert';
 
+/// Full-screen analytics: contributions heatmap, month comparison,
+/// the body/soul seesaw and exercise cooldown list — all computed from
+/// the local database, works without any server.
 class Billboard extends StatefulWidget {
   const Billboard({super.key});
 
@@ -17,153 +20,103 @@ class Billboard extends StatefulWidget {
 class _BillboardState extends State<Billboard> {
   String _type = "Sum";
   bool _loading = true;
-  bool _contributionLoading = true;
-  List _typeMenu = [];
-  List _contributionData = [];
-  Map<String, List> _barData = {};
+  List<TaskType> _typeMenu = [];
+  Map<String, int> _contributionData = {};
+  Map<String, List<int>> _monthCompare = {};
+  List<Map<String, dynamic>> _overdue = [];
 
-  getContributionData(String type) {
-    dioLara.get("/api/tasks/contribution?type=$type").then((response) {
-      var data = jsonDecode(response.data);
-      setState(() {
-        _contributionLoading = false;
-        _contributionData = data["data"];
-        _type = type;
-      });
+  getContributionData(String type) async {
+    final data = type == "Sum"
+        ? await TaskRepo.contributions()
+        : await TaskRepo.contributionsFor(type);
+    setState(() {
+      _contributionData = data;
+      _type = type;
     });
   }
 
-  getBarData() {
-    dioLara.get("/api/tasks/compare2month").then((response) {
-      var data = jsonDecode(response.data);
-      Map<String, List> tmp = {
-        "this_month": data["data"]["this_month"],
-        "last_month": data["data"]["last_month"]
-      };
-      setState(() {
-        _barData = tmp;
-      });
+  _load() async {
+    final types = await TaskRepo.types();
+    final compare = await TaskRepo.monthCompare();
+    final overdue = await TaskRepo.overdueBody();
+    final contribution = await TaskRepo.contributions();
+    if (!mounted) return;
+    setState(() {
+      _typeMenu = types;
+      _monthCompare = compare;
+      _overdue = overdue;
+      _contributionData = contribution;
+      _loading = false;
     });
   }
 
   @override
   void initState() {
-    getContributionData(_type);
-    getBarData();
-    dioLara.get("/api/tasktypes").then((response) {
-      var data = jsonDecode(response.data);
-      setState(() {
-        _typeMenu = data["data"];
-        _loading = false;
-      });
-    });
     super.initState();
+    _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        color: Colors.transparent,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Container(
-                margin: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    BlurCard(_contributionLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(),
-                          )
-                        : ContributionView(_type, _contributionData)),
-                    Expanded(child: BlurCard(BarChartView(_barData))),
-                    BlurCard(PercentageView(_barData, _typeMenu)),
-                    Row(children: [
-                      Expanded(
-                          child: BlurCard(SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: PopupMenuButton(
-                          offset: const Offset(80, 0),
-                          child: Center(
-                              child: Text(_type,
-                                  style: const TextStyle(color: Colors.white))),
-                          itemBuilder: (context) {
-                            List<PopupMenuEntry> menus = [];
-                            menus.add(const PopupMenuItem(
-                                value: "Sum", child: Text("Sum")));
-                            for (var element in _typeMenu) {
-                              String name = element["name"];
-                              PopupMenuItem item =
-                                  PopupMenuItem(value: name, child: Text(name));
-                              menus.add(item);
-                            }
-                            return menus;
-                          },
-                          onSelected: (value) {
-                            String name0 = value.toString();
-                            getContributionData(name0);
-                          },
-                        ),
-                      ))),
-                      Container(width: 25),
-                      Expanded(
-                          child: BlurCard(SizedBox(
-                              width: double.infinity,
-                              height: 60,
-                              child: TextButton(
-                                child: const Icon(Icons.close, color: Colors.white),
-                                onPressed: () => Navigator.of(context).pop(),
-                              ))))
-                    ]),
-                  ],
-                )));
-  }
-}
-
-class BlurCard extends StatelessWidget {
-  const BlurCard(this.content,
-      {super.key, this.left = 0, this.right = 0, this.top = 0, this.bottom = 25});
-  final Widget content;
-  final double left;
-  final double right;
-  final double top;
-  final double bottom;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-        padding:
-            EdgeInsets.only(left: left, right: right, top: top, bottom: bottom),
-        child: ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(15)),
-            child: Stack(children: [
-              BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Container(
-                    color: const Color.fromARGB(20, 0, 0, 0),
-                    child: content,
-                  )),
-            ])));
+    return Scaffold(
+        appBar: AppBar(
+            title: const Text("数据分析"),
+            actions: [
+              PopupMenuButton<String>(
+                  offset: const Offset(0, 50),
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(_type == "Sum" ? "全部" : _type,
+                          style: KittStyle.label(size: 13, color: KittColors.amber, spacing: 1))),
+                  itemBuilder: (context) {
+                    List<PopupMenuEntry<String>> menus = [
+                      const PopupMenuItem(value: "Sum", child: Text("全部合计")),
+                      for (var element in _typeMenu)
+                        PopupMenuItem(value: element.name, child: Text(element.name)),
+                    ];
+                    return menus;
+                  },
+                  onSelected: getContributionData)
+            ]),
+        body: GridBackdrop(
+            child: SafeArea(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        padding: const EdgeInsets.all(14),
+                        children: [
+                          KittPanel(
+                              title: "贡献热力 // ${_type == "Sum" ? "全部" : _type}",
+                              child: ContributionView(_type, _contributionData)),
+                          const SizedBox(height: 12),
+                          KittPanel(
+                              title: "本月对比",
+                              child: BarChartView(_monthCompare)),
+                          const SizedBox(height: 12),
+                          KittPanel(
+                              title: "身心灵平衡",
+                              accent: KittColors.amber,
+                              child: PercentageView(_monthCompare, _typeMenu)),
+                          const SizedBox(height: 12),
+                          KittPanel(
+                              title: "冷却提醒",
+                              accent: KittColors.cyan,
+                              child: OverdueList(_overdue)),
+                        ]))));
   }
 }
 
 class ContributionView extends StatelessWidget {
   const ContributionView(this.name, this.data, {super.key});
   final String name;
-  final List data;
+  final Map<String, int> data;
 
   @override
   Widget build(BuildContext context) {
     Map<DateTime, int> datasets = {};
-    if (name == "Sum") {
-      for (var element in data) {
-        datasets[DateTime.parse(element["date"])] = int.parse(element['sum']);
-      }
-    } else {
-      for (var element in data) {
-        datasets[DateTime.parse(element["date"])] = 1;
-      }
-    }
+    data.forEach((k, v) {
+      datasets[LocalDb.day(k)] = v;
+    });
 
     return SizedBox(
         height: 220,
@@ -174,170 +127,155 @@ class ContributionView extends StatelessWidget {
                     scrollable: true,
                     datasets: datasets,
                     showColorTip: false,
-                    defaultColor: const Color.fromARGB(99, 236, 236, 236),
+                    defaultColor: KittColors.panelSoft,
+                    textColor: KittColors.textDim,
                     colorsets: const {
-                      1: Colors.pink,
+                      1: KittColors.redDeep,
+                      2: KittColors.red,
+                      4: KittColors.redBright,
                     }))));
   }
 }
 
 class BarChartView extends StatelessWidget {
   const BarChartView(this.data, {super.key});
-  final Map<String, List> data;
+  final Map<String, List<int>> data;
 
   BarChartGroupData makeGroupData(int x, double y1, double y2) {
     return BarChartGroupData(barsSpace: 4, x: x, barRods: [
-      BarChartRodData(
-        toY: y1,
-        color: Colors.red,
-        width: 10,
-      ),
-      BarChartRodData(
-        toY: y2,
-        color: Colors.blue,
-        width: 10,
-      ),
+      BarChartRodData(toY: y1, color: KittColors.red, width: 10),
+      BarChartRodData(toY: y2, color: KittColors.amber, width: 10),
     ]);
   }
 
   @override
   Widget build(BuildContext context) {
     List<BarChartGroupData> items = [];
-    Map<String, List<double>> tasks = {};
-    if (data["this_month"] != null) {
-      for (var element in data["this_month"]!) {
-        tasks[element["name"]] = [element["times"] / 1];
-      }
-      for (var element in data["last_month"]!) {
-        tasks[element["name"]]?.add(element["times"] / 1);
-      }
-    }
-
-    int i = 0;
     List<String> name = [];
-    tasks.forEach((key, value) {
-      BarChartGroupData tmp =
-          makeGroupData(i, value[0], value.length == 2 ? value[1] : 0);
-      if (i < 7) items.add(tmp);
+    int i = 0;
+    data.forEach((key, value) {
+      items.add(makeGroupData(i, value[0].toDouble(), value.length == 2 ? value[1].toDouble() : 0));
       name.add(key);
       i++;
     });
 
-    return Container(
-        child: data["this_month"] == null
-            ? const CircularProgressIndicator()
-            : BarChart(BarChartData(
-                maxY: 31,
-                minY: 0,
-                barTouchData: BarTouchData(
-                    touchTooltipData:
-                        BarTouchTooltipData(fitInsideVertically: true)),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 60,
-                          getTitlesWidget: (num, TitleMeta a) {
-                            return Transform.rotate(
-                                angle: -0.8,
-                                child: Center(
-                                    child: Text(name[num.round()])));
-                          })),
-                  leftTitles: const AxisTitles(),
-                  rightTitles: const AxisTitles(),
-                  topTitles: const AxisTitles(),
-                ),
-                borderData: FlBorderData(
-                  show: false,
-                ),
-                barGroups: items,
-                gridData: const FlGridData(show: false),
-              )));
+    return SizedBox(
+        height: 240,
+        child: Padding(
+            padding: const EdgeInsets.only(top: 10, right: 10),
+            child: Row(children: [
+              RotatedBox(
+                  quarterTurns: 3,
+                  child: Text("红=本月 琥珀=上月",
+                      style: KittStyle.label(size: 12, spacing: 1))),
+              const SizedBox(width: 6),
+              Expanded(
+                  child: items.isEmpty
+                      ? Center(
+                          child: Text("暂无数据",
+                              style: KittStyle.label(color: KittColors.textDim)))
+                      : BarChart(BarChartData(
+                          maxY: (data.values
+                                      .map((e) => e.reduce(max))
+                                      .fold(0, max) +
+                                  1)
+                              .toDouble(),
+                          minY: 0,
+                          barTouchData: BarTouchData(
+                              touchTooltipData: BarTouchTooltipData(
+                                  getTooltipColor: (_) => KittColors.panelSoft,
+                                  getTooltipItem: (group, gi, rod, ri) =>
+                                      BarTooltipItem(
+                                          "${name[group.x]}: ${rod.toY.toInt()}\n",
+                                          const TextStyle(
+                                              color: KittColors.text,
+                                              fontFamily: KittStyle.mono,
+                                              fontSize: 12)))),
+                          titlesData: FlTitlesData(
+                            show: true,
+                            bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 56,
+                                    getTitlesWidget: (num, TitleMeta a) {
+                                      return Transform.rotate(
+                                          angle: -0.8,
+                                          child: Center(
+                                              child: Text(name[num.round()],
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontFamily: KittStyle.mono,
+                                                      color: KittColors.textDim))));
+                                    })),
+                            leftTitles: const AxisTitles(),
+                            rightTitles: const AxisTitles(),
+                            topTitles: const AxisTitles(),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          barGroups: items,
+                          gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              getDrawingHorizontalLine: (v) =>
+                                  FlLine(color: KittColors.grid, strokeWidth: .5)),
+                        ))),
+            ])));
   }
 }
 
 class PercentageView extends StatelessWidget {
   const PercentageView(this.data, this.types, {super.key});
 
-  final Map<String, List> data;
-  final List types;
-
-  popPE(context, pie) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: ExerciseList(pie));
-        });
-  }
+  final Map<String, List<int>> data;
+  final List<TaskType> types;
 
   @override
   Widget build(BuildContext context) {
-    List pieData = [];
-    List<String> body = [];
-    List<String> soul = [];
-    List<String> steps = [];
+    final bodyNames = types.where((t) => t.classify == 'body').map((t) => t.name).toSet();
+    final soulMap = {for (final t in types.where((t) => t.classify == 'soul')) t.name: t.weight};
+    final stepsMap = {for (final t in types.where((t) => t.classify == 'steps')) t.name: t.weight};
 
-    for (var element in types) {
-      switch (element["classify"]) {
-        case "body":
-          body.add(element["name"]);
-          break;
-        case "soul":
-          soul.add(element["name"]);
-          break;
-        case "steps":
-          steps.add(element["name"]);
-          break;
-        default:
-      }
-    }
+    List<Map<String, dynamic>> pieData = [];
     int soulNum = 0;
     int stepsNum = 0;
-    if (data["this_month"] != null) {
-      for (var element in data["this_month"]!) {
-        if (body.contains(element["name"])) {
-          pieData.add(element);
-        }
-
-        int weight = element["weight"];
-        if (soul.contains(element["name"])) {
-          soulNum += int.parse(element["times"].toString()) * weight;
-        }
-        if (steps.contains(element["name"])) {
-          stepsNum += int.parse(element["times"].toString()) * weight;
-        }
+    data.forEach((name, value) {
+      if (bodyNames.contains(name)) {
+        pieData.add({"name": name, "times": value[0]});
       }
-    }
+      if (soulMap.containsKey(name)) soulNum += value[0] * soulMap[name]!;
+      if (stepsMap.containsKey(name)) stepsNum += value[0] * stepsMap[name]!;
+    });
 
     int drop = stepsNum - soulNum;
     double angle = drop / 50;
-    return Container(
-        padding: const EdgeInsets.all(20),
-        height: 200,
+    return SizedBox(
+        height: 220,
         width: double.infinity,
         child: Row(
           children: [
             Expanded(
-                child: Center(
-                    child: Stack(
-              children: [
-                Align(
-                    alignment: const Alignment(0, -0.6),
-                    child: Text("Soul: $soulNum , Steps: $stepsNum ")),
-                CustomPaint(
-                  size: const Size(300, 300),
-                  painter: Seesaw(angle),
-                )
-              ],
-            ))),
+                child: LayoutBuilder(builder: (context, c) {
+              final paintSize = min(c.maxWidth, c.maxHeight) - 16;
+              return Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: Size.square(paintSize),
+                        painter: Seesaw(angle),
+                      ),
+                      Positioned(
+                          top: 4,
+                          child: Text("心灵$soulNum / 步数$stepsNum",
+                              style: KittStyle.label(
+                                  size: 12, color: KittColors.amber, spacing: 0)),
+                          width: c.maxWidth),
+                    ],
+                  ));
+            })),
             Expanded(
-                child: GestureDetector(
-              child: Center(child: PhysicalPie(pieData, false)),
-              onTap: () => popPE(context, pieData),
-            ))
+                child: Center(
+                    child: PhysicalPie(pieData.map((e) => e).toList(), false))),
           ],
         ));
   }
@@ -356,11 +294,6 @@ class Seesaw extends CustomPainter {
         [cos(x), sin(x), 0, 0, -sin(x), cos(x), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   }
 
-  Float64List scale(double x, double y) {
-    return Float64List.fromList(
-        [x, 0, 0, 0, 0, y, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
     Offset middle = Offset(size.width / 2, size.height / 2);
@@ -372,16 +305,15 @@ class Seesaw extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.fill
-      ..color = Colors.red
-      ..strokeWidth = 4;
+      ..color = KittColors.red
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     Paint painterPlank = Paint()
       ..isAntiAlias = true
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.fill
-      ..color = Colors.blue
+      ..color = KittColors.amber
       ..strokeWidth = 4;
-    painterPlank.color = Colors.blue;
     Path tri = Path()..moveTo(peak.dx, peak.dy);
     tri.lineTo(left.dx, left.dy);
     tri.lineTo(right.dx, right.dy);
@@ -403,8 +335,8 @@ class Seesaw extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+  bool shouldRepaint(covariant Seesaw oldDelegate) {
+    return oldDelegate.angle != angle;
   }
 }
 
@@ -417,134 +349,87 @@ class PhysicalPie extends StatelessWidget {
   Widget build(BuildContext context) {
     List<PieChartSectionData> pieData = [];
     num pieSum = 0;
-    for (var element in data) {
-      pieSum += element["times"];
+    for (var element in data.asMap().entries) {
+      pieSum += element.value["times"];
       PieChartSectionData part = PieChartSectionData(
-          radius: big ? 100 : 45,
-          title: "${element["name"]}:${element["times"]}",
-          value: element["times"] / 1,
-          color: Color.fromARGB(255, Random().nextInt(128) + 128,
-              Random().nextInt(128) + 128, Random().nextInt(128) + 128));
+          radius: big ? 100 : 55,
+          title: "${element.value["name"]}:${element.value["times"]}",
+          titleStyle: TextStyle(
+              fontSize: big ? 15 : 12,
+              fontFamily: KittStyle.mono,
+              color: Colors.black),
+          value: (element.value["times"] as num).toDouble(),
+          color: KittColors.chartAt(element.key));
       pieData.add(part);
     }
 
     return Stack(
+      alignment: Alignment.center,
       children: [
         PieChart(
           PieChartData(
             sections: pieData,
-            sectionsSpace: 8,
+            sectionsSpace: 6,
           ),
-          swapAnimationDuration: const Duration(seconds: 2),
+          swapAnimationDuration: const Duration(seconds: 1),
         ),
-        Center(
-            child: Text(
+        Text(
           pieSum.toString(),
-          style: const TextStyle(
-              fontSize: 30,
-              shadows: [Shadow(color: Colors.white, blurRadius: 20)]),
-        ))
+          style: KittStyle.glow(size: 26, color: KittColors.text),
+        )
       ],
     );
   }
 }
 
-class ExerciseList extends StatefulWidget {
-  const ExerciseList(this.pie, {super.key});
-  final pie;
-  @override
-  _ExerciseListState createState() => _ExerciseListState();
-}
-
-class _ExerciseListState extends State<ExerciseList> {
-  List<Widget> list = [];
-  @override
-  void initState() {
-    list.add(Container(
-        margin: const EdgeInsets.only(top: 30),
-        width: 260,
-        height: 260,
-        child: PhysicalPie(widget.pie, true)));
-    laravel.get("recently_exercise").then((value) => sortTask(value.data));
-    super.initState();
-  }
-
-  sortTask(data) {
-    DateTime now = DateTime.now();
-    List<Map?> tasks = [];
-    for (var element in data["data"]) {
-      DateTime date = DateTime.parse(element['date']);
-      int days = now.difference(date).inDays;
-      Map? task;
-
-      if (days >= 1) {
-        if (days == 1) {
-          task = {"sort": 2, "content": "${element["name"]} >24h"};
-        }
-        if (days == 2) {
-          task = {"sort": 3, "content": "${element["name"]} >48h"};
-        }
-        if (days > 2 && days < 5) {
-          task = {"sort": 4, "content": "${element["name"]} >72h"};
-        }
-        if (days >= 5) {
-          task = {"sort": 1, "content": "${element["name"]} >120h"};
-        }
-      }
-
-      if (task != null) tasks.add(task);
-    }
-
-    tasks.sort(((a, b) => a?["sort"] - b?["sort"]));
-
-    for (var i = 0; i < tasks.length; i++) {
-      double scale = 1;
-      Color color;
-      switch (tasks[i]!["sort"]) {
-        case 4:
-          color = Colors.red;
-          scale = 4;
-          break;
-        case 3:
-          color = Colors.orange;
-          scale = 3.3;
-          break;
-        case 2:
-          color = Colors.blue;
-          scale = 2.5;
-          break;
-        case 1:
-          color = Colors.deepPurple;
-          scale = 2;
-          break;
-        default:
-          color = Colors.black;
-      }
-      Widget widget = Container(
-          padding: const EdgeInsets.only(top: 20),
-          child: Text(tasks[i]!['content'],
-              style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: scale * 12,
-                  shadows: const [Shadow(color: Colors.white, blurRadius: 5)])));
-      list.add(widget);
-    }
-    setState(() {});
-  }
+class OverdueList extends StatelessWidget {
+  const OverdueList(this.overdue, {super.key});
+  final List<Map<String, dynamic>> overdue;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        color: Colors.transparent,
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          child: Column(
-            verticalDirection: VerticalDirection.up,
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: list,
-          ),
-        ));
+    final rows = overdue.where((e) => (e['days'] as int) >= 1).toList()
+      ..sort((a, b) => b['days'].compareTo(a['days']));
+    if (rows.isEmpty) {
+      return Text("全部状态新鲜", style: KittStyle.label(color: KittColors.green, spacing: 1));
+    }
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final e in rows)
+            Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(children: [
+                  Text("⚠", style: TextStyle(color: _cool(e['days'] as int))),
+                  const SizedBox(width: 8),
+                  Text("${e['name']}",
+                      style: KittStyle.body(size: 13, color: _cool(e['days'] as int))),
+                  const Spacer(),
+                  Text("闲置 ${e['days']} 天",
+                      style: KittStyle.label(size: 12, color: KittColors.textDim, spacing: 1)),
+                ]))
+        ]);
   }
+
+  Color _cool(int days) {
+    if (days >= 5) return KittColors.red;
+    if (days >= 2) return KittColors.amber;
+    return KittColors.cyan;
+  }
+}
+
+/// Compat wrapper for older callers (node cards): dark cockpit card.
+class BlurCard extends StatelessWidget {
+  const BlurCard(this.content,
+      {super.key, this.left = 0, this.right = 0, this.top = 0, this.bottom = 25});
+  final Widget content;
+  final double left;
+  final double right;
+  final double top;
+  final double bottom;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: EdgeInsets.only(left: left, right: right, top: top, bottom: bottom),
+      child: KittPanel(padding: EdgeInsets.zero, child: content));
 }

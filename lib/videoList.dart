@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart' as v;
 import 'utils/network.dart';
+import 'kitt/theme.dart';
 
 class VideoList extends StatefulWidget {
   const VideoList({super.key});
@@ -57,7 +58,7 @@ class _VideoListState extends State<VideoList> {
             padding: const EdgeInsets.only(left: 10, right: 10),
             child: Text(
               "${_list[index]["Name"]}",
-              style: TextStyle(color: Colors.black, fontSize: 14),
+              style: const TextStyle(color: KittColors.textDim, fontSize: 12, fontFamily: KittStyle.mono),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ))
@@ -88,13 +89,13 @@ class _VideoListState extends State<VideoList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: LayoutBuilder(builder: (ctx, cons) {
+    return Scaffold(backgroundColor: KittColors.bg, body: LayoutBuilder(builder: (ctx, cons) {
       int nums = (cons.maxWidth / 200).round();
       return CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Text("Learning Materials"),
-            backgroundColor: Colors.pinkAccent,
+            title: const Text("学习资料"),
+            backgroundColor: KittColors.panel,
             actions: [
               IconButton(
                   onPressed: () => Navigator.of(context).pushNamed('audios'),
@@ -209,10 +210,11 @@ class _ProcessImgState extends State<ProcessImg> {
               alignment: const Alignment(0, 0.3),
               child: Text(
                 widget.title!,
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 30,
+                    fontFamily: KittStyle.mono,
                     color: Colors.black,
-                    backgroundColor: Colors.orange),
+                    backgroundColor: KittColors.amber),
               ),
             ),
             Slider(

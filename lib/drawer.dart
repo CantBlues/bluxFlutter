@@ -1,11 +1,17 @@
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
+import 'package:blux/usage/usage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/network.dart';
 
+/// Side console: link settings for the online modules and entry points
+/// into local configuration.
 class DrawerView extends StatefulWidget {
-  const DrawerView(this.ipv, this.pcStatus, {super.key});
-  final bool ipv;
-  final bool pcStatus;
+  const DrawerView(this.pcOnline, this.onTaskSetting, this.onAppsSetting, {super.key});
+  final bool pcOnline;
+  final VoidCallback onTaskSetting;
+  final VoidCallback onAppsSetting;
 
   @override
   State<DrawerView> createState() => _DrawerViewState();
@@ -37,132 +43,95 @@ class _DrawerViewState extends State<DrawerView> {
       _serverAddress = value;
     });
     Domain = value;
+    // rebuild the online-only clients against the new address
+    resetClients();
+  }
+
+  Widget _entry(IconData icon, String label, VoidCallback tap, {bool locked = false}) {
+    Widget content = KittPanel(
+        accent: locked ? KittColors.textFaint : KittColors.red,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(children: [
+          Icon(icon, size: 22, color: locked ? KittColors.textFaint : KittColors.red),
+          const SizedBox(width: 14),
+          Expanded(
+              child: Text(label,
+              overflow: TextOverflow.ellipsis,
+              style: KittStyle.label(size: 14, color: KittColors.text))),
+          const SizedBox(width: 6),
+          if (locked) Text("需联网", style: KittStyle.label(size: 12, color: KittColors.amber)),
+        ]));
+    return Opacity(
+        opacity: locked ? .4 : 1,
+        child: GestureDetector(
+            onTap: locked ? null : tap,
+            child: Container(height: 56, margin: const EdgeInsets.only(bottom: 10), child: content)));
+  }
+
+  Widget _linkField() {
+    return Row(children: [
+      Expanded(
+          child: TextField(
+        controller: _controller,
+        style: const TextStyle(color: KittColors.text, fontFamily: KittStyle.mono, fontSize: 13),
+        decoration: const InputDecoration(hintText: 'http://192.168.0.141:888/'),
+        onSubmitted: (value) {
+          if (value.isNotEmpty) _saveServerAddress(value);
+        },
+      )),
+      IconButton(
+          icon: const Icon(Icons.save_alt),
+          onPressed: () {
+            if (_controller != null && _controller!.text.isNotEmpty) {
+              _saveServerAddress(_controller!.text);
+            }
+          })
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-        child: Container(
-      decoration: const BoxDecoration(image: DecorationImage(fit: BoxFit.fill, image: AssetImage("assets/drawer.png"))),
-      child: Column(children: [
-        Container(
-            alignment: Alignment(-1, 0.3),
-            constraints: BoxConstraints(minHeight: 300),
-            child: Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(15)), color: Color.fromARGB(255, 255, 206, 111)),
-              margin: EdgeInsets.only(left: 25),
-              child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: !widget.ipv
-                      ? SizedBox(height: 60, width: 120, child: Image.asset("assets/me.png"))
-                      : SizedBox(
-                          width: 120,
-                          child: Align(alignment: Alignment(0.6, 1.2), child: Image.asset("assets/cat.png", width: 50)),
-                        )),
-              width: 120,
-              height: 80,
-            )),
-        // 新增服务器地址设置入口
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Row(
-            children: [
-              const Text('服务器地址:', style: TextStyle(color: Colors.white)),
+        backgroundColor: KittColors.bg,
+        child: GridBackdrop(
+            child: SafeArea(
+                child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              BlinkDot(color: widget.pcOnline ? KittColors.green : KittColors.red),
+              const SizedBox(width: 10),
               Expanded(
-                child: TextField(
-                  controller: _controller,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: '输入服务器地址',
-                    hintStyle: TextStyle(color: Colors.white54),
-                    border: UnderlineInputBorder(),
-                  ),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) _saveServerAddress(value);
-                  },
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.save, color: Colors.white),
-                onPressed: () {
-                  if (_controller != null && _controller!.text.isNotEmpty) {
-                    _saveServerAddress(_controller!.text);
-                  }
-                },
-              )
-            ],
-          ),
-        ),
-        Expanded(
-            child: Column(
-          verticalDirection: VerticalDirection.up,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Cave(
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(width: 20),
-                  Text(
-                    "IPv4/6",
-                    style: TextStyle(fontSize: 15),
-                  ),
-                  Expanded(child: Container()),
-                  Switch(
-                      value: widget.ipv,
-                      onChanged: (v) {
-                        switchIpv(!widget.ipv);
-                      })
-                ],
-              ),
-            ),
-            Cave(
-                TextButton(
-                  child: Text("Task Types Setting", style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => widget.pcStatus ? Navigator.of(context).pushNamed("taskSetting") : null,
-                ),
-                color: Colors.deepPurple),
-            Cave(
-                TextButton(
-                  child: Text("UsageStat Apps Setting", style: TextStyle(fontSize: 15, color: Colors.white70)),
-                  onPressed: () => widget.pcStatus ? Navigator.of(context).pushNamed("usage_edit_apps") : null,
-                ),
-                color: Colors.deepPurple),
-            Cave(
-                TextButton(
-                    child: Text("Test Module", style: TextStyle(fontSize: 15, color: Colors.white70)),
-                    onPressed: () => Navigator.of(context).pushNamed("test")),
-                color: Colors.deepPurple),
-            Cave(
-                TextButton(
-                    child: Text("Nodes", style: TextStyle(fontSize: 15, color: Colors.white70)),
-                    onPressed: () => Navigator.of(context).pushNamed("v2ray")),
-                color: Colors.blue)
-          ],
-        )),
-        Container(height: 50)
-      ]),
-    ));
-  }
-}
-
-class Cave extends StatelessWidget {
-  const Cave(this.widget, {super.key, this.color}) : _color = (color != null) ? color : Colors.deepOrange;
-  final Widget widget;
-  final Color? color;
-  final Color? _color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        height: 60,
-        width: double.infinity,
-        margin: const EdgeInsets.only(left: 30, top: 10, right: 30, bottom: 10),
-        decoration: BoxDecoration(
-            color: _color,
-            borderRadius: const BorderRadius.all(Radius.circular(20)),
-            boxShadow: const [BoxShadow(color: Colors.black, blurStyle: BlurStyle.outer, blurRadius: 10)]),
-        child: widget);
+                  child: Text("K.I.T.T. 控制台",
+                      overflow: TextOverflow.ellipsis, style: KittStyle.glow(size: 15))),
+            ]),
+            const SizedBox(height: 24),
+            Text("服务器地址（影视 / 节点 / 星空）",
+                style: KittStyle.label(size: 12, color: KittColors.textDim, spacing: 1)),
+            const SizedBox(height: 6),
+            _linkField(),
+            const SizedBox(height: 24),
+            const KittSection("配置"),
+            const SizedBox(height: 10),
+            _entry(Icons.checklist, "任务类型", widget.onTaskSetting),
+            _entry(Icons.apps, "追踪应用", widget.onAppsSetting),
+            _entry(Icons.hub_outlined, "中继节点",
+                () => Navigator.of(context).pushNamed("v2ray"),
+                locked: !widget.pcOnline),
+            const SizedBox(height: 8),
+            const KittSection("维护"),
+            const SizedBox(height: 10),
+            _entry(Icons.sync, "立即采集使用数据", () async {
+              await recordPhoneUsage(multi: true);
+              if (context.mounted) Navigator.of(context).pop();
+            }),
+            _entry(Icons.science_outlined, "测试模块",
+                () => Navigator.of(context).pushNamed("test")),
+            const SizedBox(height: 20),
+            Text("数据库: kitt_blux.db · 本地", style: KittStyle.label(size: 12, spacing: 1)),
+            Text("状态: ${widget.pcOnline ? "链路已通" : "单机模式"}",
+                style: KittStyle.label(size: 12, color: KittColors.textFaint, spacing: 1)),
+          ]),
+        ))));
   }
 }

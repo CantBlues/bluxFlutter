@@ -1,64 +1,51 @@
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
+import 'package:blux/local/local_db.dart';
 import 'package:flutter/material.dart';
 import 'package:wheel_chooser/wheel_chooser.dart';
-import 'dart:convert';
-import 'usage/usage_utils.dart';
-import 'utils/network.dart';
 
-class TaskWidget extends StatefulWidget {
-  const TaskWidget(this.name, this.left, this.tap, this.status, {super.key});
+class TaskWidget extends StatelessWidget {
+  const TaskWidget(this.task, this.marked, this.tap, {super.key});
 
-  final String name;
-  final bool left;
-  final bool status;
-  final tap;
-
-  @override
-  State<StatefulWidget> createState() => _TaskWidgetState();
-}
-
-class _TaskWidgetState extends State<TaskWidget> {
-  bool _mark = false;
-
-  _taskTap() {
-    widget.tap(widget.name, !_mark).then((e) {
-      setState(() {
-        _mark = !_mark;
-      });
-    });
-  }
-
-  @override
-  void initState() {
-    setState(() {
-      _mark = widget.status;
-    });
-    super.initState();
-  }
-
-  @override
-  void didUpdateWidget(covariant TaskWidget oldWidget) {
-    setState(() {
-      _mark = widget.status;
-    });
-    super.didUpdateWidget(oldWidget);
-  }
+  final TaskType task;
+  final bool marked;
+  final Function(TaskType, bool) tap;
 
   @override
   Widget build(BuildContext context) {
-    var text = Text(widget.name,
-        style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-            color: _mark ? Colors.white54 : Colors.white,
-            shadows: const [Shadow(blurRadius: 10)],
-            decorationColor: Colors.red,
-            decorationThickness: 3,
-            decoration: _mark ? TextDecoration.lineThrough : TextDecoration.none));
-    Alignment align = widget.left ? const Alignment(-0.6, 0) : const Alignment(0.6, 0);
-    return TextButton(
-        onPressed: () => _taskTap(),
-        style: TextButton.styleFrom(padding: const EdgeInsets.all(0)),
-        child: Align(alignment: align, child: text));
+    final color = marked ? KittColors.textFaint : KittColors.red;
+    return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => tap(task, !marked),
+        child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            child: Row(children: [
+              Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                      border: Border.all(color: color),
+                      color: marked ? color.withOpacity(.15) : Colors.transparent,
+                      borderRadius: const BorderRadius.all(Radius.circular(3))),
+                  child: marked
+                      ? const Icon(Icons.check, size: 18, color: KittColors.red)
+                      : null),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(task.name,
+                      style: TextStyle(
+                          fontFamily: KittStyle.mono,
+                          fontSize: 20,
+                          color: marked ? KittColors.textFaint : KittColors.text,
+                          shadows: marked
+                              ? null
+                              : const [Shadow(color: Color(0x66FF3B30), blurRadius: 6)],
+                          decoration: marked ? TextDecoration.lineThrough : null,
+                          decorationColor: KittColors.red,
+                          decorationThickness: 2))),
+              Text("x${task.weight}",
+                  style: KittStyle.label(size: 13, color: KittColors.amber)),
+            ])));
   }
 }
 
@@ -73,66 +60,37 @@ class _TaskLayerState extends State<TaskLayer> {
   DateTime selectDate = DateTime.now();
   List nearDate = [];
   bool _loading = true;
-  List<int> serverData = [];
-  List<Map<String, dynamic>> tasks = [];
+  List<int> marked = [];
+  List<TaskType> tasks = [];
 
-  Future tapTask(String name, bool mark) async {
-    var ret = await dioLara
-        .post("/api/task/mark", data: {"date": selectDate.millisecondsSinceEpoch, "name": name, "mark": mark});
-    return ret;
+  Future tapTask(TaskType task, bool mark) async {
+    await TaskRepo.setMark(task.id, selectDate, mark);
+    _queryTasks(selectDate);
   }
 
-  List<Widget> _generateTasks() {
-    List<Widget> ret = [];
-    bool left = false;
-    for (var task in tasks) {
-      var marked = serverData.contains(task["type_id"]) ? true : false;
-      ret.add(TaskWidget(task["name"], !left, tapTask, marked));
-      left = !left;
-    }
-    return ret;
-  }
-
-  queryTasks(DateTime day) {
+  _queryTasks(DateTime day) async {
     setState(() {
       _loading = true;
     });
-    dioLara.get('/api/tasktypes').then(
-      (response) {
-        var data = jsonDecode(response.data);
-        List<Map<String, dynamic>> tasksTmp = [];
-        for (var element in data['data']) {
-          tasksTmp.add({"name": element["name"], "type_id": element["id"]});
-        }
-        setState(() {
-          tasks = tasksTmp;
-        });
-      },
-    );
-    dioLara.get("/api/tasks/daily/${day.millisecondsSinceEpoch}").then((response) {
-      var ret = jsonDecode(response.data);
-      List<int> markedTask = [];
-      for (var element in ret['data']) {
-        markedTask.add(element['type_id']);
-      }
-      setState(() {
-        serverData = markedTask;
-        _loading = false;
-      });
+    final types = await TaskRepo.types();
+    final ids = await TaskRepo.markedTypeIds(day);
+    if (!mounted) return;
+    setState(() {
+      tasks = types;
+      marked = ids;
+      selectDate = day;
+      _loading = false;
     });
   }
 
   dateChanged(data) {
-    data = DateTime.parse(data);
-    queryTasks(data);
-    selectDate = data;
+    _queryTasks(DateTime.parse(data));
   }
 
   List generateNearDate() {
     List dates = [];
-    DateTime from = DateTime.now().subtract(const Duration(days: 7));
-
-    while (from.isBefore(DateTime.now())) {
+    DateTime from = DateTime.now().subtract(const Duration(days: 29));
+    while (!from.isAfter(DateTime.now())) {
       dates.add(from.toString().substring(0, 10));
       from = from.add(const Duration(days: 1));
     }
@@ -143,47 +101,75 @@ class _TaskLayerState extends State<TaskLayer> {
   void initState() {
     super.initState();
     nearDate = generateNearDate();
-    queryTasks(DateTime.now());
-    // check whether need collect UsageStats
-    dioLara.get("/api/phone/usages/recently/node").then((value) {
-      var data = jsonDecode(value.data);
-      if (data["data"].length == 9) return;
-      recordPhoneUsage(multi: true);
-    });
+    _queryTasks(DateTime.now());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData(fontFamily: "ShadowsIntoLight"),
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-              image: DecorationImage(image: AssetImage("assets/blackboard.jpg"), fit: BoxFit.fitWidth)),
-          child: Column(
-            children: [
-              Container(height: 50),
-              SizedBox(
-                  height: 100,
-                  child: WheelChooser(
-                    itemSize: 100,
+    final done = marked.length;
+    return Scaffold(
+      body: GridBackdrop(
+          child: SafeArea(
+              child: Column(children: [
+        const SizedBox(height: 8),
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: KittPanel(
+                title: "今日任务",
+                trailing: IconButton(
+                    icon: const Icon(Icons.settings, size: 20),
+                    onPressed: () => Navigator.of(context).pushNamed("taskSetting")),
+                child: Row(children: [
+                  KittGauge(
+                      value: done.toDouble(),
+                      maxValue: tasks.isEmpty ? 1 : tasks.length.toDouble(),
+                      sub: "完成",
+                      size: 90),
+                  Expanded(
+                      child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                              "$done / ${tasks.length} 标记完成\n${selectDate.toString().substring(0, 10)}",
+                              style: KittStyle.body(size: 14, color: KittColors.amber)))),
+                ]))),
+        SizedBox(
+            height: 90,
+            child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: WheelChooser(
+                    itemSize: 80,
                     startPosition: nearDate.length,
                     onValueChanged: dateChanged,
                     datas: nearDate,
                     horizontal: true,
-                    selectTextStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                    unSelectTextStyle: const TextStyle(color: Colors.white),
-                  )),
-              Expanded(
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView(
-                          // mainAxisAlignment: MainAxisAlignment.end,
-                          children: _generateTasks()))
-            ],
-          ),
-        ),
-      ),
+                    selectTextStyle:
+                        const TextStyle(color: KittColors.red, fontWeight: FontWeight.bold, fontFamily: KittStyle.mono),
+                    unSelectTextStyle: const TextStyle(
+                        color: KittColors.textFaint, fontFamily: KittStyle.mono)))),
+        const SizedBox(height: 4),
+        Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: KittPanel(
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                        child: tasks.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.all(30),
+                                child: Center(
+                                    child: Text("还没有任务类型\n→ 点右上角配置",
+                                        style: KittStyle.body(color: KittColors.textDim)))
+                              )
+                            : ListView(
+                                shrinkWrap: true,
+                                children: tasks
+                                    .map((t) => TaskWidget(
+                                        t, marked.contains(t.id), tapTask))
+                                    .toList(),
+                              ))),
+        )
+      ]))),
     );
   }
 }

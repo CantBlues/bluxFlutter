@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:usage_stats/usage_stats.dart';
 
-const BgColor = Color.fromARGB(255, 223, 223, 223);
+const BgColor = Color(0xFF0D0E12);
 
 class UsageTimeLine extends StatelessWidget {
   const UsageTimeLine({super.key});
@@ -153,7 +153,7 @@ class HeaderBox extends StatelessWidget {
     return Container(
         height: 120,
         decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFF14161C),
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Stack(
           children: [

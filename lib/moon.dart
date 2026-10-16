@@ -1,24 +1,31 @@
 import 'dart:ui';
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
 import 'package:blux/utils/network.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// Moon atlas: the phase wheel images live on the link server,
+/// so this module needs a connection. Everything turns, nothing is stored.
 class MoonPage extends StatelessWidget {
   const MoonPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        child: Container(
-            margin: const EdgeInsets.only(top: 50),
-            child: Column(
-              children: [
-                const Text("Moon Phase 2023",
-                    style:
-                        TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-                MoonPhase()
-              ],
-            )));
+    return Scaffold(
+        backgroundColor: KittColors.bg,
+        appBar: AppBar(title: const Text("登月图鉴")),
+        body: GridBackdrop(
+            child: SafeArea(
+                child: Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      children: [
+                        Text("SOLAR SYSTEM PANEL",
+                            style: KittStyle.label(size: 13, color: KittColors.amber, spacing: 1)),
+                        Expanded(child: MoonPhase())
+                      ],
+                    )))));
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'utils/network.dart';
+import 'kitt/theme.dart';
 import 'utils/audio_commons.dart';
 import 'package:rxdart/rxdart.dart';
 // import 'package:just_audio_background/just_audio_background.dart';
@@ -14,8 +15,8 @@ class AudiosPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.pinkAccent,
-        title: const Text("listening practice"),
+        backgroundColor: KittColors.panel,
+        title: const Text("听力练习"),
       ),
       body: const AudioJust(),
     );
@@ -238,7 +239,7 @@ class AudioJustState extends State<AudioJust> {
                                 },
                                 child: Material(
                                   color: i == state!.currentIndex
-                                      ? Colors.grey.shade300
+                                      ? KittColors.panelSoft
                                       : null,
                                   child: ListTile(
                                     title:
@@ -275,7 +276,7 @@ class ControlButtons extends StatelessWidget {
           onPressed: () {
             showSliderDialog(
               context: context,
-              title: "Adjust volume",
+              title: "调节音量",
               divisions: 10,
               min: 0.0,
               max: 1.0,
@@ -343,7 +344,7 @@ class ControlButtons extends StatelessWidget {
             onPressed: () {
               showSliderDialog(
                 context: context,
-                title: "Adjust speed",
+                title: "调节倍速",
                 divisions: 10,
                 min: 0.5,
                 max: 1.5,

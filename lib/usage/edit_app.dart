@@ -1,92 +1,112 @@
-import 'dart:convert';
-import 'package:blux/utils/network.dart';
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
+import 'package:blux/local/local_db.dart';
 import 'package:flutter/material.dart';
 
+/// Which tracked apps show up in the usage cockpit — pure local table.
 class UsageAppsEditPage extends StatefulWidget {
   const UsageAppsEditPage({super.key});
 
   @override
-  _UsageAppsEditPageState createState() => _UsageAppsEditPageState();
+  State<UsageAppsEditPage> createState() => _UsageAppsEditPageState();
 }
 
 class _UsageAppsEditPageState extends State<UsageAppsEditPage> {
   bool loading = true;
   List apps = [];
 
-  getApps() {
-    dioLara.get("/api/phone/apps").then(
-      (value) {
-        var data = jsonDecode(value.data);
-        setState(() {
-          apps = data["data"];
-          loading = false;
-        });
-      },
-    );
+  getApps() async {
+    final rows = await UsageRepo.apps();
+    if (!mounted) return;
+    setState(() {
+      apps = rows;
+      loading = false;
+    });
   }
 
   @override
   void initState() {
-    getApps();
     super.initState();
+    getApps();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        child: Center(
-            child: loading
-                ? const CircularProgressIndicator()
-                : Container(
-                    child: ListView.builder(
-                        itemCount: apps.length,
-                        itemBuilder: ((context, index) {
-                          return AppsRow(apps[index], getApps);
-                        })))));
+    return Scaffold(
+        appBar: AppBar(title: const Text("追踪应用")),
+        body: GridBackdrop(
+            child: SafeArea(
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : apps.isEmpty
+                        ? Center(
+                            child: Text(
+                                "NO APPS TRACKED YET.\nGRANT USAGE ACCESS AND DRIVE A WHILE.",
+                                style: KittStyle.body(color: KittColors.textDim)))
+                        : ListView.builder(
+                            itemCount: apps.length,
+                            itemBuilder: ((context, index) {
+                              return AppsRow(apps[index], getApps);
+                            })))));
   }
 }
 
 class AppsRow extends StatelessWidget {
   const AppsRow(this.info, this.tap, {super.key});
   final Map info;
-  final tap;
+  final Function tap;
 
   @override
   Widget build(BuildContext context) {
-    String packageName = info["package_name"];
+    String packageName = info["pkg"];
     String name = info["name"] ?? "";
 
-    showEdit(Map info) {
-      showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              child: AppInfo(info, tap),
-            );
-          });
-    }
-
-    return Center(
-        child: Card(
-            margin: const EdgeInsets.all(10),
-            child: InkWell(
-                onTap: () => showEdit(info),
-                child: SizedBox(
+    return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        child: KittPanel(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            accent: (info["display"] ?? 1) == 1 ? KittColors.amber : KittColors.textFaint,
+            child: Row(children: [
+              Expanded(
                   child: Column(
-                    children: [
-                       Text(packageName),
-                      if(name != "" ) Text(name) 
-                    ],
-                  ),
-                  height: 50,width:double.infinity
-                ))));
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name.isEmpty ? packageName : name,
+                            style: const TextStyle(
+                                fontFamily: KittStyle.mono,
+                                fontSize: 15,
+                                color: KittColors.text)),
+                        Text(packageName,
+                            style: KittStyle.label(size: 12, color: KittColors.textFaint)),
+                      ])),
+              IconButton(
+                  icon: const Icon(Icons.edit, size: 18),
+                  onPressed: () => showEdit(context)),
+              Switch(
+                  value: (info["display"] ?? 1) == 1,
+                  onChanged: (v) async {
+                    await UsageRepo.setDisplay(packageName, v);
+                    tap();
+                  }),
+            ])));
+  }
+
+  showEdit(BuildContext c) {
+    showDialog(
+        context: c,
+        builder: (c) => Dialog(
+            backgroundColor: KittColors.panel,
+            child: AppInfo(info, () {
+              Navigator.of(c).pop();
+            }, tap)));
   }
 }
 
 class AppInfo extends StatefulWidget {
-  const AppInfo(this.info, this.tap, {super.key});
+  const AppInfo(this.info, this.close, this.tap, {super.key});
   final Map info;
-  final tap;
+  final Function close;
+  final Function tap;
 
   @override
   _AppInfoState createState() => _AppInfoState();
@@ -95,57 +115,40 @@ class AppInfo extends StatefulWidget {
 class _AppInfoState extends State<AppInfo> {
   final _formKey = GlobalKey<FormState>();
 
-  String _name = "";
-  final Map _data = {};
+  final _name = TextEditingController();
 
-  _submit() {
+  _submit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      if (widget.info["id"] != null) {
-        _data["id"] = widget.info["id"];
-      }
-        _data["name"] = _name;
-
-      dioLara.post("/api/phone/app/edit", data: _data);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saving Data')),
-      );
-      Navigator.of(context).pop();
+      await UsageRepo.setName(widget.info["pkg"], _name.text);
+      widget.close();
       widget.tap();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _name.text = widget.info["name"] ?? "";
     return Container(
         margin: const EdgeInsets.all(30),
         child: Form(
             key: _formKey,
-            child: FormField(builder: (FormFieldState<Object?> a) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(widget.info["package_name"]),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: "Name"),
-                    initialValue:
-                        widget.info["name"],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter name.";
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      _name = value!;
-                    },
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.only(top: 30),
-                      child: ElevatedButton(
-                          onPressed: () => _submit(), child: const Text("Submit")))
-                ],
-              );
-            })));
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(widget.info["pkg"],
+                  style: KittStyle.label(size: 12, color: KittColors.textDim)),
+              TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(labelText: "显示名称"),
+                  validator: (value) =>
+                      (value == null || value.isEmpty) ? "必填" : null),
+              const SizedBox(height: 24),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(
+                    onPressed: () => widget.close(),
+                    child: const Text("取消")),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                    onPressed: _submit, child: const Text("保存")),
+              ])
+            ])));
   }
 }

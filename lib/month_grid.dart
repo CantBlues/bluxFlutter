@@ -1,18 +1,23 @@
-import 'package:blux/utils/network.dart';
-import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:blux/kitt/theme.dart';
+import 'package:blux/kitt/widgets.dart';
+import 'package:blux/local/local_db.dart';
+import 'package:flutter/material.dart';
 import 'package:hexagon/hexagon.dart';
 
+/// One habit's whole year drawn as 12 columns of hex cells — lit cells are
+/// recorded days. Reads entirely from the local database.
 class HabbitRecordPage extends StatefulWidget {
-  const HabbitRecordPage({super.key, required this.id});
+  const HabbitRecordPage({super.key, required this.id, this.name});
   final int id;
+  final String? name;
 
   @override
   State<HabbitRecordPage> createState() => _HabbitRecordPageState();
 }
 
 class _HabbitRecordPageState extends State<HabbitRecordPage> {
-  dynamic data;
+  List<List<int>>? data;
 
   @override
   void initState() {
@@ -21,70 +26,66 @@ class _HabbitRecordPageState extends State<HabbitRecordPage> {
   }
 
   getHabbitRecord() async {
-    var result = (await laravel.get("habbit/record", queryParameters: {"id": widget.id})).data;
-    List<List<int>> formattedData = List.generate(12, (_) => []);
-    for (var record in result['data']) {
-      DateTime date = DateTime.parse(record['created_at']);
-      int month = date.month;
-      int day = date.day;
-      formattedData[month - 1].add(day);
-    }
-
+    final matrix = await HabitRepo.yearMatrix(widget.id);
+    if (!mounted) return;
     setState(() {
-      data = formattedData;
+      data = matrix;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return data == null ? const Center(child: CircularProgressIndicator()) : MonthGridPage(data: data);
+    return Scaffold(
+        backgroundColor: KittColors.bg,
+        appBar: AppBar(title: Text("习惯年度 // ${widget.name ?? ''}")),
+        body: data == null
+            ? const Center(child: CircularProgressIndicator())
+            : MonthGridPage(data: data!));
   }
 }
 
 class MonthGridPage extends StatelessWidget {
   const MonthGridPage({super.key, required this.data});
-  final dynamic data;
+  final List<List<int>> data;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight;
-            final screenWidth = constraints.maxWidth;
+    return GridBackdrop(
+        child: SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenHeight = constraints.maxHeight;
+          final screenWidth = constraints.maxWidth;
 
-            const padding = 2.0; // Padding between cells
-            const columns = 12; // Number of months in a row
-            const rows = 31; // Maximum days in a month
+          const padding = 2.0;
+          const columns = 12;
+          const rows = 31;
 
-            final cellWidth = (screenWidth - (columns + 1) * padding) / columns;
-            final cellHeight = (screenHeight - 30 - (rows + 1) * padding) / rows;
-            final cellSize = min(cellWidth, cellHeight);
+          final cellWidth = (screenWidth - (columns + 1) * padding) / columns;
+          final cellHeight = (screenHeight - 40 - (rows + 1) * padding) / rows;
+          final cellSize = min(cellWidth, cellHeight);
+          final horizonPadding =
+              (screenWidth - (cellSize + padding) * columns) / columns;
 
-            final horizonPadding = (screenWidth - (cellSize + padding) * 12) / 12;
-
-            return Center(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(12, (monthIndex) {
-                  return Padding(
-                    padding: EdgeInsets.only(left: horizonPadding),
-                    child: MonthView(
-                      monthIndex: monthIndex + 1,
-                      availableHeight: cellSize,
-                      padding: padding,
-                      monthData: data[monthIndex],
-                    ),
-                  );
-                }),
-              ),
-            );
-          },
-        ),
+          return Center(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(12, (monthIndex) {
+                return Padding(
+                  padding: EdgeInsets.only(left: horizonPadding),
+                  child: MonthView(
+                    monthIndex: monthIndex + 1,
+                    availableHeight: cellSize,
+                    padding: padding,
+                    monthData: data[monthIndex],
+                  ),
+                );
+              }),
+            ),
+          );
+        },
       ),
-    );
+    ));
   }
 }
 
@@ -103,7 +104,7 @@ class MonthView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final daysInMonth = DateTime(2025, monthIndex + 1, 0).day;
+    final daysInMonth = DateTime(DateTime.now().year, monthIndex + 1, 0).day;
     final daySize = availableHeight;
 
     return Column(
@@ -112,8 +113,12 @@ class MonthView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(2.0),
           child: Text(
-            '$monthIndex',
-            style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+            monthIndex.toString().padLeft(2, '0'),
+            style: const TextStyle(
+                fontSize: 13,
+                color: KittColors.amber,
+                fontWeight: FontWeight.bold,
+                fontFamily: KittStyle.mono),
           ),
         ),
         Wrap(
@@ -127,11 +132,19 @@ class MonthView extends StatelessWidget {
               height: daySize,
               child: HexagonWidget.pointy(
                 width: daySize,
-                color: monthData.contains(dayIndex + 1) ? Colors.red : Colors.blueGrey,
+                color: monthData.contains(dayIndex + 1)
+                    ? KittColors.red
+                    : KittColors.panelSoft,
                 child: Center(
                   child: Text(
                     '${dayIndex + 1}',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: daySize * .35,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: KittStyle.mono,
+                        color: monthData.contains(dayIndex + 1)
+                            ? Colors.white
+                            : KittColors.textFaint),
                   ),
                 ),
               ),

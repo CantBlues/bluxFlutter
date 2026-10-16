@@ -1,6 +1,7 @@
 import 'package:blux/utils/heapmap.dart';
 import 'package:blux/utils/local_auth.dart';
 import 'package:blux/utils/network.dart';
+import 'package:blux/kitt/theme.dart';
 import 'package:flutter/material.dart';
 
 class TestPage extends StatelessWidget {
@@ -9,6 +10,7 @@ class TestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+        color: KittColors.bg,
         child: Container(
             alignment: const Alignment(0, 0),
             margin: const EdgeInsets.only(top: 50),
