@@ -21,10 +21,13 @@ const habitIconChoices = [
 ];
 
 IconData habitIconOf(HabitType h) {
-  if (h.iconCode != null && h.iconFont != null) {
-    try {
-      return IconData(h.iconCode!, fontFamily: h.iconFont!, matchTextDirection: true);
-    } catch (_) {}
+  final code = h.iconCode;
+  if (code != null) {
+    // map the stored codepoint back to one of the const icons — building a
+    // runtime IconData would defeat release-mode icon tree shaking
+    for (final i in habitIconChoices) {
+      if (i.codePoint == code) return i;
+    }
   }
   return Icons.insights;
 }

@@ -2,7 +2,6 @@ import 'package:blux/kitt/theme.dart';
 import 'package:blux/kitt/widgets.dart';
 import 'package:blux/local/ad_notify.dart';
 import 'package:blux/local/local_db.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 /// 广告日志：记录每天看的广告（游戏 / 设备 可选自快捷名录，广告名手输），
@@ -21,10 +20,6 @@ class _AdsPageState extends State<AdsPage> {
   String? _selPhone;
   final _ad = TextEditingController();
   List<Map<String, Object?>> _logs = [];
-  Map<String, int> _series = {};
-  Map<String, int> _top = {};
-  int _today = 0;
-  int _month = 0;
   bool _loading = true;
   bool _remindOn = false;
   int _hour = 21, _minute = 0;
@@ -33,23 +28,12 @@ class _AdsPageState extends State<AdsPage> {
     final games = await AdRepo.games();
     final phones = await AdRepo.phones();
     final logs = await AdRepo.recentLogs();
-    final series = await AdRepo.dailySeries();
-    final top = await AdRepo.topGames();
-    final today = await AdRepo.countOn(DateTime.now());
-    final monthKey = LocalDb.key(DateTime.now()).substring(0, 7);
-    final month = series.entries
-        .where((e) => e.key.startsWith(monthKey))
-        .fold(0, (a, b) => a + b.value);
     final (on, h, m) = await AdNotify.current();
     if (!mounted) return;
     setState(() {
       _games = games;
       _phones = phones;
       _logs = logs;
-      _series = series;
-      _top = top;
-      _today = today;
-      _month = month;
       _remindOn = on;
       _hour = h;
       _minute = m;
@@ -77,6 +61,7 @@ class _AdsPageState extends State<AdsPage> {
       return;
     }
     await AdRepo.addLog(game: _selGame, phone: _selPhone, ad: name);
+    await AdNotify.clearNotice(); // 已记录，撤掉可能在等的提醒
     _ad.clear();
     _load();
     _toast("已记录：$_selGame · $_selPhone · $name");
@@ -294,7 +279,7 @@ class _AdsPageState extends State<AdsPage> {
                             size: 13, color: KittColors.amber, spacing: 1)))),
           ]),
           const SizedBox(height: 4),
-          Text("通知上有“推迟1小时 / 推迟3小时”按钮，点击即可延后提醒。",
+          Text("到点会先检查：今天已有记录就不打扰；没有才弹通知。通知上有“推迟1小时 / 3小时”。",
               style: KittStyle.body(size: 13, color: KittColors.textDim)),
           Align(
               alignment: Alignment.centerRight,
@@ -302,71 +287,10 @@ class _AdsPageState extends State<AdsPage> {
                   onPressed: () async {
                     await AdNotify.ensurePermission();
                     await AdNotify.test();
-                    _toast("8 秒后会弹一条测试通知");
+                    _toast("已弹出一条测试通知");
                   },
                   child: const Text("发一条测试通知", style: TextStyle(fontSize: 13)))),
         ]));
-  }
-
-  // ----------------------------------------------------------------- chart --
-  Widget _seriesChart() {
-    final keys = _series.keys.toList();
-    final vals = _series.values.toList();
-    final maxY = vals.isEmpty ? 4.0 : (vals.reduce((a, b) => a > b ? a : b) + 1).toDouble();
-    return SizedBox(
-        height: 140,
-        child: BarChart(BarChartData(
-            maxY: maxY,
-            minY: 0,
-            borderData: FlBorderData(show: false),
-            gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) =>
-                    FlLine(color: KittColors.grid, strokeWidth: .5)),
-            barTouchData: BarTouchData(
-                touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => KittColors.panelSoft,
-                    getTooltipItem: (g, gi, r, ri) => BarTooltipItem(
-                        "${keys[g.x]}: ${r.toY.toInt()} 条",
-                        const TextStyle(
-                            color: KittColors.text,
-                            fontFamily: KittStyle.mono,
-                            fontSize: 12)))),
-            titlesData: FlTitlesData(
-                topTitles: const AxisTitles(),
-                rightTitles: const AxisTitles(),
-                leftTitles: const AxisTitles(),
-                bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 3,
-                        reservedSize: 26,
-                        getTitlesWidget: (x, meta) {
-                          final i = x.round();
-                          if (i < 0 || i >= keys.length) {
-                            return const SizedBox();
-                          }
-                          final d = keys[i].substring(5); // MM-dd
-                          return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(d,
-                                  style: const TextStyle(
-                                      fontSize: 10,
-                                      fontFamily: KittStyle.mono,
-                                      color: KittColors.textDim)));
-                        }))),
-            barGroups: [
-              for (var i = 0; i < vals.length; i++)
-                BarChartGroupData(x: i, barRods: [
-                  BarChartRodData(
-                      toY: vals[i].toDouble(),
-                      color: i == vals.length - 1
-                          ? KittColors.redBright
-                          : KittColors.red,
-                      width: 9)
-                ])
-            ])));
   }
 
   // ------------------------------------------------------------------ list --
@@ -415,40 +339,22 @@ class _AdsPageState extends State<AdsPage> {
                         padding: const EdgeInsets.all(14),
                         children: [
                           KittPanel(
-                              title: "今日概览",
-                              child: Row(children: [
-                                KittGauge(
-                                    value: _today.toDouble(),
-                                    maxValue: 10,
-                                    sub: "今日",
-                                    color: KittColors.red,
-                                    size: 86),
-                                Expanded(
-                                    child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text("本月共 $_month 条",
+                              title: "最近记录",
+                              accent: KittColors.green,
+                              child: _logs.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Center(
+                                          child: Text("还没有记录",
                                               style: KittStyle.body(
-                                                  size: 14,
-                                                  color: KittColors.amber)),
-                                          const SizedBox(height: 6),
-                                          if (_top.isNotEmpty)
-                                            Text("高频游戏：${_top.keys.first}",
-                                                maxLines: 2,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                                style: KittStyle.body(
-                                                    size: 13,
-                                                    color:
-                                                        KittColors.textDim)),
-                                        ])),
-                              ])),
-                          const SizedBox(height: 12),
-                          KittPanel(
-                              title: "近 14 天",
-                              accent: KittColors.cyan,
-                              child: _seriesChart()),
+                                                  color:
+                                                      KittColors.textFaint))),
+                                    )
+                                  : Column(
+                                      children: [
+                                        for (final e in _logs) _logRow(e)
+                                      ],
+                                    )),
                           const SizedBox(height: 12),
                           KittPanel(
                               title: "快速记录",
@@ -482,24 +388,6 @@ class _AdsPageState extends State<AdsPage> {
                                   ])),
                           const SizedBox(height: 12),
                           _reminderPanel(),
-                          const SizedBox(height: 12),
-                          KittPanel(
-                              title: "最近记录",
-                              accent: KittColors.green,
-                              child: _logs.isEmpty
-                                  ? Padding(
-                                      padding: const EdgeInsets.all(14),
-                                      child: Center(
-                                          child: Text("还没有记录",
-                                              style: KittStyle.body(
-                                                  color:
-                                                      KittColors.textFaint))),
-                                    )
-                                  : Column(
-                                      children: [
-                                        for (final e in _logs) _logRow(e)
-                                      ],
-                                    )),
                         ]))));
   }
 }

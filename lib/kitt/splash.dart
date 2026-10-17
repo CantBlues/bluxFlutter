@@ -18,7 +18,7 @@ class _BootPageState extends State<BootPage> with TickerProviderStateMixin {
       AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
         ..repeat(reverse: true);
   late final AnimationController _fade =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
 
   final List<String> _lines = [];
   static const _boot = [
@@ -37,7 +37,7 @@ class _BootPageState extends State<BootPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _t = Timer.periodic(const Duration(milliseconds: 380), (timer) {
+    _t = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (_i < _boot.length) {
         setState(() => _lines.add(_boot[_i++]));
       } else {

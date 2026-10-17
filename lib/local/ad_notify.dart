@@ -1,14 +1,25 @@
+import 'dart:ui';
+
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Daily "time to log your ads" reminder, with snooze buttons on the
-/// notification itself (推迟 1h / 3h). Settings live in SharedPreferences,
-/// the alarm lives in Android's scheduler — no server involved.
+import 'local_db.dart';
+
+/// Conditional daily ad-log reminder.
+///
+/// At the configured time every day a background isolate runs [check]:
+/// it opens the local db, and only when there is NO log for today it pops
+/// a notification. The notification carries 推迟1小时 / 推迟3小时 buttons
+/// that re-arm the same check. The chain re-registers itself, and
+/// rescheduleOnReboot keeps it alive across phone restarts.
 class AdNotify {
-  static const _dailyId = 100;
-  static const _snoozeId = 101;
+  static const _checkId = 301; // the daily re-check alarm
+  static const _snoozeCheckId = 302; // postponed re-check
+  static const _notifId = 100;
 
   static const kOn = 'ad_remind_on';
   static const kHour = 'ad_remind_hour';
@@ -23,7 +34,7 @@ class AdNotify {
   static const _channelId = 'ad_reminder';
   static const _channelName = '广告提醒';
   static const _channelDesc = '每日广告记录提醒';
-  static const _body = '该看广告了。记录今日数据，或按下推迟。';
+  static const _body = "今天还没有广告记录。进「广告日志」补一条，或按下推迟。";
 
   static const _details = NotificationDetails(
       android: AndroidNotificationDetails(_channelId, _channelName,
@@ -45,7 +56,9 @@ class AdNotify {
   }
 
   static Future<void> init() async {
+    WidgetsFlutterBinding.ensureInitialized();
     _initTz();
+    await AndroidAlarmManager.initialize();
     await _plugin.initialize(
         const InitializationSettings(
             android: AndroidInitializationSettings('@mipmap/launcher_icon')),
@@ -67,17 +80,6 @@ class AdNotify {
     return granted ?? true;
   }
 
-  static void _handle(NotificationResponse r) {
-    final id = r.actionId;
-    if (id == 'snooze60') {
-      snooze(60);
-    } else if (id == 'snooze180') {
-      snooze(180);
-    } else if (r.payload == 'ads' || id == null) {
-      onOpenAds?.call();
-    }
-  }
-
   // ---- persisted settings ----
   static Future<(bool on, int hour, int min)> current() async {
     final p = await SharedPreferences.getInstance();
@@ -96,67 +98,92 @@ class AdNotify {
     await rescheduleFromPrefs();
   }
 
-  /// re-arm (or clear) the daily alarm from stored settings —
-  /// call on app start so the schedule survives force-quits.
+  static DateTime _nextFire(DateTime now, int h, int m) {
+    var t = DateTime(now.year, now.month, now.day, h, m);
+    if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
+    return t;
+  }
+
+  /// re-arm (or clear) the daily check from stored settings —
+  /// call on app start so the chain survives force-quits.
   static Future<void> rescheduleFromPrefs() async {
-    await _plugin.cancel(_dailyId);
+    await AndroidAlarmManager.cancel(_checkId);
     final (on, hour, min) = await current();
     if (!on) return;
-    await scheduleDaily(hour, min);
+    await AndroidAlarmManager.oneShotAt(
+        _nextFire(DateTime.now(), hour, min), _checkId, check,
+        wakeup: true,
+        allowWhileIdle: true,
+        exact: true,
+        rescheduleOnReboot: true);
   }
 
-  // ---- alarms ----
-  static Future<void> scheduleDaily(int hour, int min) async {
-    final now = tz.TZDateTime.now(tz.local);
-    var target = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, min);
-    if (!target.isAfter(now)) target = target.add(const Duration(days: 1));
-    await _plugin.zonedSchedule(
-        _dailyId, 'K.I.T.T. 提示', _body, target, _details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-        payload: 'ads');
+  /// runs in a background isolate at the alarm time:
+  /// notify only if today has no ad log; always re-arm the next day.
+  @pragma('vm:entry-point')
+  static Future<void> check() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    DartPluginRegistrant.ensureInitialized();
+    _initTz();
+    final (on, hour, min) = await current();
+    if (!on) return;
+    // keep the chain alive first, whatever the check decides below
+    await AndroidAlarmManager.oneShotAt(
+        _nextFire(DateTime.now(), hour, min), _checkId, check,
+        wakeup: true,
+        allowWhileIdle: true,
+        exact: true,
+        rescheduleOnReboot: true);
+    await LocalDb.instance.db;
+    final logged = await AdRepo.countOn(DateTime.now());
+    if (logged == 0) {
+      await _plugin.show(_notifId, 'K.I.T.T. 提示', _body, _details);
+    }
   }
 
+  /// postpone: re-run the same check in `minutes` (it stays silent if the
+  /// log got filled meanwhile) and pull down today's notification.
   static Future<void> snooze(int minutes) async {
-    await _plugin.cancel(_snoozeId);
-    final t = tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes));
-    await _plugin.zonedSchedule(
-        _snoozeId, 'K.I.T.T. 推迟提醒', _body, t, _details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: 'ads');
+    await _plugin.cancel(_notifId);
+    await AndroidAlarmManager.cancel(_snoozeCheckId);
+    await AndroidAlarmManager.oneShotAt(
+        DateTime.now().add(Duration(minutes: minutes)),
+        _snoozeCheckId,
+        check,
+        wakeup: true,
+        allowWhileIdle: true,
+        exact: true);
   }
 
-  /// fires a real notification in 8 seconds so the user can see the buttons
+  /// clears a pending reminder notification once the user logs an ad
+  static Future<void> clearNotice() async => _plugin.cancel(_notifId);
+
+  /// immediate notification so the user can try the snooze buttons
   static Future<void> test() async {
-    await _plugin.cancel(_snoozeId);
-    final t = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 8));
-    await _plugin.zonedSchedule(
-        _snoozeId, 'K.I.T.T. 测试', '这是一条测试通知，可体验推迟按钮', t, _details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: 'ads');
+    await _plugin.show(_notifId, 'K.I.T.T. 测试',
+        '这是一条测试通知，可体验推迟按钮', _details);
+  }
+
+  // ---- responses ----
+  static void _handle(NotificationResponse r) {
+    final id = r.actionId;
+    if (id == 'snooze60') {
+      snooze(60);
+    } else if (id == 'snooze180') {
+      snooze(180);
+    } else if (r.payload == 'ads' || id == null) {
+      onOpenAds?.call();
+    }
   }
 }
 
-/// runs in a background isolate when the app is not in foreground.
+/// background-isolate twin of _handle (app not in foreground).
 @pragma('vm:entry-point')
 void _onBackgroundResponse(NotificationResponse r) {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
   final id = r.actionId;
   if (id != 'snooze60' && id != 'snooze180') return;
-  AdNotify._initTz();
-  final plugin = FlutterLocalNotificationsPlugin();
-  final minutes = id == 'snooze60' ? 60 : 180;
-  plugin.cancel(AdNotify._snoozeId);
-  final t = tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes));
-  plugin.zonedSchedule(AdNotify._snoozeId, 'K.I.T.T. 推迟提醒', AdNotify._body, t,
-      AdNotify._details,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: 'ads');
+  AndroidAlarmManager.initialize().then((_) =>
+      AdNotify.snooze(id == 'snooze60' ? 60 : 180));
 }

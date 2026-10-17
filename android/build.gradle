@@ -12,6 +12,38 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
+def kittAndroidFix = { p ->
+    if (p.hasProperty('android')) {
+        p.android {
+            compileSdk = 36
+            // unify JVM targets: some plugins declare Java 1.8 but inherit
+            // Kotlin's default (21 under this JDK) -> AGP 8 fails the match check
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+            kotlinOptions {
+                jvmTarget = '17'
+            }
+            // older plugins (e.g. image_gallery_saver) predate AGP 8 namespace
+            if (p.android.namespace == null) {
+                def manifestFile = new File("${p.projectDir}/src/main/AndroidManifest.xml")
+                def pkg = null
+                if (manifestFile.exists()) {
+                    def matcher = manifestFile.text =~ /package="([\w.]+)"/
+                    if (matcher.find()) pkg = matcher.group(1)
+                }
+                p.android.namespace = pkg ?: p.name
+            }
+        }
+    }
+}
+
+// pass 1: register every hook while no subproject is evaluated yet.
+// (a single subprojects{} loop that also calls evaluationDependsOn breaks:
+// evaluating :app pulls in the flutter plugin projects, and by the time the
+// loop reaches them their afterEvaluate can no longer be registered.)
 subprojects {
     // Aliyun mirrors ahead of any jcenter/google a plugin declares in its own
     // buildscript block — jcenter is dead and its redirect now returns 403.
@@ -24,31 +56,12 @@ subprojects {
         }
     }
     afterEvaluate {
-        if (project.hasProperty('android')) {
-            android {
-                compileSdk = 36
-                // unify JVM targets: some plugins declare Java 1.8 but inherit
-                // Kotlin's default (21 under this JDK) -> AGP 8 fails the match check
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_17
-                    targetCompatibility = JavaVersion.VERSION_17
-                }
-                kotlinOptions {
-                    jvmTarget = '17'
-                }
-                // older plugins (e.g. image_gallery_saver) predate AGP 8 namespace
-                if (namespace == null) {
-                    def manifestFile = file("${projectDir}/src/main/AndroidManifest.xml")
-                    def pkg = null
-                    if (manifestFile.exists()) {
-                        def matcher = manifestFile.text =~ /package="([\w.]+)"/
-                        if (matcher.find()) pkg = matcher.group(1)
-                    }
-                    namespace pkg ?: project.name
-                }
-            }
-        }
+        kittAndroidFix(project)
     }
+}
+
+// pass 2: force :app to evaluate first
+subprojects {
     project.evaluationDependsOn(":app")
 }
 
