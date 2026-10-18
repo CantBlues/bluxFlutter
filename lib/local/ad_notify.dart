@@ -1,86 +1,29 @@
-import 'dart:ui';
-
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest_all.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
 
 import 'local_db.dart';
 
-/// Conditional daily ad-log reminder.
+/// Daily ad-log reminder, delegated to the system calendar.
 ///
-/// At the configured time every day a background isolate runs [check]:
-/// it opens the local db, and only when there is NO log for today it pops
-/// a notification. The notification carries 推迟1小时 / 推迟3小时 buttons
-/// that re-arm the same check. The chain re-registers itself, and
-/// rescheduleOnReboot keeps it alive across phone restarts.
+/// The old AlarmManager background check got eaten by OEM battery managers,
+/// so instead [refresh] (run at app start and after every record) writes a
+/// one-off event for *tomorrow* at the chosen time into the phone calendar —
+/// the calendar app's own reminder alarm is what pops the notification.
+/// When every game has been logged today, the not-yet-fired event for
+/// today is deleted ("完成即撤"). Permission prompts only ever happen from
+/// user gestures; startup stays silent.
 class AdNotify {
-  static const _checkId = 301; // the daily re-check alarm
-  static const _snoozeCheckId = 302; // postponed re-check
-  static const _notifId = 100;
+  static const _ch = MethodChannel('kitt/calendar');
 
   static const kOn = 'ad_remind_on';
   static const kHour = 'ad_remind_hour';
   static const kMin = 'ad_remind_min';
+  static const _evKey = 'ad_ev_'; // + yyyy-MM-dd -> "eventId:startMs"
 
-  static final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  static const _remindMin = 0; // fire at the event start itself
 
-  /// wired by main() to jump to the ad log page when the notification is tapped
-  static void Function()? onOpenAds;
+  static bool _busy = false; // re-entrancy guard for refresh()
 
-  static const _channelId = 'ad_reminder';
-  static const _channelName = '广告提醒';
-  static const _channelDesc = '每日广告记录提醒';
-  static const _body = "今天还没有广告记录。进「广告日志」补一条，或按下推迟。";
-
-  static const _details = NotificationDetails(
-      android: AndroidNotificationDetails(_channelId, _channelName,
-          channelDescription: _channelDesc,
-          importance: Importance.max,
-          priority: Priority.high,
-          actions: [
-            AndroidNotificationAction('snooze60', '推迟1小时'),
-            AndroidNotificationAction('snooze180', '推迟3小时'),
-          ]));
-
-  static void _initTz() {
-    tzdata.initializeTimeZones();
-    try {
-      tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
-    } catch (_) {
-      tz.setLocalLocation(tz.UTC);
-    }
-  }
-
-  static Future<void> init() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    _initTz();
-    await AndroidAlarmManager.initialize();
-    await _plugin.initialize(
-        const InitializationSettings(
-            android: AndroidInitializationSettings('@mipmap/launcher_icon')),
-        onDidReceiveNotificationResponse: _handle,
-        onDidReceiveBackgroundNotificationResponse: _onBackgroundResponse);
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(const AndroidNotificationChannel(
-            _channelId, _channelName,
-            description: _channelDesc, importance: Importance.max));
-  }
-
-  /// Android 13+ needs a runtime grant for showing notifications.
-  static Future<bool> ensurePermission() async {
-    final a = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await a?.requestNotificationsPermission();
-    return granted ?? true;
-  }
-
-  // ---- persisted settings ----
   static Future<(bool on, int hour, int min)> current() async {
     final p = await SharedPreferences.getInstance();
     return (
@@ -95,95 +38,151 @@ class AdNotify {
     await p.setBool(kOn, on);
     if (hour != null) await p.setInt(kHour, hour);
     if (min != null) await p.setInt(kMin, min);
-    await rescheduleFromPrefs();
+    await refresh();
   }
 
-  static DateTime _nextFire(DateTime now, int h, int m) {
-    var t = DateTime(now.year, now.month, now.day, h, m);
-    if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-    return t;
-  }
+  // ---- permission ----
 
-  /// re-arm (or clear) the daily check from stored settings —
-  /// call on app start so the chain survives force-quits.
-  static Future<void> rescheduleFromPrefs() async {
-    await AndroidAlarmManager.cancel(_checkId);
-    final (on, hour, min) = await current();
-    if (!on) return;
-    await AndroidAlarmManager.oneShotAt(
-        _nextFire(DateTime.now(), hour, min), _checkId, check,
-        wakeup: true,
-        allowWhileIdle: true,
-        exact: true,
-        rescheduleOnReboot: true);
-  }
-
-  /// runs in a background isolate at the alarm time:
-  /// notify only if today has no ad log; always re-arm the next day.
-  @pragma('vm:entry-point')
-  static Future<void> check() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    DartPluginRegistrant.ensureInitialized();
-    _initTz();
-    final (on, hour, min) = await current();
-    if (!on) return;
-    // keep the chain alive first, whatever the check decides below
-    await AndroidAlarmManager.oneShotAt(
-        _nextFire(DateTime.now(), hour, min), _checkId, check,
-        wakeup: true,
-        allowWhileIdle: true,
-        exact: true,
-        rescheduleOnReboot: true);
-    await LocalDb.instance.db;
-    final logged = await AdRepo.countOn(DateTime.now());
-    if (logged == 0) {
-      await _plugin.show(_notifId, 'K.I.T.T. 提示', _body, _details);
+  /// silent check — safe at startup
+  static Future<bool> hasPermission() async {
+    try {
+      return await _ch.invokeMethod<bool>('hasPermission') ?? false;
+    } catch (_) {
+      return false;
     }
   }
 
-  /// postpone: re-run the same check in `minutes` (it stays silent if the
-  /// log got filled meanwhile) and pull down today's notification.
-  static Future<void> snooze(int minutes) async {
-    await _plugin.cancel(_notifId);
-    await AndroidAlarmManager.cancel(_snoozeCheckId);
-    await AndroidAlarmManager.oneShotAt(
-        DateTime.now().add(Duration(minutes: minutes)),
-        _snoozeCheckId,
-        check,
-        wakeup: true,
-        allowWhileIdle: true,
-        exact: true);
-  }
-
-  /// clears a pending reminder notification once the user logs an ad
-  static Future<void> clearNotice() async => _plugin.cancel(_notifId);
-
-  /// immediate notification so the user can try the snooze buttons
-  static Future<void> test() async {
-    await _plugin.show(_notifId, 'K.I.T.T. 测试',
-        '这是一条测试通知，可体验推迟按钮', _details);
-  }
-
-  // ---- responses ----
-  static void _handle(NotificationResponse r) {
-    final id = r.actionId;
-    if (id == 'snooze60') {
-      snooze(60);
-    } else if (id == 'snooze180') {
-      snooze(180);
-    } else if (r.payload == 'ads' || id == null) {
-      onOpenAds?.call();
+  /// prompts the system dialog — only call from a user gesture
+  static Future<bool> ensurePermission() async {
+    try {
+      final ok = await _ch
+          .invokeMethod<bool>('ensurePermission')
+          .timeout(const Duration(seconds: 60));
+      return ok ?? false;
+    } catch (_) {
+      return false;
     }
   }
-}
 
-/// background-isolate twin of _handle (app not in foreground).
-@pragma('vm:entry-point')
-void _onBackgroundResponse(NotificationResponse r) {
-  WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
-  final id = r.actionId;
-  if (id != 'snooze60' && id != 'snooze180') return;
-  AndroidAlarmManager.initialize().then((_) =>
-      AdNotify.snooze(id == 'snooze60' ? 60 : 180));
+  // ---- scheduling ----
+
+  static DateTime _at(DateTime day, int h, int m) =>
+      DateTime(day.year, day.month, day.day, h, m);
+
+  static Future<void> refresh() async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      final p = await SharedPreferences.getInstance();
+      final (on, h, m) = await current();
+      if (!on) {
+        await _purge(p);
+        return;
+      }
+      if (!await hasPermission()) return; // never nag at startup
+      final now = DateTime.now();
+      final todayK = LocalDb.key(now);
+      final tomorrowK = LocalDb.key(now.add(const Duration(days: 1)));
+
+      // tomorrow's reminder must exist every day we're used
+      await _ensure(p, tomorrowK, _at(now, h, m).add(const Duration(days: 1)));
+
+      // today: keep only while tasks are unfinished and the time not passed
+      final games = await AdRepo.games();
+      final counts = await AdRepo.gameCountsOn(now);
+      final allDone =
+          games.isNotEmpty && games.every((g) => (counts[g] ?? 0) > 0);
+      final tk = '$_evKey$todayK';
+      if (allDone) {
+        await _drop(p, tk);
+      } else if (_at(now, h, m).isAfter(now)) {
+        await _ensure(p, todayK, _at(now, h, m));
+      } else {
+        await _drop(p, tk); // already fired — tidy up the key
+      }
+
+      // prune stale day keys (yesterday's fired event etc.)
+      for (final k in p.getKeys().where((k) => k.startsWith(_evKey)).toList()) {
+        final d = k.substring(_evKey.length);
+        if (d == todayK || d == tomorrowK || !_isDate(d)) continue;
+        if (LocalDb.day(d).isBefore(LocalDb.day(todayK))) await _drop(p, k);
+      }
+    } catch (_) {
+      // startup path: any hiccup here stays silent
+    } finally {
+      _busy = false;
+    }
+  }
+
+  static bool _isDate(String s) {
+    final p = s.split('-');
+    return p.length == 3 &&
+        p.every((e) => int.tryParse(e) != null) &&
+        s.length == 10;
+  }
+
+  static Future<void> _ensure(
+      SharedPreferences p, String dayKey, DateTime start) async {
+    final k = '$_evKey$dayKey';
+    final ms = start.millisecondsSinceEpoch;
+    final prev = _parse(p.getString(k));
+    if (prev != null) {
+      final exists = await _ch.invokeMethod<bool>('eventExists', {'id': prev.$1});
+      if (exists == true && prev.$2 == ms) return; // same time, still there
+      await _ch.invokeMethod('deleteEvent', {'id': prev.$1}); // time changed
+    }
+    final id = await _ch.invokeMethod<int>('createEvent', {
+      'title': 'K.I.T.T. 记得记广告 · ${dayKey.substring(5)}',
+      'startMs': ms,
+      'durationMin': 10,
+      'reminderMin': _remindMin,
+    });
+    // id==null → no calendar account/permission: no key, retried next refresh
+    if (id != null) await p.setString(k, '$id:$ms');
+  }
+
+  static Future<void> _drop(SharedPreferences p, String k) async {
+    final prev = _parse(p.getString(k));
+    if (prev != null) {
+      try {
+        await _ch.invokeMethod('deleteEvent', {'id': prev.$1});
+      } catch (_) {}
+    }
+    await p.remove(k); // drop the key even if the delete failed
+  }
+
+  static Future<void> _purge(SharedPreferences p) async {
+    for (final k in p.getKeys().where((k) => k.startsWith(_evKey)).toList()) {
+      await _drop(p, k);
+    }
+  }
+
+  static (int, int)? _parse(String? v) {
+    if (v == null) return null;
+    final i = v.indexOf(':');
+    if (i < 0) return null;
+    final id = int.tryParse(v.substring(0, i));
+    final ms = int.tryParse(v.substring(i + 1));
+    return (id != null && ms != null) ? (id, ms) : null;
+  }
+
+  static const _testKey = '${_evKey}test';
+
+  /// one-shot event starting in 2 minutes so the user can see the
+  /// system-calendar reminder actually fire
+  static Future<bool> test() async {
+    if (!await hasPermission()) return false;
+    final p = await SharedPreferences.getInstance();
+    await _drop(p, _testKey); // clear a previous test event
+    final start = DateTime.now().add(const Duration(minutes: 2));
+    final id = await _ch.invokeMethod<int>('createEvent', {
+      'title': 'K.I.T.T. 测试提醒',
+      'startMs': start.millisecondsSinceEpoch,
+      'durationMin': 5,
+      'reminderMin': _remindMin,
+    });
+    if (id == null) return false;
+    await p.setString(_testKey, '$id:${start.millisecondsSinceEpoch}');
+    return true;
+  }
 }

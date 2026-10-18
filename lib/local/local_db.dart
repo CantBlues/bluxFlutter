@@ -17,7 +17,7 @@ class LocalDb {
 
   Future<Database> _open() async {
     final path = join(await getDatabasesPath(), 'kitt_blux.db');
-    return openDatabase(path, version: 2,
+    return openDatabase(path, version: 3,
         onCreate: (db, v) async {
       await db.execute('''
         CREATE TABLE task_types(
@@ -60,6 +60,15 @@ class LocalDb {
       await _createAdTables(db);
     }, onUpgrade: (db, oldV, newV) async {
       if (oldV < 2) await _createAdTables(db);
+      if (oldV < 3) {
+        try {
+          await db.execute(
+              'ALTER TABLE ad_phones ADD COLUMN rnd INTEGER NOT NULL DEFAULT 0');
+        } catch (e) {
+          // the 1->3 path above just created the table already carrying rnd
+          if (!e.toString().toLowerCase().contains('duplicate column')) rethrow;
+        }
+      }
     });
   }
 
@@ -71,7 +80,8 @@ class LocalDb {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS ad_phones(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE)''');
+        name TEXT NOT NULL UNIQUE,
+        rnd INTEGER NOT NULL DEFAULT 0)''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS ad_logs(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -465,15 +475,33 @@ class AdRepo {
   static Future<List<String>> games() => _names('ad_games');
   static Future<List<String>> phones() => _names('ad_phones');
 
+  /// phones with their "participate in random" flag
+  static Future<List<({String name, bool rnd})>> phoneEntries() async {
+    final db = await LocalDb.instance.db;
+    final rows = await db.query('ad_phones',
+        columns: ['name', 'rnd'], orderBy: 'id');
+    return [
+      for (final r in rows)
+        (name: r['name'] as String, rnd: (r['rnd'] as int? ?? 0) == 1)
+    ];
+  }
+
+  static Future<void> setPhoneRnd(String name, bool rnd) async {
+    final db = await LocalDb.instance.db;
+    await db.update('ad_phones', {'rnd': rnd ? 1 : 0},
+        where: 'name = ?', whereArgs: [name]);
+  }
+
   static Future<void> addGame(String name) async {
     final db = await LocalDb.instance.db;
     await db.insert('ad_games', {'name': name},
         conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
-  static Future<void> addPhone(String name) async {
+  static Future<void> addPhone(String name, {bool rnd = true}) async {
     final db = await LocalDb.instance.db;
-    await db.insert('ad_phones', {'name': name},
+    await db.insert('ad_phones',
+        {'name': name, 'rnd': rnd ? 1 : 0},
         conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
@@ -516,6 +544,16 @@ class AdRepo {
     final r = await db.rawQuery(
         'select count(*) c from ad_logs where date = ?', [LocalDb.key(day)]);
     return r.first['c'] as int;
+  }
+
+  /// today's task state: game name -> number of logs for that game on `day`
+  static Future<Map<String, int>> gameCountsOn(DateTime day) async {
+    final db = await LocalDb.instance.db;
+    final rows = await db.rawQuery(
+        "select game g, count(*) c from ad_logs "
+        "where date = ? and g is not null and g != '' group by g",
+        [LocalDb.key(day)]);
+    return {for (final r in rows) r['g'] as String: r['c'] as int};
   }
 
   /// dense per-day counts for the last `days` days: date -> number

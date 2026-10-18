@@ -27,7 +27,7 @@ import 'package:universal_platform/universal_platform.dart';
 import 'usage/usage_utils.dart';
 import 'utils/network.dart';
 
-/// lets the notification tap jump straight into the ad log page
+/// navigator key for in-app routes
 final navKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -41,10 +41,9 @@ void main() async {
   // open local storage + first-run seed
   await LocalDb.instance.db;
   await TaskRepo.ensureSeeded();
-  // daily ad-log reminder (stored schedule re-armed on every start)
-  await AdNotify.init();
-  AdNotify.onOpenAds = () => navKey.currentState?.pushNamed("ads");
-  await AdNotify.rescheduleFromPrefs();
+  // daily ad-log reminder: sync the system-calendar events (fire-and-forget
+  // so the boot screen doesn't wait on calendar IO)
+  AdNotify.refresh();
   try {
     if (UniversalPlatform.isAndroid && !kDebugMode) {
       FlutterDisplayMode.setHighRefreshRate(); // OnePlus 60fps lock looks rough

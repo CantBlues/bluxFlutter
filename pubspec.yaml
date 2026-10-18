@@ -62,9 +62,9 @@ dependencies:
   hexagon: ^0.2.0
   flutter_expandable_fab: ^2.5.0
   shared_preferences: ^2.2.2
-  flutter_local_notifications: ^18.0.1
-  timezone: ^0.9.4
-  android_alarm_manager_plus: ^4.0.5
+  # reminders now go through the system calendar (MethodChannel in
+  # MainActivity.kt) — flutter_local_notifications / timezone /
+  # android_alarm_manager_plus were removed with the alarm-based scheme
 
 
 dev_dependencies:
