@@ -19,7 +19,7 @@ class AdsPage extends StatefulWidget {
   State<AdsPage> createState() => _AdsPageState();
 }
 
-class _AdsPageState extends State<AdsPage> {
+class _AdsPageState extends State<AdsPage> with WidgetsBindingObserver {
   List<String> _games = [];
   List<({String name, bool rnd})> _phones = [];
   List<Map<String, Object?>> _logs = [];
@@ -89,7 +89,22 @@ class _AdsPageState extends State<AdsPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ad.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // coming back to the app: keep tomorrow's calendar event alive and
+    // repair it if the user deleted it in the calendar app
+    if (state == AppLifecycleState.resumed) AdNotify.refresh();
   }
 
   void _toast(String msg) {
@@ -175,9 +190,11 @@ class _AdsPageState extends State<AdsPage> {
       await _setAssign(game, res.phone!); // 重掷结果记进今天，行上同步显示
     }
     await AdRepo.addLog(game: game, phone: res.phone, ad: res.ad);
+    await AdNotify.clearNext(); // 下一条已记录 → 之前挂的提醒作废
     await AdNotify.refresh(); // 可能刚好补齐了今天 → 撤回日程
     _load();
     _toast("已记录：$game · ${res.phone ?? "—"} · ${res.ad}");
+    await _askNextRemind(); // 顺手挂“下一条广告”的日程提醒
   }
 
   Widget _taskRow(String g) {
@@ -267,9 +284,11 @@ class _AdsPageState extends State<AdsPage> {
     HapticFeedback.mediumImpact();
     await AdRepo.addLog(game: _selGame, phone: _selPhone, ad: name);
     _ad.clear();
+    await AdNotify.clearNext(); // 下一条已记录 → 之前挂的提醒作废
     await AdNotify.refresh();
     _load();
     _toast("已记录：${_selGame ?? "—"} · ${_selPhone ?? "—"} · $name");
+    await _askNextRemind(); // 顺手挂“下一条广告”的日程提醒
   }
 
   // ---------------------------------------------------------------- chips --
@@ -440,67 +459,145 @@ class _AdsPageState extends State<AdsPage> {
     showModalBottomSheet(
         context: context,
         backgroundColor: KittColors.panel,
-        builder: (context) {
+        isScrollControlled: true, // otherwise the 24+12 chips push the
+        useSafeArea: true, // confirm/cancel row off the screen
+        builder: (sheetCtx) {
           int h = _hour, m = _minute;
-          return StatefulBuilder(builder: (context, setSheet) {
-            return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const KittSection("小时"),
-                      const SizedBox(height: 8),
-                      Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (var i = 0; i < 24; i++)
-                              _chip(i.toString().padLeft(2, '0'), h == i,
-                                  () => setSheet(() => h = i))
-                          ]),
-                      const SizedBox(height: 6),
-                      const KittSection("分钟"),
-                      const SizedBox(height: 8),
-                      Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (var i = 0; i < 60; i += 5)
-                              _chip(i.toString().padLeft(2, '0'), m == i,
-                                  () => setSheet(() => m = i))
-                          ]),
-                      const SizedBox(height: 12),
-                      Row(children: [
+          return StatefulBuilder(builder: (sheetCtx, setSheet) {
+            return ConstrainedBox(
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(sheetCtx).size.height * .82),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Flexible(
+                      child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const KittSection("小时"),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      for (var i = 0; i < 24; i++)
+                                        _chip(
+                                            i.toString().padLeft(2, '0'),
+                                            h == i,
+                                            () => setSheet(() => h = i))
+                                    ]),
+                                const SizedBox(height: 6),
+                                const KittSection("分钟"),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      for (var i = 0; i < 60; i += 5)
+                                        _chip(
+                                            i.toString().padLeft(2, '0'),
+                                            m == i,
+                                            () => setSheet(() => m = i))
+                                    ]),
+                              ]))),
+                  // pinned below the scroll area: always reachable
+                  Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Row(children: [
                         Expanded(
                             child: ElevatedButton(
                                 onPressed: () async {
-                                  Navigator.pop(context);
+                                  Navigator.pop(sheetCtx);
                                   final ok =
                                       await AdNotify.ensurePermission();
                                   if (!ok) {
                                     _toast("未获得日历权限，提醒无法生效");
                                     return;
                                   }
-                                  await AdNotify.save(
+                                  final err = await AdNotify.save(
                                       on: true, hour: h, min: m);
+                                  if (!mounted) return;
                                   setState(() {
                                     _remindOn = true;
                                     _hour = h;
                                     _minute = m;
                                   });
-                                  _toast("已设定每日 "
-                                      "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} 日历提醒");
+                                  final t =
+                                      "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}";
+                                  _toast(err == null
+                                      ? "已写入系统日历：每天 $t 提醒"
+                                      : "提醒已开启，但写入日历失败：$err");
                                 },
-                                child: Text("确定 · ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}"))),
+                                child: Text(
+                                    "确定 · ${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}"))),
                         const SizedBox(width: 10),
                         TextButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => Navigator.pop(sheetCtx),
                             child: const Text("取消")),
-                      ]),
-                    ]));
+                      ])),
+                ]));
           });
         });
+  }
+
+  // -------------------------------------------------- next-ad reminder ------
+  /// after a record: ask how many minutes from now to remind the *next* ad;
+  /// "不提醒" clears it. The event is a one-off, today only.
+  Future<void> _askNextRemind() async {
+    final p = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    final ctrl = TextEditingController(
+        text: '${p.getInt(AdNotify.kNextMin) ?? 30}');
+    final res = await showDialog<int>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+            builder: (ctx, setDlg) => AlertDialog(
+                  scrollable: true, // keyboard must not clip the actions
+                  title: Text("下一条广告提醒", style: KittStyle.glow(size: 16)),
+                  content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("多少分钟后提醒你记下一条广告？只写入今天的日程。",
+                            style: KittStyle.body(
+                                size: 13, color: KittColors.textDim)),
+                        const SizedBox(height: 12),
+                        Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final n in const [15, 30, 60, 120])
+                                _chip('$n 分钟', ctrl.text == '$n',
+                                    () => setDlg(() => ctrl.text = '$n'))
+                            ]),
+                        const SizedBox(height: 4),
+                        TextField(
+                            controller: ctrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                                labelText: "分钟", hintText: "例如 45"),
+                            onChanged: (_) => setDlg(() {})),
+                      ]),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, 0),
+                        child: const Text("不提醒")),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(
+                            ctx, int.tryParse(ctrl.text.trim()) ?? -1),
+                        child: const Text("确定")),
+                  ],
+                )));
+    if (!mounted || res == null || res == 0) return; // cancelled / not now
+    if (res < 0) {
+      _toast("请输入提醒分钟数");
+      return;
+    }
+    final err = await AdNotify.remindIn(res);
+    if (!mounted) return;
+    _toast(err == null
+        ? "已加入今天的日程：$res 分钟后提醒"
+        : "提醒未写入日历：$err");
   }
 
   Widget _reminderPanel() {
@@ -521,8 +618,12 @@ class _AdsPageState extends State<AdsPage> {
                       return;
                     }
                   }
-                  await AdNotify.save(on: v);
+                  final err = await AdNotify.save(on: v);
+                  if (!mounted) return;
                   setState(() => _remindOn = v);
+                  if (v && err != null) {
+                    _toast("提醒已开启，但写入日历失败：$err");
+                  }
                 }),
             const SizedBox(width: 6),
             Text(_remindOn ? "已开启" : "已关闭",
@@ -543,16 +644,17 @@ class _AdsPageState extends State<AdsPage> {
           ]),
           const SizedBox(height: 4),
           Text("到点由系统日历弹提醒（比应用内闹钟可靠）；每天全部记完后，"
-              "当天没响的提醒会被自动撤回。若到点没弹，检查日历 App 的通知权限。",
+              "当天没响的提醒会被自动撤回。若到点没弹，检查日历 App 的通知权限。"
+              "每次记录后还会询问“下一条广告”多少分钟后提醒（仅当日）。",
               style: KittStyle.body(size: 13, color: KittColors.textDim)),
           Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                   onPressed: () async {
-                    final ok = await AdNotify.test();
-                    _toast(ok
+                    final err = await AdNotify.test();
+                    _toast(err == null
                         ? "已写入日历，约 2 分钟后弹提醒"
-                        : "日历不可用：请先在系统日历中添加账户，并允许日历权限");
+                        : "日历不可用：$err");
                   },
                   child: const Text("发一条测试日程",
                       style: TextStyle(fontSize: 13)))),
